@@ -2109,6 +2109,7 @@ function getInterpolatedForecastPointFromHourly(hourly, timeStr) {
     wind: interpolateNumber(before, after, ratio, 'wind'),
     gusts: interpolateNumber(before, after, ratio, 'gusts'),
     uv: interpolateNumber(before, after, ratio, 'uv', null),
+    aqi: interpolateNumber(before, after, ratio, 'aqi', null),
     windDir: ratio < 0.5 ? before.windDir : after.windDir,
     code: ratio < 0.5 ? before.code : after.code,
     isDay: ratio < 0.5 ? before.isDay : after.isDay
@@ -4017,6 +4018,7 @@ function getInterpolatedHourlyPoint(data, timeStr) {
     wind: interpolateNumber(before, after, ratio, 'wind'),
     gusts: interpolateNumber(before, after, ratio, 'gusts'),
     uv: interpolateNumber(before, after, ratio, 'uv', null),
+    aqi: interpolateNumber(before, after, ratio, 'aqi', null),
     windDir: ratio < 0.5 ? before.windDir : after.windDir,
     code: ratio < 0.5 ? before.code : after.code,
     isDay: ratio < 0.5 ? before.isDay : after.isDay
