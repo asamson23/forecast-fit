@@ -10,6 +10,9 @@ import './styles/responsive.css';
 import * as L from 'leaflet';
 import flatpickr from 'flatpickr';
 import JSZip from 'jszip';
+import { getUvCategory as getSharedUvCategory } from './data/uvScale';
+import { getTimelineTickConfig as getSharedTimelineTickConfig } from './features/best-window/timelineTicks';
+import { haversineKm } from './utils/distance';
 
 Object.assign(window, { L, flatpickr, JSZip });
 
@@ -2701,12 +2704,7 @@ function setLoading(isLoading) {
 }
 
 function distanceKm(lat1, lon1, lat2, lon2) {
-  const toRad = d => d * Math.PI / 180;
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return haversineKm(lat1, lon1, lat2, lon2);
 }
 
 function wCodeToEmoji(code) {
@@ -2870,12 +2868,15 @@ function isOutdoorUvRelevantActivity(activity = selectedActivity) {
 function getUvRiskInfo(value) {
   const uv = firstFinite(value, null);
   if (!isFiniteNumber(uv)) return null;
-  // ECCC / Health Canada UV categories: Low 0–2, Moderate 3–5, High 6–7, Very High 8–10, Extreme 11+.
-  if (uv >= 11) return { value: uv, label: 'Extreme', tone: 'severe', icon: '☀️', className: 'extreme', colour: 'purple' };
-  if (uv >= 8) return { value: uv, label: 'Very high', tone: 'severe', icon: '☀️', className: 'very-high', colour: 'red' };
-  if (uv >= 6) return { value: uv, label: 'High', tone: 'warn', icon: '☀️', className: 'high', colour: 'orange' };
-  if (uv >= 3) return { value: uv, label: 'Moderate', tone: '', icon: '☀️', className: 'moderate', colour: 'yellow' };
-  return { value: uv, label: 'Low', tone: 'ok', icon: '☀️', className: 'low', colour: 'green' };
+  const category = getSharedUvCategory(uv);
+  const byCategory = {
+    Extreme: { tone: 'severe', className: 'extreme', colour: 'purple' },
+    'Very high': { tone: 'severe', className: 'very-high', colour: 'red' },
+    High: { tone: 'warn', className: 'high', colour: 'orange' },
+    Moderate: { tone: '', className: 'moderate', colour: 'yellow' },
+    Low: { tone: 'ok', className: 'low', colour: 'green' }
+  };
+  return { value: uv, label: category, icon: '☀️', ...byCategory[category] };
 }
 
 function formatUvValue(value) {
@@ -3408,14 +3409,7 @@ function getBestWindowTimelineTickMinutes(totalMinutes) {
 }
 
 function getBestWindowTimelineTickConfig(totalMinutes) {
-  const minutes = Math.max(1, Number(totalMinutes) || 1);
-  if (minutes <= 360) return { major: 30, minor: 15 };
-  if (minutes <= 720) return { major: 60, minor: 30 };
-  if (minutes <= 1440) return { major: 120, minor: 60 };
-  if (minutes <= 2880) return { major: 240, minor: 120 };
-  if (minutes <= 4320) return { major: 360, minor: 180 };
-  if (minutes <= 10080) return { major: 720, minor: 360 };
-  return { major: 1440, minor: 720 };
+  return getSharedTimelineTickConfig(totalMinutes);
 }
 
 function ceilDateToStep(date, stepMinutes) {
@@ -7975,3 +7969,29 @@ Object.assign(window, {
   closeQuickStartGuide,
   jumpToQuickStartTarget,
 });
+
+function bindDomActions() {
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const trigger = event.target.closest('[data-action]');
+    if (!trigger) return;
+
+    const action = trigger.dataset.action;
+    if (action === 'openQuickStartGuide') openQuickStartGuide();
+    else if (action === 'toggleLocationCardCollapse') toggleLocationCardCollapse();
+    else if (action === 'forceRefreshWeather') forceRefreshWeather();
+    else if (action === 'resetLocationSection') resetLocationSection();
+    else if (action === 'clearAllTool') clearAllTool();
+    else if (action === 'useCurrentLocation') useCurrentLocation();
+    else if (action === 'clearRoute') clearRoute();
+    else if (action === 'resetActivitySection') resetActivitySection();
+    else if (action === 'toggleRaceDayMode') toggleRaceDayMode();
+    else if (action === 'selectActivity') selectActivity(trigger);
+    else if (action === 'selectPlannedEffort') selectPlannedEffort(trigger.dataset.plannedEffort);
+    else if (action === 'selectStartMode') selectStartMode(trigger);
+    else if (action === 'toggleManualWeatherOverride') toggleManualWeatherOverride();
+    else if (action === 'selectCheckpointModel') selectCheckpointModel(trigger.dataset.checkpointModel);
+  });
+}
+
+bindDomActions();

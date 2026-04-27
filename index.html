@@ -12,7 +12,7 @@
   <h1>Forecast <span>Fit</span></h1>
   <p>Weather-aware outfit and route planning, without the fluff</p>
   <div class="header-actions">
-    <button class="mode-toggle-btn helper-launch-btn" type="button" id="quick-start-btn" onclick="openQuickStartGuide()">Quick start</button>
+    <button class="mode-toggle-btn helper-launch-btn" type="button" id="quick-start-btn" data-action="openQuickStartGuide">Quick start</button>
   </div>
 </header>
 
@@ -21,10 +21,10 @@
     <label>Location & route</label>
     <div class="section-actions-row">
       <span class="inline-summary" id="location-card-summary" hidden></span>
-      <button class="mode-toggle-btn quiet-btn" type="button" id="location-card-toggle-btn" hidden onclick="toggleLocationCardCollapse()">Collapse</button>
-      <button class="mode-toggle-btn" type="button" id="refresh-weather-btn" onclick="forceRefreshWeather()" disabled>Refresh weather</button>
-      <button class="reset-btn" type="button" onclick="resetLocationSection()">Reset section</button>
-      <button class="mode-toggle-btn clear-btn" type="button" onclick="clearAllTool()">Clear all</button>
+      <button class="mode-toggle-btn quiet-btn" type="button" id="location-card-toggle-btn" hidden data-action="toggleLocationCardCollapse">Collapse</button>
+      <button class="mode-toggle-btn" type="button" id="refresh-weather-btn" data-action="forceRefreshWeather" disabled>Refresh weather</button>
+      <button class="reset-btn" type="button" data-action="resetLocationSection">Reset section</button>
+      <button class="mode-toggle-btn clear-btn" type="button" data-action="clearAllTool">Clear all</button>
     </div>
   </div>
   <div id="location-card-body">
@@ -35,7 +35,7 @@
           <div class="input-wrapper">
             <input type="text" id="location-input" placeholder="Search for a city" autocomplete="off">
           </div>
-          <button class="btn btn-secondary inline-location-btn" id="current-location-btn" type="button" onclick="useCurrentLocation()" aria-label="Use current location" title="Use current location"><span class="locate-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></button>
+          <button class="btn btn-secondary inline-location-btn" id="current-location-btn" type="button" data-action="useCurrentLocation" aria-label="Use current location" title="Use current location"><span class="locate-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></button>
         </div>
         <p class="field-note compact">Search for a city only. Pick a suggestion or press Enter.</p>
       </div>
@@ -44,7 +44,7 @@
         <label class="sub-label">Route file</label>
         <div class="route-file-row">
           <input type="file" id="route-file-input" accept=".gpx,.geojson,application/gpx+xml,application/geo+json">
-          <button class="reset-btn clear-btn" id="clear-route-btn" type="button" onclick="clearRoute()" style="display:none">Remove route</button>
+          <button class="reset-btn clear-btn" id="clear-route-btn" type="button" data-action="clearRoute" style="display:none">Remove route</button>
         </div>
         <p class="status-line compact" id="route-status">Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when the file contains time data.</p>
       </div>
@@ -57,7 +57,7 @@
   <div class="section-label-row planner-heading-row">
     <label>Activity &amp; parameters</label>
     <div class="section-actions-row">
-      <button class="reset-btn" type="button" onclick="resetActivitySection()">Reset section</button>
+      <button class="reset-btn" type="button" data-action="resetActivitySection">Reset section</button>
     </div>
   </div>
   <div class="setup-grid">
@@ -65,22 +65,22 @@
       <div class="section-label-row" id="activity-section">
         <label>Activity</label>
         <div class="section-actions-row">
-          <button class="mode-toggle-btn" type="button" id="race-day-mode-btn" aria-pressed="false" onclick="toggleRaceDayMode()">Race day mode</button>
+          <button class="mode-toggle-btn" type="button" id="race-day-mode-btn" aria-pressed="false" data-action="toggleRaceDayMode">Race day mode</button>
         </div>
       </div>
       <div class="activity-sections">
         <div class="activity-section-group">
           <div class="activity-group-title">Performance & multisport</div>
           <div class="activity-grid">
-            <button class="activity-btn" data-activity="running" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="running" data-action="selectActivity">
               <span class="icon">🏃</span>
               <div><div class="label">Running</div><div class="sublabel">Road / race / training</div></div>
             </button>
-            <button class="activity-btn" data-activity="cycling" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="cycling" data-action="selectActivity">
               <span class="icon">🚴</span>
               <div><div class="label">Cycling</div><div class="sublabel">Road / commute / endurance</div></div>
             </button>
-            <button class="activity-btn" data-activity="triathlon" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="triathlon" data-action="selectActivity">
               <span class="icon">🏊</span>
               <div><div class="label">Triathlon</div><div class="sublabel">Multisport / event</div></div>
             </button>
@@ -89,23 +89,23 @@
         <div class="activity-section-group">
           <div class="activity-group-title">Indoor training</div>
           <div class="activity-grid">
-            <button class="activity-btn" data-activity="gym" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="gym" data-action="selectActivity">
               <span class="icon">🏋️</span>
               <div><div class="label">Gym</div><div class="sublabel">Strength / fitness</div></div>
             </button>
-            <button class="activity-btn" data-activity="indoor_running" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="indoor_running" data-action="selectActivity">
               <span class="icon">🏃</span>
               <div><div class="label">Indoor running</div><div class="sublabel">Track / treadmill</div></div>
             </button>
-            <button class="activity-btn" data-activity="indoor_cycling" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="indoor_cycling" data-action="selectActivity">
               <span class="icon">🚴</span>
               <div><div class="label">Indoor cycling</div><div class="sublabel">Trainer / spin / velodrome</div></div>
             </button>
-            <button class="activity-btn" data-activity="indoor_multisport" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="indoor_multisport" data-action="selectActivity">
               <span class="icon">🏟️</span>
               <div><div class="label">Indoor multisport</div><div class="sublabel">Brick / gym / track / pool</div></div>
             </button>
-            <button class="activity-btn" data-activity="swimming_pool_indoor" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="swimming_pool_indoor" data-action="selectActivity">
               <span class="icon">🏊</span>
               <div><div class="label">Indoor pool swim</div><div class="sublabel">Heated pool / lap swim</div></div>
             </button>
@@ -114,15 +114,15 @@
         <div class="activity-section-group">
           <div class="activity-group-title">Outdoor swimming</div>
           <div class="activity-grid">
-            <button class="activity-btn" data-activity="swimming_open" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="swimming_open" data-action="selectActivity">
               <span class="icon">🌊</span>
               <div><div class="label">Open-water swim</div><div class="sublabel">Lake / river / sea</div></div>
             </button>
-            <button class="activity-btn" data-activity="swimming_pool_outdoor" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="swimming_pool_outdoor" data-action="selectActivity">
               <span class="icon">🏊</span>
               <div><div class="label">Outdoor pool swim</div><div class="sublabel">Heated or unheated pool</div></div>
             </button>
-            <button class="activity-btn" data-activity="snorkeling" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="snorkeling" data-action="selectActivity">
               <span class="icon">🤿</span>
               <div><div class="label">Snorkeling</div><div class="sublabel">Mask / fins / shore</div></div>
             </button>
@@ -131,19 +131,19 @@
         <div class="activity-section-group">
           <div class="activity-group-title">Paddling & board sports</div>
           <div class="activity-grid">
-            <button class="activity-btn" data-activity="sup" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="sup" data-action="selectActivity">
               <span class="icon">🏄</span>
               <div><div class="label">Paddleboarding</div><div class="sublabel">SUP / flatwater</div></div>
             </button>
-            <button class="activity-btn" data-activity="kayaking" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="kayaking" data-action="selectActivity">
               <span class="icon">🛶</span>
               <div><div class="label">Kayak</div><div class="sublabel">Paddle / touring</div></div>
             </button>
-            <button class="activity-btn" data-activity="surfing" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="surfing" data-action="selectActivity">
               <span class="icon">🌊</span>
               <div><div class="label">Surfing</div><div class="sublabel">Board / shore break</div></div>
             </button>
-            <button class="activity-btn" data-activity="water_sports" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="water_sports" data-action="selectActivity">
               <span class="icon">💦</span>
               <div><div class="label">Other water</div><div class="sublabel">Generic water setup</div></div>
             </button>
@@ -152,19 +152,19 @@
         <div class="activity-section-group">
           <div class="activity-group-title">Trail & mountain</div>
           <div class="activity-grid">
-            <button class="activity-btn" data-activity="hiking" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="hiking" data-action="selectActivity">
               <span class="icon">🥾</span>
               <div><div class="label">Hiking</div><div class="sublabel">Trail / day hike</div></div>
             </button>
-            <button class="activity-btn" data-activity="trail_running" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="trail_running" data-action="selectActivity">
               <span class="icon">🏃</span>
               <div><div class="label">Trail running</div><div class="sublabel">Trail / mixed terrain</div></div>
             </button>
-            <button class="activity-btn" data-activity="mtb_gravel" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="mtb_gravel" data-action="selectActivity">
               <span class="icon">🚵</span>
               <div><div class="label">MTB / gravel</div><div class="sublabel">Dirt / mixed surface</div></div>
             </button>
-            <button class="activity-btn" data-activity="ski_snowboard" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="ski_snowboard" data-action="selectActivity">
               <span class="icon">⛷️</span>
               <div><div class="label">Ski / snowboard</div><div class="sublabel">Resort / winter layers</div></div>
             </button>
@@ -173,11 +173,11 @@
         <div class="activity-section-group">
           <div class="activity-group-title">Hunting & fishing</div>
           <div class="activity-grid">
-            <button class="activity-btn" data-activity="fishing" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="fishing" data-action="selectActivity">
               <span class="icon">🎣</span>
               <div><div class="label">Fishing</div><div class="sublabel">Shore / boat / ice</div></div>
             </button>
-            <button class="activity-btn" data-activity="hunting" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="hunting" data-action="selectActivity">
               <span class="icon">🦌</span>
               <div><div class="label">Hunting</div><div class="sublabel">Blind / stand / field</div></div>
             </button>
@@ -186,19 +186,19 @@
         <div class="activity-section-group">
           <div class="activity-group-title">Outdoor & travel</div>
           <div class="activity-grid">
-            <button class="activity-btn" data-activity="walk" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="walk" data-action="selectActivity">
               <span class="icon">🚶</span>
               <div><div class="label">Walk</div><div class="sublabel">Neighbourhood / urban / easy path</div></div>
             </button>
-            <button class="activity-btn" data-activity="casual" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="casual" data-action="selectActivity">
               <span class="icon">🧥</span>
               <div><div class="label">Casual</div><div class="sublabel">Everyday wear</div></div>
             </button>
-            <button class="activity-btn" data-activity="road_trip" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="road_trip" data-action="selectActivity">
               <span class="icon">🚗</span>
               <div><div class="label">Road trip</div><div class="sublabel">Stops / long-drive weather</div></div>
             </button>
-            <button class="activity-btn" data-activity="camping" onclick="selectActivity(this)">
+            <button class="activity-btn" data-activity="camping" data-action="selectActivity">
               <span class="icon">🏕️</span>
               <div><div class="label">Camping</div><div class="sublabel">Overnight / multi-day</div></div>
             </button>
@@ -273,23 +273,23 @@
     <div class="comfort-panel">
       <p class="status-line compact" id="planned-effort-status">Adjusts clothing for how hard the session should feel. Low effort nudges warmer; hard/race efforts nudge lighter because you generate more heat.</p>
       <div class="toggle-row planned-effort-row" id="planned-effort-row">
-        <button class="toggle-btn" type="button" data-planned-effort="low" onclick="selectPlannedEffort('low')">
+        <button class="toggle-btn" type="button" data-planned-effort="low" data-action="selectPlannedEffort">
           <div class="label">Low / standing</div>
           <div class="sublabel">Fishing, hunting, easy strolls, long waits</div>
         </button>
-        <button class="toggle-btn" type="button" data-planned-effort="easy" onclick="selectPlannedEffort('easy')">
+        <button class="toggle-btn" type="button" data-planned-effort="easy" data-action="selectPlannedEffort">
           <div class="label">Easy</div>
           <div class="sublabel">Social pace / recovery / relaxed</div>
         </button>
-        <button class="toggle-btn active" type="button" data-planned-effort="steady" onclick="selectPlannedEffort('steady')">
+        <button class="toggle-btn active" type="button" data-planned-effort="steady" data-action="selectPlannedEffort">
           <div class="label">Steady</div>
           <div class="sublabel">Default endurance / normal outing</div>
         </button>
-        <button class="toggle-btn" type="button" data-planned-effort="hard" onclick="selectPlannedEffort('hard')">
+        <button class="toggle-btn" type="button" data-planned-effort="hard" data-action="selectPlannedEffort">
           <div class="label">Hard</div>
           <div class="sublabel">Workout / intervals / tempo</div>
         </button>
-        <button class="toggle-btn" type="button" data-planned-effort="race" onclick="selectPlannedEffort('race')">
+        <button class="toggle-btn" type="button" data-planned-effort="race" data-action="selectPlannedEffort">
           <div class="label">Race</div>
           <div class="sublabel">Max effort / minimal faff</div>
         </button>
@@ -318,15 +318,15 @@
   <div id="start-time-section" style="margin-top:18px">
     <label>Start time</label>
     <div class="toggle-row start-mode-row">
-      <button class="toggle-btn active" data-start-mode="now" onclick="selectStartMode(this)">
+      <button class="toggle-btn active" data-start-mode="now" data-action="selectStartMode">
         <div class="label">Now</div>
         <div class="sublabel">Use current conditions + next hours</div>
       </button>
-      <button class="toggle-btn" data-start-mode="later" onclick="selectStartMode(this)">
+      <button class="toggle-btn" data-start-mode="later" data-action="selectStartMode">
         <div class="label">Later</div>
         <div class="sublabel">Pick a start date and time within the forecast range</div>
       </button>
-      <button class="toggle-btn" data-start-mode="best" onclick="selectStartMode(this)">
+      <button class="toggle-btn" data-start-mode="best" data-action="selectStartMode">
         <div class="label">Best window</div>
         <div class="sublabel">Find the strongest start window in a chosen range</div>
       </button>
@@ -415,7 +415,7 @@
   <div id="water-temp-section" style="margin-top:18px">
     <div class="section-label-row">
       <label>Water temperature & override</label>
-      <button class="mode-toggle-btn" type="button" id="manual-weather-toggle-btn" aria-pressed="false" onclick="toggleManualWeatherOverride()">Show manual override</button>
+      <button class="mode-toggle-btn" type="button" id="manual-weather-toggle-btn" aria-pressed="false" data-action="toggleManualWeatherOverride">Show manual override</button>
     </div>
     <div class="water-controls-panel">
       <div class="water-model-grid">
@@ -470,11 +470,11 @@
       <label>Weather checkpoint model</label>
     </div>
     <div class="toggle-row" id="checkpoint-model-row">
-      <button class="toggle-btn" type="button" data-checkpoint-model="old" onclick="selectCheckpointModel('old')">
+      <button class="toggle-btn" type="button" data-checkpoint-model="old" data-action="selectCheckpointModel">
         <div class="label">Old model</div>
         <div class="sublabel">Evenly spaced by route progress</div>
       </button>
-      <button class="toggle-btn active" type="button" data-checkpoint-model="smart" onclick="selectCheckpointModel('smart')">
+      <button class="toggle-btn active" type="button" data-checkpoint-model="smart" data-action="selectCheckpointModel">
         <div class="label">Smart model</div>
         <div class="sublabel">Time, terrain, daylight, weather, wind</div>
       </button>
