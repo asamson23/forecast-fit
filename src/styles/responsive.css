@@ -102,9 +102,9 @@
     .weather-meta {
       grid-area: meta;
       text-align: left;
-      display: flex;
+      /*display: flex;
       flex-wrap: wrap;
-      gap: 6px 12px;
+      gap: 6px 12px;*/
       line-height: 1.55;
     }
     .forecast-scroll > div:not(.daily-forecast-grid) {
