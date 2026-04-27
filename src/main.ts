@@ -52,7 +52,17 @@ import {
   waterExposureActivities as SHARED_WATER_EXPOSURE_ACTIVITIES,
 } from './features/gear/waterRules';
 import { fetchEcccWeatherAlertsForPoint as fetchEcccWeatherAlertsForPointFromModule } from './features/weather/ecccAlertsClient';
-import { ECCC_MARINE_STATIONS as SHARED_ECCC_MARINE_STATIONS } from './features/weather/marineClient';
+import {
+  buildMarinePayloadFromEccc as buildMarinePayloadFromEcccFromModule,
+  buildMarinePayloadFromNdbcStation as buildMarinePayloadFromNdbcStationFromModule,
+  buildMarinePayloadFromOpenMeteo as buildMarinePayloadFromOpenMeteoFromModule,
+  describeMarineSource as describeMarineSourceFromModule,
+  ECCC_MARINE_STATIONS as SHARED_ECCC_MARINE_STATIONS,
+  getBestMarinePoint as getBestMarinePointFromModule,
+  getNearestMarinePointFromSeries as getNearestMarinePointFromSeriesFromModule,
+  hasUsefulMarineSource as hasUsefulMarineSourceFromModule,
+  sanitizeMarineSource as sanitizeMarineSourceFromModule,
+} from './features/weather/marineClient';
 import {
   buildOpenMeteoForecastUrl,
   dedupeSearchResults as dedupeSearchResultsFromModule,
@@ -3517,59 +3527,19 @@ function firstFinite(...values) {
 }
 
 function sanitizeMarineSource(source, latitude, longitude) {
-  if (!source) return null;
-  if (isFiniteNumber(source.latitude) && isFiniteNumber(source.longitude)) {
-    const snapDistanceKm = distanceKm(latitude, longitude, source.latitude, source.longitude);
-    source.snapDistanceKm = snapDistanceKm;
-    if (snapDistanceKm > 60) {
-      source.currentWaterTemp = null;
-      source.currentWaveHeight = null;
-      source.hourly = [];
-      source.tooFar = true;
-    }
-  }
-  return source;
+  return sanitizeMarineSourceFromModule(source, latitude, longitude, distanceKm);
 }
 
 function buildMarinePayloadFromOpenMeteo(marineJson) {
-  if (!marineJson) return null;
-  const hourly = (marineJson.hourly?.time || []).map((time, i) => ({
-    time,
-    waterTemp: marineJson.hourly.sea_surface_temperature?.[i],
-    waveHeight: marineJson.hourly.wave_height?.[i]
-  })).filter(point => isFiniteNumber(point.waterTemp) || isFiniteNumber(point.waveHeight));
-  return {
-    source: 'Open-Meteo Marine',
-    latitude: marineJson.latitude,
-    longitude: marineJson.longitude,
-    currentWaterTemp: marineJson.current?.sea_surface_temperature,
-    currentWaveHeight: marineJson.current?.wave_height,
-    hourly
-  };
+  return buildMarinePayloadFromOpenMeteoFromModule(marineJson);
 }
 
 function buildMarinePayloadFromEccc(station, parsed) {
-  if (!station || !parsed) return null;
-  return {
-    source: `ECCC buoy ${station.name}`,
-    latitude: station.lat,
-    longitude: station.lon,
-    currentWaterTemp: parsed.waterTemp,
-    currentWaveHeight: parsed.waveHeight,
-    hourly: []
-  };
+  return buildMarinePayloadFromEcccFromModule(station, parsed);
 }
 
 function buildMarinePayloadFromNdbcStation(station, parsed) {
-  if (!station || !parsed) return null;
-  return {
-    source: `NOAA NDBC buoy ${station.id}`,
-    latitude: station.lat,
-    longitude: station.lon,
-    currentWaterTemp: parsed.waterTemp,
-    currentWaveHeight: parsed.waveHeight,
-    hourly: []
-  };
+  return buildMarinePayloadFromNdbcStationFromModule(station, parsed);
 }
 
 function textHasNoData(value) {
@@ -3670,44 +3640,19 @@ async function fetchNdbcMarineFallback(latitude, longitude) {
 }
 
 function hasUsefulMarineSource(source) {
-  return !!(source && (isFiniteNumber(source.currentWaterTemp) || isFiniteNumber(source.currentWaveHeight) || (source.hourly || []).some(point => isFiniteNumber(point.waterTemp) || isFiniteNumber(point.waveHeight))));
+  return hasUsefulMarineSourceFromModule(source);
 }
 
 function getNearestMarinePointFromSeries(series, targetTime) {
-  if (!Array.isArray(series) || !series.length) return null;
-  const targetMs = parseAnyTime(targetTime);
-  if (!Number.isFinite(targetMs)) return series[0] || null;
-  let best = null;
-  let bestDiff = Infinity;
-  for (const point of series) {
-    const ms = parseAnyTime(point.time);
-    if (!Number.isFinite(ms)) continue;
-    const diff = Math.abs(ms - targetMs);
-    if (diff < bestDiff) {
-      best = point;
-      bestDiff = diff;
-    }
-  }
-  return best;
+  return getNearestMarinePointFromSeriesFromModule(series, targetTime, parseAnyTime);
 }
 
 function getBestMarinePoint(marinePayload, targetTime) {
-  if (!marinePayload) return { waterTemp: null, waveHeight: null };
-  const primaryPoint = getNearestMarinePointFromSeries(marinePayload.primary?.hourly, targetTime);
-  const ecccPoint = getNearestMarinePointFromSeries(marinePayload.eccc?.hourly, targetTime);
-  const noaaPoint = getNearestMarinePointFromSeries(marinePayload.noaa?.hourly, targetTime);
-  return {
-    waterTemp: firstFinite(primaryPoint?.waterTemp, marinePayload.primary?.currentWaterTemp, ecccPoint?.waterTemp, marinePayload.eccc?.currentWaterTemp, noaaPoint?.waterTemp, marinePayload.noaa?.currentWaterTemp),
-    waveHeight: firstFinite(primaryPoint?.waveHeight, marinePayload.primary?.currentWaveHeight, ecccPoint?.waveHeight, marinePayload.eccc?.currentWaveHeight, noaaPoint?.waveHeight, marinePayload.noaa?.currentWaveHeight)
-  };
+  return getBestMarinePointFromModule(marinePayload, targetTime, parseAnyTime, firstFinite);
 }
 
 function describeMarineSource(marinePayload) {
-  const parts = [];
-  if (hasUsefulMarineSource(marinePayload?.primary)) parts.push(marinePayload.primary.source);
-  if (hasUsefulMarineSource(marinePayload?.eccc)) parts.push(marinePayload.eccc.source);
-  if (hasUsefulMarineSource(marinePayload?.noaa)) parts.push(marinePayload.noaa.source);
-  return parts.length ? parts.join(' + ') : 'Marine data unavailable';
+  return describeMarineSourceFromModule(marinePayload);
 }
 
 async function fetchMarineDataWithFallback(latitude, longitude) {
