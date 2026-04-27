@@ -1,5 +1,34 @@
 import type { Activity } from '../types/activity';
 
+export const activityLabels: Record<string, string> = {
+  running: 'running',
+  cycling: 'outdoor cycling',
+  triathlon: 'triathlon',
+  swimming_open: 'open-water swimming',
+  swimming_pool: 'pool swimming',
+  swimming_pool_indoor: 'indoor pool swimming',
+  swimming_pool_outdoor: 'outdoor pool swimming',
+  gym: 'gym / indoor training',
+  indoor_running: 'indoor running',
+  indoor_cycling: 'indoor cycling / velodrome',
+  indoor_multisport: 'indoor multisport',
+  sup: 'paddleboarding',
+  surfing: 'surfing',
+  kayaking: 'kayaking',
+  snorkeling: 'snorkeling',
+  water_sports: 'water sports',
+  hiking: 'hiking',
+  trail_running: 'trail running',
+  mtb_gravel: 'MTB / gravel',
+  ski_snowboard: 'ski / snowboard',
+  camping: 'camping',
+  road_trip: 'road trip',
+  walk: 'walk',
+  fishing: 'fishing',
+  hunting: 'hunting',
+  casual: 'casual everyday wear',
+};
+
 export const activityPresets: Activity[] = [
   { key: 'running', label: 'Run' },
   { key: 'cycling', label: 'Ride' },
@@ -10,6 +39,7 @@ export const activityPresets: Activity[] = [
   { key: 'indoor_multisport', label: 'Indoor multisport', isIndoor: true, isMultisport: true },
   { key: 'swimming_pool_indoor', label: 'Indoor pool', isIndoor: true, isWaterRelevant: true },
   { key: 'swimming_open', label: 'Open water', isWaterRelevant: true },
+  { key: 'swimming_pool', label: 'Pool', isWaterRelevant: true },
   { key: 'swimming_pool_outdoor', label: 'Outdoor pool', isWaterRelevant: true },
   { key: 'snorkeling', label: 'Snorkel', isWaterRelevant: true },
   { key: 'sup', label: 'SUP', isWaterRelevant: true },

@@ -8,6 +8,7 @@ export type ActivityKey =
   | 'indoor_multisport'
   | 'swimming_pool_indoor'
   | 'swimming_open'
+  | 'swimming_pool'
   | 'swimming_pool_outdoor'
   | 'snorkeling'
   | 'sup'

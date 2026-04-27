@@ -10,8 +10,51 @@ import './styles/responsive.css';
 import * as L from 'leaflet';
 import flatpickr from 'flatpickr';
 import JSZip from 'jszip';
+import {
+  ECCC_ALERTS_API as SHARED_ECCC_ALERTS_API,
+  GEO_API as SHARED_GEO_API,
+  LOCATION_PRIORITY_COUNTRY_CODES,
+  MARINE_API as SHARED_MARINE_API,
+  NOAA_NDBC_ACTIVE_XML as SHARED_NOAA_NDBC_ACTIVE_XML,
+  NOAA_NDBC_REALTIME_BASE as SHARED_NOAA_NDBC_REALTIME_BASE,
+  NORTH_AMERICA_COUNTRY_CODES,
+  NOMINATIM_SEARCH_API as SHARED_NOMINATIM_SEARCH_API,
+  WEATHER_API as SHARED_WEATHER_API,
+  WESTERN_EUROPE_COUNTRY_CODES,
+} from './data/constants';
+import {
+  durationOrder as SHARED_DURATION_ORDER,
+  durationProfiles as SHARED_DURATION_PROFILES,
+} from './data/durationProfiles';
+import { activityLabels as SHARED_ACTIVITY_LABELS } from './data/activityPresets';
 import { getUvCategory as getSharedUvCategory } from './data/uvScale';
 import { getTimelineTickConfig as getSharedTimelineTickConfig } from './features/best-window/timelineTicks';
+import {
+  effortRelevantActivities as SHARED_EFFORT_RELEVANT_ACTIVITIES,
+  noLocationIndoorActivities as SHARED_NO_LOCATION_INDOOR_ACTIVITIES,
+} from './features/gear/activityRules';
+import {
+  paddleDistanceActivities as SHARED_PADDLE_DISTANCE_ACTIVITIES,
+  waterDistanceActivities as SHARED_WATER_DISTANCE_ACTIVITIES,
+  waterExposureActivities as SHARED_WATER_EXPOSURE_ACTIVITIES,
+} from './features/gear/waterRules';
+import { ECCC_MARINE_STATIONS as SHARED_ECCC_MARINE_STATIONS } from './features/weather/marineClient';
+import { weatherCodeToEmoji } from './features/weather/weatherCodes';
+import {
+  dedupeAlerts as dedupeAlertsFromModule,
+  isProbablyCanadaPoint as isProbablyCanadaPointFromModule,
+  normalizeEcccAlertFeature as normalizeEcccAlertFeatureFromModule,
+  shouldUseEcccAlertsForWeatherData,
+} from './features/weather/warnings';
+import {
+  parseRouteFile as parseUploadedRouteFile,
+  parseRouteText as parseUploadedRouteText,
+} from './features/route/parseRouteText';
+import { parseGeoJsonRouteObject as parseGeoJsonRouteObjectFromModule } from './features/route/parseGeoJson';
+import { parseXmlRouteDocument as parseXmlRouteDocumentFromModule } from './features/route/parseGpx';
+import { normalizeRoutePoints as normalizeRoutePointsFromModule } from './features/route/parseGeoJson';
+import { buildRouteStateModel } from './features/route/routeMetrics';
+import { getSegmentTimeFactor as getSegmentTimeFactorFromModule } from './features/route/routeTiming';
 import { haversineKm } from './utils/distance';
 
 Object.assign(window, { L, flatpickr, JSZip });
@@ -87,23 +130,14 @@ Object.assign(window, { L, flatpickr, JSZip });
  *   checkpoint controls, and viewport-bound chart tooltips that no longer clip
  *   at the top of the chart.
  */
-const GEO_API = "https://geocoding-api.open-meteo.com/v1/search";
-const NOMINATIM_SEARCH_API = "https://nominatim.openstreetmap.org/search";
-const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
-const MARINE_API = "https://marine-api.open-meteo.com/v1/marine";
-const ECCC_ALERTS_API = "https://api.weather.gc.ca/collections/weather-alerts/items";
-const NOAA_NDBC_ACTIVE_XML = "https://www.ndbc.noaa.gov/activestations.xml";
-const NOAA_NDBC_REALTIME_BASE = "https://www.ndbc.noaa.gov/data/realtime2";
-const ECCC_MARINE_STATIONS = [
-  { id: '44258', name: 'Halifax Harbour', lat: 44.5, lon: -63.4, url: 'https://www.weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=15&siteID=13807&stationID=44258' },
-  { id: '44489', name: 'West Chedabucto Bay', lat: 45.49, lon: -61.14, url: 'https://www.weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=15&siteID=15603&stationID=44489' },
-  { id: '46036', name: 'South Nomad', lat: 48.35, lon: -133.95, url: 'https://weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=02&siteID=&stationID=46036' },
-  { id: '46146', name: 'Halibut Bank', lat: 49.34, lon: -123.72, url: 'https://weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=02&siteID=&stationID=46146' },
-  { id: '46132', name: 'South Brooks', lat: 49.46, lon: -127.53, url: 'https://weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=02&siteID=14300&stationID=46132' },
-  { id: '46131', name: 'Sentry Shoal', lat: 49.92, lon: -125.0, url: 'https://weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=02&siteID=04800&stationID=46131' },
-  { id: '46206', name: 'La Perouse Bank', lat: 48.83, lon: -126.0, url: 'https://weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=02&siteID=14300&stationID=46206' },
-  { id: '46185', name: 'South Hecate Strait', lat: 52.85, lon: -130.08, url: 'https://weather.gc.ca/marine/weatherConditions-currentConditions_e.html?mapID=02&siteID=06205&stationID=46185' }
-];
+const GEO_API = SHARED_GEO_API;
+const NOMINATIM_SEARCH_API = SHARED_NOMINATIM_SEARCH_API;
+const WEATHER_API = SHARED_WEATHER_API;
+const MARINE_API = SHARED_MARINE_API;
+const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
+const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
+const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
+const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
 let ndbcActiveStationsCache = null;
 
 let selectedActivity = null;
@@ -230,24 +264,8 @@ let bestWindowDebounceTimer = null;
 let bestWindowAnalysisToken = 0;
 
 // Duration presets drive both clothing bias and the forecast window.
-const durationProfiles = {
-  d30: { label: '30 min', sublabel: 'Quick hit', minutes: 30, hoursWindow: 3, exposureBias: 0, mode: 'hourly' },
-  d90: { label: '90 min\n(1.5 h)', sublabel: 'In between', minutes: 90, hoursWindow: 4, exposureBias: 0, mode: 'hourly' },
-  h1:  { label: '60 min\n(1 h)', sublabel: 'Short session', minutes: 60, hoursWindow: 4, exposureBias: 0, mode: 'hourly' },
-  h2:  { label: '120 min\n(2 h)', sublabel: 'Standard outing', minutes: 120, hoursWindow: 5, exposureBias: 1, mode: 'hourly' },
-  h3:  { label: '180 min\n(3 h)', sublabel: 'Extended outing', minutes: 180, hoursWindow: 6, exposureBias: 1, mode: 'hourly' },
-  h4:  { label: '4 h', sublabel: 'Long session', minutes: 240, hoursWindow: 8, exposureBias: 2, mode: 'hourly' },
-  h6:  { label: '6 h', sublabel: 'Big outing', minutes: 360, hoursWindow: 10, exposureBias: 2, mode: 'hourly' },
-  h8:  { label: '8 h', sublabel: 'All-day effort', minutes: 480, hoursWindow: 12, exposureBias: 3, mode: 'hourly' },
-  h10: { label: '10 h', sublabel: 'Long day', minutes: 600, hoursWindow: 13, exposureBias: 4, mode: 'hourly' },
-  h12: { label: '12 h', sublabel: 'Very long day', minutes: 720, hoursWindow: 14, exposureBias: 4, mode: 'hourly' },
-  h18: { label: '18 h', sublabel: 'Ultra-long day', minutes: 1080, daysWindow: 2, exposureBias: 5, mode: 'daily' },
-  d1:  { label: '24 h', sublabel: 'Full day', minutes: 1440, hoursWindow: 24, exposureBias: 5, mode: 'hourly' },
-  d2:  { label: '2 days', sublabel: 'Weekend-ish', minutes: 2880, daysWindow: 2, exposureBias: 5, mode: 'daily' },
-  d3:  { label: '3 days', sublabel: 'Short expedition', minutes: 4320, daysWindow: 3, exposureBias: 6, mode: 'daily' },
-  d5:  { label: '4–7 days', sublabel: 'Multi-day', minutes: 7200, daysWindow: 5, exposureBias: 7, mode: 'daily' }
-};
-const durationOrder = ['d30','h1','d90','h2','h3','h4','h6','h8','h10','h12','h18','d1','d2','d3','d5'];
+const durationProfiles = SHARED_DURATION_PROFILES;
+const durationOrder = SHARED_DURATION_ORDER;
 
 function nearestDurationKey(minutes) {
   const mins = Number(minutes);
@@ -259,40 +277,13 @@ function nearestDurationKey(minutes) {
   }, durationOrder[0]);
 }
 
-const activityLabels = {
-  running: 'running',
-  cycling: 'outdoor cycling',
-  triathlon: 'triathlon',
-  swimming_open: 'open-water swimming',
-  swimming_pool: 'pool swimming',
-  swimming_pool_indoor: 'indoor pool swimming',
-  swimming_pool_outdoor: 'outdoor pool swimming',
-  gym: 'gym / indoor training',
-  indoor_running: 'indoor running',
-  indoor_cycling: 'indoor cycling / velodrome',
-  indoor_multisport: 'indoor multisport',
-  sup: 'paddleboarding',
-  surfing: 'surfing',
-  kayaking: 'kayaking',
-  snorkeling: 'snorkeling',
-  water_sports: 'water sports',
-  hiking: 'hiking',
-  trail_running: 'trail running',
-  mtb_gravel: 'MTB / gravel',
-  ski_snowboard: 'ski / snowboard',
-  camping: 'camping',
-  road_trip: 'road trip',
-  walk: 'walk',
-  fishing: 'fishing',
-  hunting: 'hunting',
-  casual: 'casual everyday wear'
-};
+const activityLabels = SHARED_ACTIVITY_LABELS;
 
 // Activities in this set can produce useful clothing/gear guidance without a
 // weather lookup. They happen indoors or in a controlled pool environment, so
 // the core advice is driven by session type, duration, sweat management, and
 // practical before/after layers rather than forecast conditions.
-const noLocationIndoorActivities = new Set(['gym', 'indoor_running', 'indoor_cycling', 'indoor_multisport', 'swimming_pool_indoor']);
+const noLocationIndoorActivities = SHARED_NO_LOCATION_INDOOR_ACTIVITIES;
 
 function isNoLocationIndoorActivity(activity = selectedActivity) {
   return noLocationIndoorActivities.has(activity);
@@ -351,7 +342,7 @@ function renderCustomMultisportControls() {
     ? 'Select the event legs you actually need. Removing the swim hides water-temperature relevance; adding transition/strength adds packing/checklist context.'
     : 'Select the indoor blocks you actually plan: pool, bike/velodrome, run, gym, or mobility. This changes the indoor checklist.';
   customMultisportLegList.innerHTML = definitions.map(def => `
-    <button class="pick-pill ${selected.has(def.key) ? 'active' : ''}" type="button" onclick="toggleCustomMultisportLeg('${escapeHtml(def.key)}')" title="${escapeHtml(def.detail)}">
+    <button class="pick-pill ${selected.has(def.key) ? 'active' : ''}" type="button" data-action="toggleCustomMultisportLeg" data-leg-key="${escapeHtml(def.key)}" title="${escapeHtml(def.detail)}">
       ${selected.has(def.key) ? '✓ ' : ''}${escapeHtml(def.label)}
     </button>`).join('');
 }
@@ -380,20 +371,17 @@ window.toggleCustomMultisportLeg = toggleCustomMultisportLeg;
 // These sets keep the recommendation code from hard-coding long chains of
 // activity names every time it needs to know whether water temperature, swim
 // pace, or paddle-style distance handling should apply.
-const waterExposureActivities = new Set(['swimming_open', 'sup', 'surfing', 'kayaking', 'snorkeling', 'water_sports']);
-const waterDistanceActivities = new Set(['swimming_open', 'swimming_pool', 'swimming_pool_indoor', 'swimming_pool_outdoor', 'snorkeling']);
-const paddleDistanceActivities = new Set(['sup', 'kayaking']);
+const waterExposureActivities = SHARED_WATER_EXPOSURE_ACTIVITIES;
+const waterDistanceActivities = SHARED_WATER_DISTANCE_ACTIVITIES;
+const paddleDistanceActivities = SHARED_PADDLE_DISTANCE_ACTIVITIES;
 
 // Location search priority.
 // Open-Meteo can return many cities with the same name. These country-code sets
 // gently sort North America first and Western Europe second without filtering out
 // other valid world locations.
-const locationPriorityCountryCodes = new Set([
-  'CA','US','MX',
-  'AD','AT','BE','CH','DE','DK','ES','FI','FR','GB','IE','IS','IT','LI','LU','MC','NL','NO','PT','SE'
-]);
-const northAmericaCountryCodes = new Set(['CA','US','MX']);
-const westernEuropeCountryCodes = new Set(['AD','AT','BE','CH','DE','DK','ES','FI','FR','GB','IE','IS','IT','LI','LU','MC','NL','NO','PT','SE']);
+const locationPriorityCountryCodes = new Set(LOCATION_PRIORITY_COUNTRY_CODES);
+const northAmericaCountryCodes = new Set(NORTH_AMERICA_COUNTRY_CODES);
+const westernEuropeCountryCodes = new Set(WESTERN_EUROPE_COUNTRY_CODES);
 
 function getPoolType() {
   return poolTypeSelect?.value || 'indoor_heated';
@@ -717,12 +705,7 @@ function updateTemperaturePreferenceUi() {
 // - Planned effort is the session's expected heat production.
 // The offset is applied to the clothing decision temperature only. It never
 // changes the real forecast, water temperature, chart, or displayed weather.
-const effortRelevantActivities = new Set([
-  'running','cycling','triathlon','swimming_open','swimming_pool','swimming_pool_indoor','swimming_pool_outdoor',
-  'gym','indoor_running','indoor_cycling','indoor_multisport',
-  'sup','surfing','kayaking','snorkeling','water_sports',
-  'hiking','trail_running','mtb_gravel','ski_snowboard','walk','fishing','hunting','camping'
-]);
+const effortRelevantActivities = SHARED_EFFORT_RELEVANT_ACTIVITIES;
 
 function isEffortRelevantActivity(activity = selectedActivity) {
   return !activity || effortRelevantActivities.has(activity);
@@ -1589,7 +1572,7 @@ function renderDurationButtons() {
   const activeKey = locked ? (routeState.derivedDurationKey || selectedDuration) : (hasManualOverride ? null : (selectedDuration || null));
   el.innerHTML = durationOrder.map(key => {
     const p = durationProfiles[key];
-    return `<button class="duration-btn ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} onclick="selectDurationKey('${key}')"><div class="label">${escapeHtml(p.label)}</div><div class="sublabel">${escapeHtml(locked && activeKey === key ? `${p.sublabel} · route` : p.sublabel)}</div></button>`;
+    return `<button class="duration-btn ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} data-action="selectDurationKey" data-duration-key="${escapeHtml(key)}"><div class="label">${escapeHtml(p.label)}</div><div class="sublabel">${escapeHtml(locked && activeKey === key ? `${p.sublabel} · route` : p.sublabel)}</div></button>`;
   }).join('');
 }
 
@@ -1606,7 +1589,7 @@ function renderEventButtons() {
   }
   const selected = getSelectedEvent();
   container.innerHTML = presets.map(p => `
-    <button class="event-btn ${!customDistanceActive && selected?.key === p.key ? 'active' : ''} ${distanceLocked ? 'locked' : ''}" type="button" ${distanceLocked ? 'disabled' : ''} onclick="selectEventPreset('${p.key}')">
+    <button class="event-btn ${!customDistanceActive && selected?.key === p.key ? 'active' : ''} ${distanceLocked ? 'locked' : ''}" type="button" ${distanceLocked ? 'disabled' : ''} data-action="selectEventPreset" data-event-key="${escapeHtml(p.key)}">
       <div class="label">${escapeHtml(p.label)}</div>
       <div class="sublabel">${escapeHtml(p.sublabel)}</div>
     </button>`).join('');
@@ -1752,102 +1735,23 @@ function clearRouteMapLayers() {
 }
 
 function normalizeRoutePoints(points) {
-  const cleaned = [];
-  for (const p of points) {
-    if (!isFiniteNumber(p.lat) || !isFiniteNumber(p.lon)) continue;
-    const last = cleaned[cleaned.length - 1];
-    const nextPoint = {
-      lat: p.lat,
-      lon: p.lon,
-      ele: isFiniteNumber(p.ele) ? Number(p.ele) : null,
-      time: p.time || null
-    };
-    if (!last || last.lat !== nextPoint.lat || last.lon !== nextPoint.lon) cleaned.push(nextPoint);
-  }
-  return cleaned;
+  return normalizeRoutePointsFromModule(points);
 }
 
 function parseGeoJsonRouteObject(geo) {
-  const points = [];
-  function walkGeom(geom, properties = {}) {
-    if (!geom) return;
-    const coordTimes = properties.coordTimes || properties.times || properties.timestamps || null;
-    if (geom.type === 'LineString') {
-      geom.coordinates.forEach((c, i) => points.push({
-        lon: Number(c[0]),
-        lat: Number(c[1]),
-        ele: isFiniteNumber(Number(c[2])) ? Number(c[2]) : null,
-        time: Array.isArray(coordTimes) ? coordTimes[i] || null : null
-      }));
-    } else if (geom.type === 'MultiLineString') {
-      geom.coordinates.forEach((line, lineIndex) => {
-        const nestedTimes = Array.isArray(coordTimes?.[lineIndex]) ? coordTimes[lineIndex] : null;
-        line.forEach((c, i) => points.push({
-          lon: Number(c[0]),
-          lat: Number(c[1]),
-          ele: isFiniteNumber(Number(c[2])) ? Number(c[2]) : null,
-          time: (nestedTimes?.[i] || null)
-        }));
-      });
-    } else if (geom.type === 'Feature') {
-      walkGeom(geom.geometry, geom.properties || {});
-    } else if (geom.type === 'FeatureCollection') {
-      geom.features.forEach(f => walkGeom(f.geometry, f.properties || {}));
-    }
-  }
-  walkGeom(geo);
-  return normalizeRoutePoints(points);
+  return parseGeoJsonRouteObjectFromModule(geo);
 }
 
 function parseXmlRouteDocument(xml) {
-  const points = [];
-  xml.querySelectorAll('trkpt, rtept').forEach(node => {
-    points.push({
-      lat: Number(node.getAttribute('lat')),
-      lon: Number(node.getAttribute('lon')),
-      ele: Number(node.querySelector('ele')?.textContent),
-      time: node.querySelector('time')?.textContent?.trim() || null
-    });
-  });
-  return normalizeRoutePoints(points);
+  return parseXmlRouteDocumentFromModule(xml);
 }
 
 function parseRouteText(name, text) {
-  const lower = (name || '').toLowerCase();
-  const trimmed = String(text || '').trim();
-  if (!trimmed) return [];
-
-  const looksLikeXml = trimmed.startsWith('<?xml') || trimmed.startsWith('<');
-  const looksLikeJson = trimmed.startsWith('{') || trimmed.startsWith('[');
-
-  if (lower.endsWith('.gpx') || (looksLikeXml && !lower.endsWith('.geojson'))) {
-    const xml = new DOMParser().parseFromString(trimmed, 'application/xml');
-    const xmlPoints = parseXmlRouteDocument(xml);
-    if (xmlPoints.length) return xmlPoints;
-    throw new Error('No route points found in that GPX file.');
-  }
-
-  if (lower.endsWith('.geojson') || looksLikeJson) {
-    try {
-      const geo = JSON.parse(trimmed);
-      const geoPoints = parseGeoJsonRouteObject(geo);
-      if (geoPoints.length) return geoPoints;
-      throw new Error('No route points found in that GeoJSON file.');
-    } catch (err) {
-      if (err instanceof Error && /GeoJSON file/.test(err.message)) throw err;
-      throw new Error('That file is not a valid GPX or GeoJSON route.');
-    }
-  }
-
-  throw new Error('Unsupported route format. Please use GPX or GeoJSON only.');
+  return parseUploadedRouteText(name, text);
 }
 
 async function parseRouteFile(file) {
-  const lower = (file?.name || '').toLowerCase();
-  if (!lower.endsWith('.gpx') && !lower.endsWith('.geojson')) {
-    throw new Error('Unsupported route format. Please use GPX or GeoJSON only.');
-  }
-  return parseRouteText(file.name, await file.text());
+  return parseUploadedRouteFile(file);
 }
 
 // Route model helpers.
@@ -1872,46 +1776,7 @@ function bearingDegrees(lat1, lon1, lat2, lon2) {
 }
 
 function buildRouteState(points, fileName) {
-  const enriched = [];
-  let totalKm = 0;
-  let totalGain = 0;
-  points.forEach((p, idx) => {
-    const prev = idx > 0 ? points[idx - 1] : null;
-    const segKm = prev ? distanceKm(prev.lat, prev.lon, p.lat, p.lon) : 0;
-    totalKm += segKm;
-    const ele = isFiniteNumber(p.ele) ? Number(p.ele) : null;
-    const prevEle = isFiniteNumber(prev?.ele) ? Number(prev.ele) : null;
-    const deltaEle = idx > 0 && isFiniteNumber(ele) && isFiniteNumber(prevEle) ? ele - prevEle : 0;
-    if (deltaEle > 0) totalGain += deltaEle;
-    const gradePct = segKm > 0 && isFiniteNumber(ele) && isFiniteNumber(prevEle)
-      ? (deltaEle / Math.max(1, segKm * 1000)) * 100
-      : 0;
-    enriched.push({
-      ...p,
-      ele,
-      index: idx,
-      kmFromStart: totalKm,
-      segmentKm: segKm,
-      deltaEle,
-      gradePct,
-      timeMs: parseAnyTime(p.time)
-    });
-  });
-  const timed = enriched.filter(p => isFiniteNumber(p.timeMs));
-  const elapsedMinutes = timed.length >= 2 ? Math.max(0, (timed[timed.length - 1].timeMs - timed[0].timeMs) / 60000) : null;
-  return {
-    fileName,
-    points: enriched,
-    totalKm,
-    totalGain,
-    hasElevation: enriched.some(p => isFiniteNumber(p.ele)),
-    timedPointCount: timed.length,
-    elapsedMinutes: isFiniteNumber(elapsedMinutes) && elapsedMinutes > 0 ? elapsedMinutes : null,
-    derivedDurationKey: isFiniteNumber(elapsedMinutes) && elapsedMinutes > 0 ? nearestDurationKey(elapsedMinutes) : null,
-    weatherCache: {},
-    timingCache: {},
-    samples: []
-  };
+  return buildRouteStateModel(points, fileName, { parseTime: parseAnyTime, nearestDurationKey });
 }
 
 function getRouteTimingMinutes() {
@@ -1920,20 +1785,7 @@ function getRouteTimingMinutes() {
 }
 
 function getSegmentTimeFactor(activity, gradePct) {
-  const grade = clamp(firstFinite(gradePct, 0), -18, 18);
-  let factor = 1;
-  if (activity === 'cycling' || activity === 'triathlon') {
-    factor += grade > 0 ? grade * 0.07 : grade * 0.025;
-  } else if (activity === 'running') {
-    factor += grade > 0 ? grade * 0.085 : grade * 0.03;
-  } else if (activity === 'road_trip') {
-    factor += grade > 0 ? grade * 0.018 : grade * 0.01;
-  } else if (activity === 'camping' || activity === 'walk' || activity === 'casual') {
-    factor += grade > 0 ? grade * 0.07 : grade * 0.015;
-  } else {
-    factor += grade > 0 ? grade * 0.045 : grade * 0.02;
-  }
-  return clamp(factor, 0.58, 3.2);
+  return getSegmentTimeFactorFromModule(activity, gradePct);
 }
 
 /** 
@@ -2708,17 +2560,7 @@ function distanceKm(lat1, lon1, lat2, lon2) {
 }
 
 function wCodeToEmoji(code) {
-  if (code === 0) return ['☀️', 'Clear sky'];
-  if (code <= 2) return ['🌤️', 'Partly cloudy'];
-  if (code === 3) return ['☁️', 'Overcast'];
-  if (code <= 49) return ['🌫️', 'Fog'];
-  if (code <= 59) return ['🌦️', 'Drizzle'];
-  if (code <= 69) return ['🌧️', 'Rain'];
-  if (code <= 79) return ['🌨️', 'Snow'];
-  if (code <= 82) return ['🌧️', 'Rain showers'];
-  if (code <= 86) return ['🌨️', 'Snow showers'];
-  if (code <= 99) return ['⛈️', 'Thunderstorm'];
-  return ['🌡️', 'Unknown'];
+  return weatherCodeToEmoji(code);
 }
 
 function weatherIconHtml(code, className = 'icon') {
@@ -2951,14 +2793,11 @@ function augmentWizardWithUvContext(wizard, data, activity) {
 }
 
 function isProbablyCanadaPoint(lat, lon) {
-  const la = Number(lat);
-  const lo = Number(lon);
-  return Number.isFinite(la) && Number.isFinite(lo) && la >= 41 && la <= 84 && lo >= -142 && lo <= -52;
+  return isProbablyCanadaPointFromModule(lat, lon);
 }
 
 function shouldUseEcccAlertsForData(data = weatherData) {
-  const code = String(data?.countryCode || data?.country_code || '').toUpperCase();
-  return code === 'CA' || isProbablyCanadaPoint(data?.latitude, data?.longitude);
+  return shouldUseEcccAlertsForWeatherData(data);
 }
 
 function pointInRing(lon, lat, ring) {
@@ -3006,35 +2845,11 @@ function isActiveEcccAlertFeature(feature, now = new Date()) {
 }
 
 function normalizeEcccAlertFeature(feature) {
-  const p = feature?.properties || {};
-  const colour = String(p.risk_colour_en || '').toLowerCase() || (p.alert_type === 'statement' ? 'grey' : 'yellow');
-  const type = String(p.alert_type || 'alert').toLowerCase();
-  const hazard = p.alert_short_name_en || p.alert_name_en || 'Weather alert';
-  const featureName = p.feature_name_en || p.province || 'Affected area';
-  const text = String(p.alert_text_en || '').replace(/\s+/g, ' ').trim();
-  const summary = text ? (text.length > 240 ? `${text.slice(0, 237)}…` : text) : `${hazard} in effect for ${featureName}.`;
-  const colourLabel = colour ? colour.charAt(0).toUpperCase() + colour.slice(1) : '';
-  const typeLabel = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Alert';
-  const level = colour === 'red' ? 'severe' : colour;
-  return {
-    id: p.id || feature?.id || `${hazard}-${featureName}`,
-    level,
-    colour,
-    icon: type === 'statement' ? 'ℹ️' : '⚠️',
-    title: `${colourLabel ? colourLabel + ' ' : ''}${typeLabel} · ${hazard}`,
-    detail: `${summary} (${featureName})`,
-    source: 'eccc'
-  };
+  return normalizeEcccAlertFeatureFromModule(feature);
 }
 
 function dedupeAlerts(alerts = []) {
-  const seen = new Set();
-  return alerts.filter(alert => {
-    const key = String(alert.id || `${alert.title}|${alert.detail}`).toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return dedupeAlertsFromModule(alerts);
 }
 
 async function fetchEcccWeatherAlertsForPoint(lat, lon, countryCode = '') {
@@ -3624,7 +3439,7 @@ function renderSuggestions() {
   suggestionsPortal.innerHTML = suggestionsData.map((r, i) => {
     const parts = [r.admin1, r.country].filter(Boolean).join(' · ') || (r.display_name && r.display_name !== r.name ? r.display_name : '');
     return `
-      <button type="button" class="suggestion-item" data-index="${i}" onclick="pickSuggestion(${i})">
+      <button type="button" class="suggestion-item" data-index="${i}" data-action="pickSuggestion">
         <span class="s-flag">${countryFlag(r.country_code)}</span>
         <div>
           <div class="s-main">${escapeHtml(r.name)}</div>
@@ -5422,7 +5237,7 @@ function getBestWindowTimelineHtml(analysis) {
     const startRange = getBestWindowClusterStartRangeInfo(cluster);
     const startRangeText = startRange ? ` · good starts ${startRange.label}` : '';
     const title = `${getBestWindowRankLabel(index, analysis.options?.priority)} · ${formatWeekdayTime(range.startTime)}–${formatShortTime(range.endTime)}${startRangeText}${warning}`;
-    return `<div class="best-window-strip-band ${rank} ${activeClass} ${overrunClass}" style="left:${left.toFixed(2)}%; width:${width.toFixed(2)}%;" title="${escapeHtml(title)}" onclick="applyBestWindowResult('${escapeHtml(cluster.representative?.startTime || '')}')"></div>`;
+    return `<div class="best-window-strip-band ${rank} ${activeClass} ${overrunClass}" style="left:${left.toFixed(2)}%; width:${width.toFixed(2)}%;" title="${escapeHtml(title)}" data-action="applyBestWindowResult" data-start-time="${escapeHtml(cluster.representative?.startTime || '')}"></div>`;
   }).join('');
 
   const markers = drawOrder.map(({ cluster, index, active }) => {
@@ -5432,7 +5247,7 @@ function getBestWindowTimelineHtml(analysis) {
     const rank = getBestWindowRankClass(index);
     const edgeClass = left <= 4 ? 'edge-start' : (left >= 96 ? 'edge-end' : '');
     const label = index < 3 ? getBestWindowRankEmoji(index) : `#${index + 1}`;
-    return `<div class="best-window-strip-marker ${rank} ${activeClass}" style="left:${left.toFixed(2)}%;" onclick="applyBestWindowResult('${escapeHtml(rep.startTime)}')"><span class="best-window-strip-label ${edgeClass}">${escapeHtml(label)}</span></div>`;
+    return `<div class="best-window-strip-marker ${rank} ${activeClass}" style="left:${left.toFixed(2)}%;" data-action="applyBestWindowResult" data-start-time="${escapeHtml(rep.startTime)}"><span class="best-window-strip-label ${edgeClass}">${escapeHtml(label)}</span></div>`;
   }).join('');
 
   const tickItems = [];
@@ -5512,7 +5327,7 @@ function renderBestWindowResults(analysis) {
         const overrun = bestWindowRangeOverrunMinutes(activityRange, analysis);
         const overrunWarning = formatBestWindowOverrunWarning(overrun);
         return `
-          <button type="button" class="best-window-card ${getBestWindowRankClass(index)} ${active ? 'active' : ''}" onclick="applyBestWindowResult('${rep.startTime}')">
+          <button type="button" class="best-window-card ${getBestWindowRankClass(index)} ${active ? 'active' : ''}" data-action="applyBestWindowResult" data-start-time="${escapeHtml(rep.startTime)}">
             <div class="best-window-rank">${escapeHtml(getBestWindowRankLabel(index, analysis.options.priority))}</div>
             <div class="best-window-time">${escapeHtml(formatWeekdayTime(rep.startTime))}</div>
             <div class="best-window-window">Activity ${escapeHtml(formatWeekdayTime(rep.startTime))}–${escapeHtml(formatShortTime(activityRange.endTime))} · ${startRangeInfo ? 'best start' : 'start window'} ${escapeHtml(startRangeInfo ? formatWeekdayTime(rep.startTime) : windowLabel)} · score ${escapeHtml(rep.score)}</div>
@@ -7708,7 +7523,6 @@ Object.assign(window, {
   clearRouteMapLayers,
   normalizeRoutePoints,
   parseGeoJsonRouteObject,
-  walkGeom,
   parseXmlRouteDocument,
   parseRouteText,
   parseRouteFile,
@@ -7909,7 +7723,6 @@ Object.assign(window, {
   getBestWindowCondenseMinutes,
   rankBestWindowCluster,
   clusterBestWindowCandidates,
-  buildClusters,
   getBestWindowRankClass,
   getBestWindowRankEmoji,
   getBestWindowRankLabel,
@@ -7919,7 +7732,6 @@ Object.assign(window, {
   formatBestWindowOverrunWarning,
   makeBestWindowClusterFromCandidate,
   addMinimumBestWindowFallbacks,
-  tryAddWithMinSeparation,
   getBestWindowTimelineDayBoundaryTicks,
   getBestWindowTimelineHtml,
   renderBestWindowResults,
@@ -7991,6 +7803,11 @@ function bindDomActions() {
     else if (action === 'selectStartMode') selectStartMode(trigger);
     else if (action === 'toggleManualWeatherOverride') toggleManualWeatherOverride();
     else if (action === 'selectCheckpointModel') selectCheckpointModel(trigger.dataset.checkpointModel);
+    else if (action === 'toggleCustomMultisportLeg') toggleCustomMultisportLeg(trigger.dataset.legKey);
+    else if (action === 'selectDurationKey') selectDurationKey(trigger.dataset.durationKey);
+    else if (action === 'selectEventPreset') selectEventPreset(trigger.dataset.eventKey);
+    else if (action === 'pickSuggestion') pickSuggestion(Number(trigger.dataset.index));
+    else if (action === 'applyBestWindowResult') applyBestWindowResult(trigger.dataset.startTime);
   });
 }
 
