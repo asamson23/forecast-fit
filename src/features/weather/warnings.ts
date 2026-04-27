@@ -28,6 +28,52 @@ export function shouldUseEcccAlertsForWeatherData(data: any): boolean {
   return shouldUseEcccAlerts(code, data?.latitude, data?.longitude);
 }
 
+export function pointInRing(lon: number, lat: number, ring: unknown[]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const current = ring[i] as unknown[];
+    const previous = ring[j] as unknown[];
+    const xi = Number(current[0]);
+    const yi = Number(current[1]);
+    const xj = Number(previous[0]);
+    const yj = Number(previous[1]);
+    const intersects = (yi > lat) !== (yj > lat) && lon < ((xj - xi) * (lat - yi)) / ((yj - yi) || 1e-12) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+export function ecccFeatureContainsPoint(feature: any, lat: unknown, lon: unknown): boolean {
+  const geom = feature?.geometry;
+  if (!geom) return false;
+  const latitude = Number(lat);
+  const longitude = Number(lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
+  if (geom.type === 'Polygon') {
+    const rings = geom.coordinates || [];
+    if (!rings.length || !pointInRing(longitude, latitude, rings[0])) return false;
+    return !rings.slice(1).some((ring: unknown[]) => pointInRing(longitude, latitude, ring));
+  }
+  if (geom.type === 'MultiPolygon') {
+    return (geom.coordinates || []).some((poly: unknown[][]) => {
+      const rings = poly || [];
+      return rings.length && pointInRing(longitude, latitude, rings[0]) && !rings.slice(1).some((ring) => pointInRing(longitude, latitude, ring));
+    });
+  }
+  return false;
+}
+
+export function isActiveEcccAlertFeature(feature: any, now = new Date()): boolean {
+  const p = feature?.properties || {};
+  const status = String(p.status_en || '').toLowerCase();
+  if (['ended', 'expired', 'cancelled', 'canceled', 'changed_from'].includes(status)) return false;
+  const expiry = p.expiration_datetime ? new Date(p.expiration_datetime) : null;
+  if (expiry && Number.isFinite(expiry.getTime()) && expiry < now) return false;
+  const eventEnd = p.event_end_datetime ? new Date(p.event_end_datetime) : null;
+  if (eventEnd && Number.isFinite(eventEnd.getTime()) && eventEnd < now) return false;
+  return true;
+}
+
 export function normalizeEcccAlertFeature(feature: EcccAlertFeature): any {
   const p = feature?.properties || {};
   const colour = String(p.risk_colour_en || '').toLowerCase() || (p.alert_type === 'statement' ? 'grey' : 'yellow');

@@ -37,8 +37,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck --if-present
 
+      - name: Test
+        run: npm test --if-present
+
       - name: Build
-        run: npm run build
+        run: npm run build -- --base=/forecast-fit/
 
       - name: Add nojekyll marker
         run: touch dist/.nojekyll
