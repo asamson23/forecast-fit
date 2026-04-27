@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Forecast Fit Maskable</title>
+  <desc id="desc">A maskable weather-aware planner icon.</desc>
+  <rect width="512" height="512" fill="#f4f7f5"/>
+  <circle cx="256" cy="256" r="220" fill="#e8f1ed"/>
+  <path d="M94 330c58-89 119-134 183-134 53 0 101 31 142 94" fill="none" stroke="#1f8a70" stroke-width="34" stroke-linecap="round"/>
+  <path d="M104 365c45-43 89-64 133-64 47 0 91 21 133 64" fill="none" stroke="#2f4858" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="363" cy="151" r="46" fill="#ffbf47"/>
+  <path d="M363 78v25M363 199v25M290 151h25M411 151h25M311 99l18 18M397 185l18 18M415 99l-18 18M329 185l-18 18" stroke="#ffbf47" stroke-width="18" stroke-linecap="round"/>
+  <path d="M130 219h79c28 0 50 22 50 49s-22 49-50 49h-39" fill="none" stroke="#7bb7d8" stroke-width="30" stroke-linecap="round"/>
+  <path d="M126 404h260" stroke="#2f4858" stroke-width="24" stroke-linecap="round"/>
+</svg>

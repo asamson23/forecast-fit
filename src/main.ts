@@ -7,6 +7,7 @@ import './styles/components.css';
 import './styles/forecast.css';
 import './styles/map.css';
 import './styles/responsive.css';
+import { registerServiceWorker } from './registerServiceWorker';
 import * as L from 'leaflet';
 import flatpickr from 'flatpickr';
 import JSZip from 'jszip';
@@ -92,6 +93,7 @@ import { getSegmentTimeFactor as getSegmentTimeFactorFromModule } from './featur
 import { haversineKm } from './utils/distance';
 
 Object.assign(window, { L, flatpickr, JSZip });
+registerServiceWorker();
 
 /**
  * Forecast Fit
