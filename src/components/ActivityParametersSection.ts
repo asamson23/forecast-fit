@@ -1,0 +1,1 @@
+export const ActivityParametersSection = 'ActivityParametersSection';

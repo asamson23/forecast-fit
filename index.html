@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forecast Fit - Weather Gear Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+</head>
+<body>
+<header>
+  <h1>Forecast <span>Fit</span></h1>
+  <p>Weather-aware outfit and route planning, without the fluff</p>
+  <div class="header-actions">
+    <button class="mode-toggle-btn helper-launch-btn" type="button" id="quick-start-btn" onclick="openQuickStartGuide()">Quick start</button>
+  </div>
+</header>
+
+<div class="card" id="location-card" style="animation-delay:0.05s">
+  <div class="section-label-row">
+    <label>Location & route</label>
+    <div class="section-actions-row">
+      <span class="inline-summary" id="location-card-summary" hidden></span>
+      <button class="mode-toggle-btn quiet-btn" type="button" id="location-card-toggle-btn" hidden onclick="toggleLocationCardCollapse()">Collapse</button>
+      <button class="mode-toggle-btn" type="button" id="refresh-weather-btn" onclick="forceRefreshWeather()" disabled>Refresh weather</button>
+      <button class="reset-btn" type="button" onclick="resetLocationSection()">Reset section</button>
+      <button class="mode-toggle-btn clear-btn" type="button" onclick="clearAllTool()">Clear all</button>
+    </div>
+  </div>
+  <div id="location-card-body">
+    <div class="location-route-choice-grid">
+      <div class="location-choice-panel">
+        <label class="sub-label">Location</label>
+        <div class="input-row location-row">
+          <div class="input-wrapper">
+            <input type="text" id="location-input" placeholder="Search for a city" autocomplete="off">
+          </div>
+          <button class="btn btn-secondary inline-location-btn" id="current-location-btn" type="button" onclick="useCurrentLocation()" aria-label="Use current location" title="Use current location"><span class="locate-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></button>
+        </div>
+        <p class="field-note compact">Search for a city only. Pick a suggestion or press Enter.</p>
+      </div>
+      <div class="location-choice-or" aria-hidden="true">OR</div>
+      <div class="location-choice-panel">
+        <label class="sub-label">Route file</label>
+        <div class="route-file-row">
+          <input type="file" id="route-file-input" accept=".gpx,.geojson,application/gpx+xml,application/geo+json">
+          <button class="reset-btn clear-btn" id="clear-route-btn" type="button" onclick="clearRoute()" style="display:none">Remove route</button>
+        </div>
+        <p class="status-line compact" id="route-status">Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when the file contains time data.</p>
+      </div>
+    </div>
+    <p id="error-msg"></p>
+  </div>
+</div>
+
+<div class="card" id="planner-card" style="animation-delay:0.1s">
+  <div class="section-label-row planner-heading-row">
+    <label>Activity &amp; parameters</label>
+    <div class="section-actions-row">
+      <button class="reset-btn" type="button" onclick="resetActivitySection()">Reset section</button>
+    </div>
+  </div>
+  <div class="setup-grid">
+    <div>
+      <div class="section-label-row" id="activity-section">
+        <label>Activity</label>
+        <div class="section-actions-row">
+          <button class="mode-toggle-btn" type="button" id="race-day-mode-btn" aria-pressed="false" onclick="toggleRaceDayMode()">Race day mode</button>
+        </div>
+      </div>
+      <div class="activity-sections">
+        <div class="activity-section-group">
+          <div class="activity-group-title">Performance & multisport</div>
+          <div class="activity-grid">
+            <button class="activity-btn" data-activity="running" onclick="selectActivity(this)">
+              <span class="icon">🏃</span>
+              <div><div class="label">Running</div><div class="sublabel">Road / race / training</div></div>
+            </button>
+            <button class="activity-btn" data-activity="cycling" onclick="selectActivity(this)">
+              <span class="icon">🚴</span>
+              <div><div class="label">Cycling</div><div class="sublabel">Road / commute / endurance</div></div>
+            </button>
+            <button class="activity-btn" data-activity="triathlon" onclick="selectActivity(this)">
+              <span class="icon">🏊</span>
+              <div><div class="label">Triathlon</div><div class="sublabel">Multisport / event</div></div>
+            </button>
+          </div>
+        </div>
+        <div class="activity-section-group">
+          <div class="activity-group-title">Indoor training</div>
+          <div class="activity-grid">
+            <button class="activity-btn" data-activity="gym" onclick="selectActivity(this)">
+              <span class="icon">🏋️</span>
+              <div><div class="label">Gym</div><div class="sublabel">Strength / fitness</div></div>
+            </button>
+            <button class="activity-btn" data-activity="indoor_running" onclick="selectActivity(this)">
+              <span class="icon">🏃</span>
+              <div><div class="label">Indoor running</div><div class="sublabel">Track / treadmill</div></div>
+            </button>
+            <button class="activity-btn" data-activity="indoor_cycling" onclick="selectActivity(this)">
+              <span class="icon">🚴</span>
+              <div><div class="label">Indoor cycling</div><div class="sublabel">Trainer / spin / velodrome</div></div>
+            </button>
+            <button class="activity-btn" data-activity="indoor_multisport" onclick="selectActivity(this)">
+              <span class="icon">🏟️</span>
+              <div><div class="label">Indoor multisport</div><div class="sublabel">Brick / gym / track / pool</div></div>
+            </button>
+            <button class="activity-btn" data-activity="swimming_pool_indoor" onclick="selectActivity(this)">
+              <span class="icon">🏊</span>
+              <div><div class="label">Indoor pool swim</div><div class="sublabel">Heated pool / lap swim</div></div>
+            </button>
+          </div>
+        </div>
+        <div class="activity-section-group">
+          <div class="activity-group-title">Outdoor swimming</div>
+          <div class="activity-grid">
+            <button class="activity-btn" data-activity="swimming_open" onclick="selectActivity(this)">
+              <span class="icon">🌊</span>
+              <div><div class="label">Open-water swim</div><div class="sublabel">Lake / river / sea</div></div>
+            </button>
+            <button class="activity-btn" data-activity="swimming_pool_outdoor" onclick="selectActivity(this)">
+              <span class="icon">🏊</span>
+              <div><div class="label">Outdoor pool swim</div><div class="sublabel">Heated or unheated pool</div></div>
+            </button>
+            <button class="activity-btn" data-activity="snorkeling" onclick="selectActivity(this)">
+              <span class="icon">🤿</span>
+              <div><div class="label">Snorkeling</div><div class="sublabel">Mask / fins / shore</div></div>
+            </button>
+          </div>
+        </div>
+        <div class="activity-section-group">
+          <div class="activity-group-title">Paddling & board sports</div>
+          <div class="activity-grid">
+            <button class="activity-btn" data-activity="sup" onclick="selectActivity(this)">
+              <span class="icon">🏄</span>
+              <div><div class="label">Paddleboarding</div><div class="sublabel">SUP / flatwater</div></div>
+            </button>
+            <button class="activity-btn" data-activity="kayaking" onclick="selectActivity(this)">
+              <span class="icon">🛶</span>
+              <div><div class="label">Kayak</div><div class="sublabel">Paddle / touring</div></div>
+            </button>
+            <button class="activity-btn" data-activity="surfing" onclick="selectActivity(this)">
+              <span class="icon">🌊</span>
+              <div><div class="label">Surfing</div><div class="sublabel">Board / shore break</div></div>
+            </button>
+            <button class="activity-btn" data-activity="water_sports" onclick="selectActivity(this)">
+              <span class="icon">💦</span>
+              <div><div class="label">Other water</div><div class="sublabel">Generic water setup</div></div>
+            </button>
+          </div>
+        </div>
+        <div class="activity-section-group">
+          <div class="activity-group-title">Trail & mountain</div>
+          <div class="activity-grid">
+            <button class="activity-btn" data-activity="hiking" onclick="selectActivity(this)">
+              <span class="icon">🥾</span>
+              <div><div class="label">Hiking</div><div class="sublabel">Trail / day hike</div></div>
+            </button>
+            <button class="activity-btn" data-activity="trail_running" onclick="selectActivity(this)">
+              <span class="icon">🏃</span>
+              <div><div class="label">Trail running</div><div class="sublabel">Trail / mixed terrain</div></div>
+            </button>
+            <button class="activity-btn" data-activity="mtb_gravel" onclick="selectActivity(this)">
+              <span class="icon">🚵</span>
+              <div><div class="label">MTB / gravel</div><div class="sublabel">Dirt / mixed surface</div></div>
+            </button>
+            <button class="activity-btn" data-activity="ski_snowboard" onclick="selectActivity(this)">
+              <span class="icon">⛷️</span>
+              <div><div class="label">Ski / snowboard</div><div class="sublabel">Resort / winter layers</div></div>
+            </button>
+          </div>
+        </div>
+        <div class="activity-section-group">
+          <div class="activity-group-title">Hunting & fishing</div>
+          <div class="activity-grid">
+            <button class="activity-btn" data-activity="fishing" onclick="selectActivity(this)">
+              <span class="icon">🎣</span>
+              <div><div class="label">Fishing</div><div class="sublabel">Shore / boat / ice</div></div>
+            </button>
+            <button class="activity-btn" data-activity="hunting" onclick="selectActivity(this)">
+              <span class="icon">🦌</span>
+              <div><div class="label">Hunting</div><div class="sublabel">Blind / stand / field</div></div>
+            </button>
+          </div>
+        </div>
+        <div class="activity-section-group">
+          <div class="activity-group-title">Outdoor & travel</div>
+          <div class="activity-grid">
+            <button class="activity-btn" data-activity="walk" onclick="selectActivity(this)">
+              <span class="icon">🚶</span>
+              <div><div class="label">Walk</div><div class="sublabel">Neighbourhood / urban / easy path</div></div>
+            </button>
+            <button class="activity-btn" data-activity="casual" onclick="selectActivity(this)">
+              <span class="icon">🧥</span>
+              <div><div class="label">Casual</div><div class="sublabel">Everyday wear</div></div>
+            </button>
+            <button class="activity-btn" data-activity="road_trip" onclick="selectActivity(this)">
+              <span class="icon">🚗</span>
+              <div><div class="label">Road trip</div><div class="sublabel">Stops / long-drive weather</div></div>
+            </button>
+            <button class="activity-btn" data-activity="camping" onclick="selectActivity(this)">
+              <span class="icon">🏕️</span>
+              <div><div class="label">Camping</div><div class="sublabel">Overnight / multi-day</div></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="custom-multisport-section" class="custom-multisport-panel" hidden>
+        <div class="section-label-row">
+          <label>Custom multisport</label>
+          <span class="comfort-current-label" id="custom-multisport-summary">Preset legs</span>
+        </div>
+        <p class="status-line compact" id="custom-multisport-status">Choose the sports/legs that are actually part of the session. This influences the checklist and water-temperature relevance.</p>
+        <div class="pick-pill-list" id="custom-multisport-leg-list"></div>
+      </div>
+
+      <div id="event-distance-section" style="margin-top:18px">
+        <label>Event / distance</label>
+        <div class="event-grid" id="event-grid"></div>
+        <p class="event-summary" id="event-summary">Pick an activity to load the usual event-distance presets.</p>
+        <div class="custom-grid best-window-range-grid">
+          <div>
+            <label class="sub-label">Custom distance</label>
+            <div class="inline-fields">
+              <input type="number" id="custom-distance-input" min="0" step="0.1" placeholder="Optional">
+              <select id="distance-unit-select"></select>
+            </div>
+            <p class="status-line compact" id="distance-status">Preset distance is used.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="duration-section">
+      <label>Planned duration</label>
+      <div class="duration-grid" id="duration-grid"></div>
+      <div class="custom-grid">
+        <div>
+          <label class="sub-label">Custom duration</label>
+          <div class="inline-fields">
+            <input type="text" id="custom-duration-input" placeholder="Optional · 5:38 or 5.5">
+            <select id="duration-unit-select">
+              <option value="min">minutes</option>
+              <option value="h" selected>hours</option>
+              <option value="d">days</option>
+            </select>
+          </div>
+          <p class="status-line compact" id="duration-status">Preset duration is used.</p>
+        </div>
+        <div>
+          <label class="sub-label" id="average-label">Average pace / speed</label>
+          <div class="inline-fields">
+            <input type="text" id="average-input" placeholder="Optional">
+            <select id="average-unit-select"></select>
+          </div>
+          <p class="status-line compact" id="average-status">Optional. Used when it makes sense.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="comfort-adjustments-section" class="comfort-adjustments-group">
+    <div class="section-label-row">
+      <label>Comfort adjustments</label>
+    </div>
+    <div class="comfort-adjustments-grid">
+      <section id="planned-effort-section">
+    <div class="section-label-row">
+      <label>Planned effort</label>
+      <span class="comfort-current-label" id="planned-effort-label">Steady</span>
+    </div>
+    <div class="comfort-panel">
+      <p class="status-line compact" id="planned-effort-status">Adjusts clothing for how hard the session should feel. Low effort nudges warmer; hard/race efforts nudge lighter because you generate more heat.</p>
+      <div class="toggle-row planned-effort-row" id="planned-effort-row">
+        <button class="toggle-btn" type="button" data-planned-effort="low" onclick="selectPlannedEffort('low')">
+          <div class="label">Low / standing</div>
+          <div class="sublabel">Fishing, hunting, easy strolls, long waits</div>
+        </button>
+        <button class="toggle-btn" type="button" data-planned-effort="easy" onclick="selectPlannedEffort('easy')">
+          <div class="label">Easy</div>
+          <div class="sublabel">Social pace / recovery / relaxed</div>
+        </button>
+        <button class="toggle-btn active" type="button" data-planned-effort="steady" onclick="selectPlannedEffort('steady')">
+          <div class="label">Steady</div>
+          <div class="sublabel">Default endurance / normal outing</div>
+        </button>
+        <button class="toggle-btn" type="button" data-planned-effort="hard" onclick="selectPlannedEffort('hard')">
+          <div class="label">Hard</div>
+          <div class="sublabel">Workout / intervals / tempo</div>
+        </button>
+        <button class="toggle-btn" type="button" data-planned-effort="race" onclick="selectPlannedEffort('race')">
+          <div class="label">Race</div>
+          <div class="sublabel">Max effort / minimal faff</div>
+        </button>
+      </div>
+    </div>
+      </section>
+
+      <section id="temperature-preference-section">
+    <div class="section-label-row">
+      <label>Temperature preference</label>
+      <span class="comfort-current-label" id="temperature-preference-label">Normal</span>
+    </div>
+    <div class="comfort-panel">
+      <p class="status-line compact" id="temperature-preference-status">Tune the recommendations if you usually run hot or cold. Warmer/red nudges toward more coverage; cooler/blue nudges toward lighter kit.</p>
+      <div class="comfort-slider-row">
+        <span class="comfort-end-label">Warmer</span>
+        <input class="comfort-slider" type="range" id="temperature-preference-input" min="-4" max="4" step="1" value="0" aria-label="Temperature preference">
+        <span class="comfort-end-label">Cooler</span>
+        <div class="comfort-ticks" aria-hidden="true"><span>max</span><span>+++</span><span>++</span><span>+</span><span>normal</span><span>−</span><span>−−</span><span>−−−</span><span>max</span></div>
+      </div>
+    </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="start-time-section" style="margin-top:18px">
+    <label>Start time</label>
+    <div class="toggle-row start-mode-row">
+      <button class="toggle-btn active" data-start-mode="now" onclick="selectStartMode(this)">
+        <div class="label">Now</div>
+        <div class="sublabel">Use current conditions + next hours</div>
+      </button>
+      <button class="toggle-btn" data-start-mode="later" onclick="selectStartMode(this)">
+        <div class="label">Later</div>
+        <div class="sublabel">Pick a start date and time within the forecast range</div>
+      </button>
+      <button class="toggle-btn" data-start-mode="best" onclick="selectStartMode(this)">
+        <div class="label">Best window</div>
+        <div class="sublabel">Find the strongest start window in a chosen range</div>
+      </button>
+    </div>
+    <div class="time-box" id="later-box">
+      <input type="text" id="later-input" placeholder="Pick a start date and time" disabled readonly>
+      <p class="status-line" id="later-status">Fetch a location first to unlock the valid forecast range.</p>
+    </div>
+    <div class="time-box" id="best-window-box">
+      <div class="best-window-panel">
+        <div class="custom-grid">
+          <div>
+            <label class="sub-label">Search range start</label>
+            <input type="text" id="best-window-start-input" placeholder="Pick a search start date and time" disabled readonly>
+          </div>
+          <div>
+            <label class="sub-label">Search range end</label>
+            <input type="text" id="best-window-end-input" placeholder="Pick a search end date and time" disabled readonly>
+          </div>
+        </div>
+        <div class="custom-grid" style="margin-top:12px">
+          <div>
+            <label class="sub-label">Priority preset</label>
+            <select id="best-window-priority-select" disabled>
+              <option value="best_overall" selected>Best overall</option>
+              <option value="driest">Driest</option>
+              <option value="calmest">Calmest</option>
+              <option value="warmest">Warmest</option>
+              <option value="fastest">Fastest conditions</option>
+              <option value="safest">Safest</option>
+            </select>
+          </div>
+          <div>
+            <label class="sub-label">Step size</label>
+            <select id="best-window-step-select" disabled>
+              <option value="auto" selected>Auto</option>
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+            </select>
+          </div>
+          <div>
+            <label class="sub-label">Finder note</label>
+            <p class="best-window-meta-note" id="best-window-note">Find distinct start windows inside your allowed range. Search end is treated as the latest allowed start; options that finish past it are flagged.</p>
+          </div>
+        </div>
+        <details class="best-window-advanced">
+          <summary>Advanced limits</summary>
+          <div class="custom-grid" style="margin-top:12px">
+            <div>
+              <label class="sub-label">Max precip risk %</label>
+              <input type="number" id="best-window-max-precip-input" placeholder="Optional" min="0" max="100" step="5" disabled>
+            </div>
+            <div>
+              <label class="sub-label">Max gust km/h</label>
+              <input type="number" id="best-window-max-gust-input" placeholder="Optional" min="0" max="150" step="1" disabled>
+            </div>
+            <div>
+              <label class="sub-label">Min air temp °C</label>
+              <input type="number" id="best-window-min-temp-input" placeholder="Optional" step="0.5" disabled>
+            </div>
+            <div>
+              <label class="sub-label">Max air temp °C</label>
+              <input type="number" id="best-window-max-temp-input" placeholder="Optional" step="0.5" disabled>
+            </div>
+            <div>
+              <label class="sub-label">Min water temp °C</label>
+              <input type="number" id="best-window-min-water-input" placeholder="Optional" step="0.5" disabled>
+            </div>
+            <div>
+              <label class="sub-label">Daylight guardrail</label>
+              <div class="inline-fields" style="grid-template-columns: minmax(0, 1fr);">
+                <label style="display:flex; align-items:center; gap:8px; margin:0; font-size:0.82rem; letter-spacing:0; text-transform:none; color:var(--text); font-family:'DM Sans', sans-serif; font-weight:500;">
+                  <input type="checkbox" id="best-window-finish-daylight-input" disabled>
+                  Finish before sunset
+                </label>
+              </div>
+            </div>
+          </div>
+        </details>
+        <p class="status-line" id="best-window-status">Fetch a location and choose a duration to search for a best weather window.</p>
+        <div id="best-window-results" class="best-window-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="water-temp-section" style="margin-top:18px">
+    <div class="section-label-row">
+      <label>Water temperature & override</label>
+      <button class="mode-toggle-btn" type="button" id="manual-weather-toggle-btn" aria-pressed="false" onclick="toggleManualWeatherOverride()">Show manual override</button>
+    </div>
+    <div class="water-controls-panel">
+      <div class="water-model-grid">
+        <div>
+          <label class="sub-label">Water body type</label>
+          <select id="water-body-type-select">
+            <option value="auto" selected>Auto / unknown</option>
+            <option value="deep_lake">Deep lake</option>
+            <option value="shallow_lake">Shallow lake</option>
+            <option value="bay">Bay / inlet</option>
+            <option value="river">River</option>
+            <option value="sheltered">Sheltered beach / pond</option>
+            <option value="coastal">Coastal / sea</option>
+          </select>
+          <p class="control-help">Use this to tell the fallback model how quickly the water usually warms or cools. Deep lakes lag more; shallow/sheltered water reacts faster.</p>
+        </div>
+        <div>
+          <label class="sub-label">Wind exposure</label>
+          <select id="wind-exposure-select">
+            <option value="auto" selected>Auto / neutral</option>
+            <option value="neutral">Neutral / unknown</option>
+            <option value="onshore">Mostly onshore</option>
+            <option value="offshore">Mostly offshore</option>
+            <option value="sheltered">Sheltered</option>
+          </select>
+          <p class="control-help">Onshore can push warmer surface water toward shore; offshore can pull colder water up or away. Leave neutral when you are not sure.</p>
+        </div>
+        <div>
+          <label class="sub-label">Pool type</label>
+          <select id="pool-type-select">
+            <option value="indoor_heated" selected>Indoor / heated</option>
+            <option value="outdoor_heated">Outdoor / heated</option>
+            <option value="outdoor_unheated">Outdoor / unheated</option>
+            <option value="unknown">Unknown</option>
+          </select>
+          <p class="control-help">Indoor/heated pools skip the fallback. Outdoor unheated pools use the estimate when no better local reading exists.</p>
+        </div>
+      </div>
+      <p class="status-line compact" id="water-model-status">If no measured marine water temperature is available, the app can estimate a conservative fallback from recent air temperatures, broad latitude band, season, wind exposure, and water-body type.</p>
+    </div>
+    <div class="water-controls-panel custom-weather-panel" id="manual-weather-panel" hidden>
+      <label class="sub-label">Manual water temperature override</label>
+      <div class="inline-fields" style="grid-template-columns: minmax(0, 1fr);">
+        <input type="number" id="manual-water-temp-input" step="0.1" placeholder="Water temp °C">
+      </div>
+      <p class="status-line compact" id="manual-weather-status">Visible only when the toggle is open. Manual water temperature overrides fetched or estimated water data. Quick lookup:<span class="status-links"><a class="status-link" href="https://www.seatemperature.info/" target="_blank" rel="noopener noreferrer">seatemperature.info</a><a class="status-link" href="https://www.seatemperature.org/" target="_blank" rel="noopener noreferrer">seatemperature.org</a></span></p>
+    </div>
+  </div>
+
+  <div id="checkpoint-model-section" class="route-only-section" style="margin-top:18px" hidden>
+    <div class="section-label-row">
+      <label>Weather checkpoint model</label>
+    </div>
+    <div class="toggle-row" id="checkpoint-model-row">
+      <button class="toggle-btn" type="button" data-checkpoint-model="old" onclick="selectCheckpointModel('old')">
+        <div class="label">Old model</div>
+        <div class="sublabel">Evenly spaced by route progress</div>
+      </button>
+      <button class="toggle-btn active" type="button" data-checkpoint-model="smart" onclick="selectCheckpointModel('smart')">
+        <div class="label">Smart model</div>
+        <div class="sublabel">Time, terrain, daylight, weather, wind</div>
+      </button>
+    </div>
+    <p class="status-line compact" id="checkpoint-model-status">Smart = time-based, terrain/daylight/weather-aware checkpoints with route-aware wind notes. Old = evenly spaced by route progress.</p>
+  </div>
+
+  <p class="field-note">Start time drives the forecast and daylight. Water temperature uses measured data first, then estimated fallback when possible, with manual override available when you have a better local reading. Loaded routes override preset distance, and route timing overrides duration when available.</p>
+</div>
+
+<div class="card" id="map-card">
+  <div class="block-title">Route</div>
+  <div id="route-map"></div>
+  <p class="status-line" id="route-summary">Load a route to see it on the map and sample checkpoint weather.</p>
+</div>
+
+<div class="card" id="result-card">
+  <div id="result-inner"></div>
+</div>
+
+<footer class="site-footer">
+  <div class="attribution-card">
+    <div class="block-title">Credits & attributions</div>
+    <p><strong>Forecast Fit</strong> <strong>v9.8.14</strong> by <strong>Albert Samson</strong>.</p>
+    <p>Implementation and iteration assistance: <strong>ChatGPT</strong>. Earlier ideation in previous revisions was also informed by <strong>Anthropic’s Claude</strong>; this build does not use any live Claude integration.</p>
+    <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, and Google Fonts for DM Sans / DM Mono.</p>
+    <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>
+    <p><strong>Weather & marine data:</strong> <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> forecast and marine APIs, <a href="https://www.ndbc.noaa.gov/" target="_blank" rel="noopener noreferrer">NOAA NDBC</a>, and <a href="https://weather.gc.ca/" target="_blank" rel="noopener noreferrer">Environment and Climate Change Canada</a> marine weather / buoy resources.</p>
+  </div>
+</footer>
+
+<div id="suggestions-portal"></div>
+
+<div id="quick-start-overlay" class="helper-overlay" hidden>
+  <div class="helper-backdrop" data-helper-close></div>
+  <section class="helper-panel" role="dialog" aria-modal="true" aria-labelledby="quick-start-title">
+    <div class="helper-head">
+      <div>
+        <span class="helper-kicker">Helper</span>
+        <h2 id="quick-start-title">Quick start guide</h2>
+      </div>
+      <button class="helper-close-btn" type="button" id="quick-start-close-btn" aria-label="Close quick start">×</button>
+    </div>
+    <p class="helper-intro" id="quick-start-intro">Follow the steps in the same order as the page. Tap a step to jump to that section.</p>
+    <div class="helper-steps" id="quick-start-steps"></div>
+    <p class="helper-footer-note">The guide adapts slightly to your current setup. Indoor activities can skip location; route and water-temperature steps only matter when those features are relevant.</p>
+  </section>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

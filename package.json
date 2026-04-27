@@ -1,0 +1,20 @@
+{
+  "name": "forecast-fit",
+  "version": "9.8.14",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit"
+  },
+  "dependencies": {
+    "flatpickr": "^4.6.13",
+    "jszip": "^3.10.1",
+    "leaflet": "^1.9.4",
+    "vite": "^5.4.0",
+    "typescript": "^5.6.0"
+  },
+  "devDependencies": {}
+}

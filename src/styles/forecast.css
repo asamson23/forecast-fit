@@ -1,0 +1,600 @@
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) 170px;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .compact {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .stack-gap { display: grid; gap: 10px; }
+  #map-card { display: none; }
+  #route-map {
+    width: 100%;
+    height: 340px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .route-weather-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+    align-items: stretch;
+  }
+  .route-weather-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .route-weather-cell .cp {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.74rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .route-weather-cell .cp-main {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .route-weather-cell .cp-place {
+    font-size: 0.78rem;
+    color: var(--text-soft);
+    line-height: 1.4;
+  }
+  .route-weather-cell .cp-sub {
+    font-size: 0.84rem;
+    color: var(--text-soft);
+    margin-top: 3px;
+    line-height: 1.45;
+  }
+  .route-weather-cell .cp-temp {
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    margin-top: 8px;
+  }
+  .route-weather-cell .cp-meta {
+    font-size: 0.82rem;
+    color: var(--text-soft);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .route-callout {
+    margin-top: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    line-height: 1.55;
+  }
+
+
+  /* ── Road trip itinerary panel ────────────────────────────────── */
+  .itinerary-panel {
+    margin-top: 14px;
+  }
+  .itinerary-stop {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 14px;
+    position: relative;
+  }
+  .itinerary-stop + .itinerary-stop { margin-top: 10px; }
+  .stop-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .stop-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface2);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .stop-dot.suggested { background: var(--warn); }
+  .stop-dot.finish { background: var(--ok); }
+  .stop-connector {
+    width: 2px;
+    flex: 1;
+    min-height: 14px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+  .stop-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .stop-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .stop-label.suggested { color: var(--warn); }
+  .stop-label.finish { color: var(--ok); }
+  .stop-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin-top: 2px;
+    color: var(--text);
+  }
+  .stop-meta {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    margin-top: 3px;
+    line-height: 1.45;
+  }
+  .stop-rationale {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    font-style: italic;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+
+  /* Sport-platform skin: Strava / Zwift-inspired, while preserving Race mode party styling */
+  body {
+    background:
+      radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 8%, transparent), transparent 32%),
+      radial-gradient(circle at top right, color-mix(in srgb, var(--accent2) 9%, transparent), transparent 34%),
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 96%, white 4%), var(--bg));
+  }
+  header h1 {
+    letter-spacing: -0.05em;
+  }
+  header h1 span {
+    color: var(--accent);
+  }
+  header p {
+    color: var(--text-soft);
+  }
+  .card,
+  .result-panel,
+  .forecast-box,
+  .route-weather-cell,
+  .weather-strip,
+  .wizard-step,
+  .activity-btn,
+  .event-btn,
+  .duration-btn,
+  .toggle-btn,
+  .choice-item,
+  .simple-item {
+    position: relative;
+  }
+  .card,
+  .result-panel,
+  .forecast-box,
+  .route-weather-cell,
+  .weather-strip,
+  .wizard-step {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 97%, white 3%), color-mix(in srgb, var(--surface2) 98%, transparent));
+    border-color: color-mix(in srgb, var(--border) 88%, white 12%);
+    box-shadow: var(--shadow);
+  }
+  /* Removed the repeated accent top-bar treatment.
+     It felt too busy across every card and could visually poke past rounded corners. */
+  .btn,
+  .reset-btn,
+  .mode-toggle-btn {
+    border-color: color-mix(in srgb, var(--border-strong) 82%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, white 12%), color-mix(in srgb, var(--surface2) 96%, transparent));
+    box-shadow: 0 4px 12px rgba(20, 33, 47, 0.06);
+  }
+  .btn:hover,
+  .reset-btn:hover,
+  .mode-toggle-btn:hover {
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+    box-shadow: 0 8px 18px rgba(20, 33, 47, 0.09);
+  }
+  .reset-btn,
+  .mode-toggle-btn {
+    min-height: 32px;
+    font-weight: 600;
+  }
+  .reset-btn {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface2) 96%, white 4%), color-mix(in srgb, var(--surface) 98%, transparent));
+    color: var(--text-soft);
+  }
+  .reset-btn:hover {
+    color: var(--text);
+  }
+  .quiet-btn {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-soft);
+  }
+  .quiet-btn:hover {
+    background: color-mix(in srgb, var(--surface2) 92%, transparent);
+    box-shadow: none;
+  }
+  .clear-btn {
+    border-color: color-mix(in srgb, var(--warn) 42%, var(--border));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--warn) 10%, var(--surface) 90%), color-mix(in srgb, var(--warn) 6%, var(--surface2) 94%));
+    color: var(--text);
+  }
+  .clear-btn:hover {
+    border-color: color-mix(in srgb, var(--warn) 60%, var(--border));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--warn) 15%, var(--surface) 85%), color-mix(in srgb, var(--warn) 10%, var(--surface2) 90%));
+  }
+  .activity-btn,
+  .event-btn,
+  .duration-btn,
+  .toggle-btn,
+  .choice-item,
+  .simple-item {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, white 8%), color-mix(in srgb, var(--surface2) 97%, transparent));
+    border-color: color-mix(in srgb, var(--border) 88%, transparent);
+    box-shadow: 0 6px 16px rgba(20, 33, 47, 0.05);
+  }
+  .activity-btn:hover, .event-btn:hover, .duration-btn:hover, .toggle-btn:hover,
+  .choice-item:hover, .simple-item:hover {
+    border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+    box-shadow: 0 10px 20px rgba(20, 33, 47, 0.08);
+  }
+  .activity-btn.active, .event-btn.active, .duration-btn.active, .toggle-btn.active,
+  .choice-item.active {
+    border-color: color-mix(in srgb, var(--accent) 78%, var(--border));
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, var(--surface)), color-mix(in srgb, var(--accent2) 6%, var(--surface2)));
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent),
+      0 10px 22px color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .mode-toggle-btn.active:not(#race-day-mode-btn) {
+    color: white;
+    border-color: color-mix(in srgb, var(--accent) 90%, black 10%);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 94%, white 6%), color-mix(in srgb, var(--accent2) 32%, var(--accent)));
+    box-shadow: 0 10px 20px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .activity-group-title,
+  .block-title,
+  label,
+  .pick-title {
+    color: color-mix(in srgb, var(--accent) 64%, var(--text-soft));
+  }
+  .mini-chip {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, white 10%), color-mix(in srgb, var(--surface2) 97%, transparent));
+    border-color: color-mix(in srgb, var(--accent2) 12%, var(--border));
+    color: var(--text-soft);
+  }
+  .mini-chip.ok {
+    border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
+    background: color-mix(in srgb, var(--ok) 10%, var(--surface2));
+  }
+  .mini-chip.warn {
+    border-color: color-mix(in srgb, var(--warn) 42%, var(--border));
+    background: color-mix(in srgb, var(--warn) 10%, var(--surface2));
+  }
+  .forecast-header strong,
+  .weather-main .temp,
+  .route-weather-cell .cp-main,
+  .stop-name {
+    color: var(--text);
+  }
+  .weather-icon {
+    filter: saturate(1.15);
+  }
+  .chart-line-temp { stroke: var(--accent); }
+  .chart-line-feels { stroke: color-mix(in srgb, var(--accent2) 78%, white 22%); }
+  .chart-dot-temp { fill: var(--accent); }
+  .chart-dot-feels { fill: color-mix(in srgb, var(--accent2) 82%, white 18%); }
+  .chart-tooltip {
+    background: color-mix(in srgb, var(--surface) 92%, black 8%);
+    border-color: color-mix(in srgb, var(--accent2) 16%, var(--border));
+    box-shadow: 0 16px 34px rgba(0,0,0,0.22);
+  }
+  .site-footer {
+    margin-top: 36px;
+  }
+  .attribution-card {
+    border-top: 1px solid color-mix(in srgb, var(--accent2) 16%, var(--border));
+    color: var(--text-soft);
+  }
+  .attribution-card a {
+    color: color-mix(in srgb, var(--accent2) 84%, var(--accent) 16%);
+  }
+
+  /* ── v8.2 responsive cleanup ───────────────────────────────────
+     Consolidates the old mobile rules, removes page-level overflow,
+     and keeps wide forecast charts scrollable inside their own panels. */
+  html {
+    width: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    padding: calc(clamp(26px, 4vw, 40px) + env(safe-area-inset-top, 0px)) clamp(12px, 3vw, 16px) 36px;
+  }
+  header,
+  .card,
+  .site-footer {
+    width: min(100%, 980px);
+  }
+  header {
+    margin-bottom: clamp(22px, 4vw, 34px);
+  }
+  .card,
+  .result-panel,
+  .forecast-box,
+  .weather-strip,
+  .setup-grid,
+  .custom-grid,
+  .input-wrapper,
+  .forecast-scroll,
+  .forecast-scroll > *,
+  .chart-wrap,
+  .route-weather-grid,
+  .best-window-results,
+  .best-window-strip,
+  .best-window-strip-axis,
+  .choice-list,
+  .simple-list {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .card {
+    padding: clamp(18px, 3vw, 28px);
+  }
+  .result-panel,
+  .forecast-box,
+  .best-window-panel,
+  .route-callout,
+  .route-weather-cell,
+  .weather-strip {
+    padding: clamp(12px, 2.4vw, 18px);
+  }
+  .section-label-row,
+  .summary-action-row,
+  .wizard-title-row {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .section-actions-row,
+  .wizard-actions,
+  .wizard-actions-inline {
+    min-width: 0;
+  }
+  .inline-summary {
+    max-width: min(100%, 420px);
+    min-width: 0;
+  }
+  .location-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    align-items: stretch;
+  }
+  .location-route-choice-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+  }
+  .location-choice-panel {
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--accent2) 12%, var(--border));
+    border-radius: 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, white 4%), color-mix(in srgb, var(--surface2) 98%, transparent));
+    padding: 12px;
+  }
+  .location-choice-or {
+    align-self: center;
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-soft);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    box-shadow: 0 4px 12px rgba(20, 33, 47, 0.06);
+  }
+  .route-file-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .route-file-row input[type="file"] {
+    min-width: 0;
+  }
+  .inline-location-btn {
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+  }
+  .locate-icon,
+  .locate-icon svg {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+  }
+  .locate-icon svg {
+    vertical-align: middle;
+  }
+  .locate-spinner {
+    margin: 0;
+    border-color: color-mix(in srgb, var(--text-soft) 35%, transparent);
+    border-top-color: var(--text);
+  }
+  .inline-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 170px);
+  }
+  .forecast-box {
+    overflow: hidden;
+  }
+  .forecast-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding-bottom: 6px;
+    margin: 0;
+  }
+  .forecast-scroll > div:not(.daily-forecast-grid) {
+    min-width: 560px;
+  }
+  .forecast-scroll > .daily-forecast-grid {
+    min-width: 0;
+  }
+  .forecast-table {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 10px;
+    overflow: visible;
+    padding-top: 14px;
+    margin-top: 0;
+  }
+  .forecast-cell {
+    min-width: 0;
+    flex: initial;
+  }
+  .daily-forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 10px;
+    padding-top: 14px;
+  }
+  .daily-forecast-cell {
+    min-width: 0;
+  }
+  .weather-strip {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .weather-main {
+    min-width: 0;
+  }
+  .weather-main .when,
+  .weather-main .desc {
+    overflow-wrap: anywhere;
+  }
+  .weather-meta {
+    min-width: 0;
+  }
+  .best-window-strip {
+    contain: paint;
+  }
+  .best-window-strip-label,
+  .best-window-strip-tick-label {
+    max-width: 72px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .route-weather-cell .cp-main,
+  .route-weather-cell .cp-temp,
+  .route-weather-cell .cp-meta {
+    min-width: 0;
+  }
+  .route-weather-cell .cp-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .water-model-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .water-temp-note {
+    margin-top: 10px;
+    border: 1px solid color-mix(in srgb, var(--warn) 32%, var(--border));
+    background: color-mix(in srgb, var(--warn) 8%, var(--surface2));
+    color: var(--text-soft);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
+  .water-signal {
+    --signal-color: var(--text-muted);
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    margin-left: 6px;
+    vertical-align: -0.12em;
+  }
+  .water-signal .bar {
+    width: 4px;
+    height: 11px;
+    border-radius: 999px;
+    background: var(--signal-color);
+    opacity: 0.22;
+  }
+  .water-signal .bar:nth-child(1) { height: 5px; }
+  .water-signal .bar:nth-child(2) { height: 7px; }
+  .water-signal .bar:nth-child(3) { height: 9px; }
+  .water-signal .bar:nth-child(4) { height: 11px; }
+  .water-signal .bar.fill { opacity: 1; }
+  .water-signal.high { --signal-color: var(--ok); }
+  .water-signal.medium { --signal-color: #d6a700; }
+  .water-signal.low { --signal-color: #f28c28; }
+  .water-signal.unknown { --signal-color: var(--text-muted); }
+  .water-signal.manual { --signal-color: var(--accent2); }
+  .water-source-label {
+    color: var(--text-soft);
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  .comfort-panel {
+    border: 1px solid color-mix(in srgb, var(--accent2) 12%, var(--border));
+    border-radius: 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, white 4%), color-mix(in srgb, var(--surface2) 98%, transparent));
+    padding: 14px;
+  }
+  .comfort-slider-row {
+    display: grid;
+    grid-template-columns: auto minmax(160px, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .comfort-end-label,
+  .comfort-current-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    white-space: nowrap;
+  }
+  .comfort-current-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
