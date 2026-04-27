@@ -71,8 +71,9 @@ export type ImportedRoute = {
   geometry: RoutePoint[];
   sourceUrl?: string;
 };
+```
 
-## Deployment
+### Deployment
 
 The frontend must remain deployable to GitHub Pages as a static Vite build.
 
