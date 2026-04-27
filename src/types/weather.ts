@@ -8,6 +8,7 @@ export interface WeatherPoint {
   precipitation?: number;
   precipitationChance?: number;
   uv?: number;
+  aqi?: number;
   weatherCode?: number;
   waterTemp?: number | null;
 }

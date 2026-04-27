@@ -91,6 +91,8 @@ import { normalizeRoutePoints as normalizeRoutePointsFromModule } from './featur
 import { buildRouteStateModel } from './features/route/routeMetrics';
 import { getSegmentTimeFactor as getSegmentTimeFactorFromModule } from './features/route/routeTiming';
 import { haversineKm } from './utils/distance';
+import { fetchAirQuality, matchAqiToHourlyTime } from './features/weather/airQualityClient';
+import { getAqiInfo } from './data/aqiScale';
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
@@ -2509,6 +2511,7 @@ function summarizePlannedConditions(selection, fallbackPoint) {
   const maxWind = points.reduce((max, p) => Math.max(max, firstFinite(p?.wind, 0)), 0);
   const maxGust = points.reduce((max, p) => Math.max(max, firstFinite(p?.gusts, p?.wind, 0)), 0);
   const maxUv = points.reduce((max, p) => Math.max(max, firstFinite(p?.uv, 0)), 0);
+  const maxAqi = points.reduce((max, p) => isFiniteNumber(p?.aqi) ? Math.max(max, p.aqi) : max, -Infinity);
   const maxPrecip = points.reduce((max, p) => Math.max(max, firstFinite(p?.precip, 0)), 0);
   const maxPrecipProb = points.reduce((max, p) => Math.max(max, firstFinite(p?.precipProb, 0)), 0);
   return {
@@ -2517,6 +2520,7 @@ function summarizePlannedConditions(selection, fallbackPoint) {
     maxWind,
     maxGust,
     maxUv,
+    maxAqi: isFiniteNumber(maxAqi) && maxAqi >= 0 ? maxAqi : null,
     maxPrecip,
     maxPrecipProb,
     anyWet: points.some(p => isWet(p?.code, p?.precip) || firstFinite(p?.precipProb, 0) >= 35),
@@ -2553,6 +2557,12 @@ function renderUvBadge(value, compact = false) {
   const info = getUvRiskInfo(value);
   if (!info) return '';
   return `<span class="uv-badge uv-${escapeHtml(info.className)}${compact ? ' compact' : ''}">UV ${escapeHtml(formatUvValue(info.value))} · ${escapeHtml(info.label)}</span>`;
+}
+
+function renderAqiBadge(value, compact = false) {
+  const info = getAqiInfo(value);
+  if (!info) return '';
+  return `<span class="aqi-badge aqi-${escapeHtml(info.className)}${compact ? ' compact' : ''}">AQI ${escapeHtml(String(info.value))}${compact ? '' : ` · ${escapeHtml(info.category)}`}</span>`;
 }
 
 function renderUvRatingBadge(value, compact = false) {
@@ -2615,6 +2625,23 @@ function augmentWizardWithUvContext(wizard, data, activity) {
   return wizard;
 }
 
+function augmentWizardWithAqiContext(wizard, data, activity) {
+  if (!wizard || !data || !isOutdoorUvRelevantActivity(activity)) return wizard;
+  const selection = getForecastSelection(data, wizard.startTime || getSelectedStartTime(data));
+  const planned = summarizePlannedConditions(selection, wizard.point || {});
+  const maxAqi = firstFinite(planned.maxAqi, wizard.point?.aqi, null);
+  const aqiInfo = getAqiInfo(maxAqi);
+  if (!aqiInfo || aqiInfo.value < 51) return wizard;
+  wizard.chips = Array.isArray(wizard.chips) ? wizard.chips : [];
+  if (!wizard.chips.some(chip => /^💨 AQI/.test(String(chip.label || '')))) {
+    wizard.chips.push({ label: `💨 AQI ${aqiInfo.value} · ${aqiInfo.category}`, tone: `aqi-${aqiInfo.className}` });
+  }
+  if (aqiInfo.value >= 101) {
+    addItemToWizardStep(wizard, { label: 'Air quality mask', detail: `AQI ${aqiInfo.value} (${aqiInfo.category}) — consider an N95/KN95 mask for prolonged outdoor effort.` });
+  }
+  return wizard;
+}
+
 function isProbablyCanadaPoint(lat, lon) {
   return isProbablyCanadaPointFromModule(lat, lon);
 }
@@ -2653,6 +2680,20 @@ function getEcccAlertWarningsForData(data = weatherData) {
 
 function getEcccAlertWarningsForRoute(samples = []) {
   return dedupeAlerts((samples || []).flatMap(cp => cp.ecccAlerts || []));
+}
+
+function getAqiHazardWarning(selection, point) {
+  const planned = summarizePlannedConditions(selection, point);
+  const maxAqi = firstFinite(planned.maxAqi, point?.aqi, null);
+  const info = getAqiInfo(maxAqi);
+  if (!info || info.value < 100) return null;
+  if (info.value >= 201) {
+    return { level: 'purple', icon: '😷', title: `${info.category} air quality`, detail: `Peak AQI around ${info.value}. Avoid prolonged outdoor exertion. N95/KN95 mask recommended if going out.` };
+  }
+  if (info.value >= 151) {
+    return { level: 'red', icon: '😷', title: 'Unhealthy air quality', detail: `Peak AQI around ${info.value}. Everyone may experience health effects. Reduce prolonged outdoor effort and consider a mask.` };
+  }
+  return { level: 'orange', icon: '😷', title: 'Unhealthy for Sensitive Groups', detail: `Peak AQI around ${info.value}. Sensitive individuals (asthma, heart/lung conditions) should reduce prolonged outdoor exertion.` };
 }
 
 function getUvHazardWarning(data, selection, point, activity) {
@@ -2748,6 +2789,8 @@ function renderWeatherHazardWarnings(data, selection, point, activity) {
     note = 'Forecast-derived warnings for non-Canadian locations. UV guidance follows ECCC / Health Canada UV categories.';
   }
   if (uvWarning) warnings.push(uvWarning);
+  const aqiWarning = getAqiHazardWarning(selection, point);
+  if (aqiWarning) warnings.push(aqiWarning);
   if (!warnings.length && !(useEccc && data?.ecccAlertStatus === 'ok')) return '';
   return renderGenericWarningList(warnings, note, 'Weather warnings');
 }
@@ -3769,10 +3812,11 @@ async function fetchWeatherCore(place) {
   const { latitude, longitude, name, country_code, admin1, country } = place;
   const weatherUrl = buildOpenMeteoForecastUrl(latitude, longitude);
 
-  const [weatherRes, marinePayload, ecccAlertPayload] = await Promise.all([
+  const [weatherRes, marinePayload, ecccAlertPayload, aqiPayload] = await Promise.all([
     fetch(weatherUrl),
     fetchMarineDataWithFallback(latitude, longitude),
-    fetchEcccWeatherAlertsForPoint(latitude, longitude, country_code)
+    fetchEcccWeatherAlertsForPoint(latitude, longitude, country_code),
+    fetchAirQuality(latitude, longitude)
   ]);
 
   const weatherJson = await weatherRes.json();
@@ -3790,7 +3834,8 @@ async function fetchWeatherCore(place) {
     sunset: weatherJson.daily.sunset?.[i],
     daylightDuration: weatherJson.daily.daylight_duration?.[i],
     code: weatherJson.daily.weather_code?.[i],
-    uvMax: weatherJson.daily.uv_index_max?.[i]
+    uvMax: weatherJson.daily.uv_index_max?.[i],
+    aqiMax: undefined as number | undefined
   }));
 
   const hourly = (weatherJson.hourly?.time || []).map((time, i) => {
@@ -3805,6 +3850,7 @@ async function fetchWeatherCore(place) {
       gusts: weatherJson.hourly.wind_gusts_10m?.[i],
       windDir: weatherJson.hourly.wind_direction_10m?.[i],
       uv: weatherJson.hourly.uv_index?.[i],
+      aqi: matchAqiToHourlyTime(aqiPayload, time),
       code: weatherJson.hourly.weather_code?.[i],
       isDay: weatherJson.hourly.is_day?.[i],
       measuredWaterTemp: isFiniteNumber(marinePoint.waterTemp) ? marinePoint.waterTemp : null,
@@ -3815,6 +3861,12 @@ async function fetchWeatherCore(place) {
       waterTempConfidence: isFiniteNumber(marinePoint.waterTemp) ? 'high' : 'unknown'
     };
   });
+
+  for (const day of daily) {
+    const dayHourly = hourly.filter(h => h.time.startsWith(day.date));
+    const aqiValues = dayHourly.map(h => h.aqi).filter(v => isFiniteNumber(v)) as number[];
+    if (aqiValues.length) day.aqiMax = Math.max(...aqiValues);
+  }
 
   const currentMarine = getBestMarinePoint(marinePayload, c.time);
   const currentHourlyPoint = hourly.find(h => h.time >= c.time) || hourly[0] || {};
@@ -3842,6 +3894,7 @@ async function fetchWeatherCore(place) {
       windDir: Math.round(c.wind_direction_10m),
       precip: c.precipitation,
       uv: currentHourlyPoint.uv,
+      aqi: currentHourlyPoint.aqi,
       isDay: c.is_day,
       code: c.weather_code,
       measuredWaterTemp: isFiniteNumber(currentMarine.waterTemp) ? round1(currentMarine.waterTemp) : null,
@@ -5220,7 +5273,7 @@ function buildForecastChart(data, selection) {
   const hitRects = points.map((p, i) => {
     const prevMid = i === 0 ? pad.left : (xForIndex(i - 1) + xForIndex(i)) / 2;
     const nextMid = i === points.length - 1 ? width - pad.right : (xForIndex(i) + xForIndex(i + 1)) / 2;
-    return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit data-time="${escapeHtml(formatShortDateTime(p.time))}" data-temp="${escapeHtml(round1(p.temp))}" data-feels="${escapeHtml(round1(p.feels))}" data-precip="${escapeHtml(round1(p.precip || 0))}" data-precip-prob="${escapeHtml(Math.round(p.precipProb || 0))}" data-wind="${escapeHtml(Math.round(p.wind || 0))}" data-wind-gust="${isFiniteNumber(p.gusts) ? escapeHtml(Math.round(p.gusts)) : ''}" data-wind-dir="${isFiniteNumber(p.windDir) ? escapeHtml(Math.round(p.windDir)) : ''}" data-uv="${isFiniteNumber(p.uv) ? escapeHtml(formatUvValue(p.uv)) : ''}" data-uv-value="${isFiniteNumber(p.uv) ? escapeHtml(p.uv) : ''}"></rect>`;
+    return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit data-time="${escapeHtml(formatShortDateTime(p.time))}" data-temp="${escapeHtml(round1(p.temp))}" data-feels="${escapeHtml(round1(p.feels))}" data-precip="${escapeHtml(round1(p.precip || 0))}" data-precip-prob="${escapeHtml(Math.round(p.precipProb || 0))}" data-wind="${escapeHtml(Math.round(p.wind || 0))}" data-wind-gust="${isFiniteNumber(p.gusts) ? escapeHtml(Math.round(p.gusts)) : ''}" data-wind-dir="${isFiniteNumber(p.windDir) ? escapeHtml(Math.round(p.windDir)) : ''}" data-uv="${isFiniteNumber(p.uv) ? escapeHtml(formatUvValue(p.uv)) : ''}" data-uv-value="${isFiniteNumber(p.uv) ? escapeHtml(p.uv) : ''}" data-aqi="${isFiniteNumber(p.aqi) ? escapeHtml(String(Math.round(p.aqi))) : ''}" data-aqi-category="${isFiniteNumber(p.aqi) ? escapeHtml(getAqiInfo(p.aqi)?.category ?? '') : ''}"></rect>`;
   }).join('');
 
   return `
@@ -5272,7 +5325,7 @@ function renderForecastBlock(data, startTime) {
           <div class="day">${escapeHtml(p.date)}</div>
           ${weatherIconHtml(p.code, 'icon')}
           <div class="temps"><span class="forecast-metric" title="High / low temperature">${Math.round(p.tMax)}° / ${Math.round(p.tMin)}°</span><span class="feels-line forecast-metric" title="Feels-like high / low">feels ${Math.round(p.feelsMax)}° / ${Math.round(p.feelsMin)}°</span></div>
-          <div class="meta"><span class="forecast-metric" title="Precipitation chance / amount">${Math.round(p.precipProbMax || 0)}% · ${round1(p.precipSum || 0)} mm</span>${isFiniteNumber(p.uvMax) ? `<br>${renderUvValueBadge(p.uvMax, true)}` : ''}<br><span class="forecast-metric" title="Sunrise / sunset">${escapeHtml(formatShortTime(p.sunrise))} · ${escapeHtml(formatShortTime(p.sunset))}</span>${daylightH != null ? `<br><span class="forecast-metric" title="Daylight duration">${daylightH} h daylight</span>` : ''}</div>
+          <div class="meta"><span class="forecast-metric" title="Precipitation chance / amount">${Math.round(p.precipProbMax || 0)}% · ${round1(p.precipSum || 0)} mm</span>${isFiniteNumber(p.uvMax) ? `<br>${renderUvValueBadge(p.uvMax, true)}` : ''}${isFiniteNumber(p.aqiMax) ? `<br>${renderAqiBadge(p.aqiMax, true)}` : ''}<br><span class="forecast-metric" title="Sunrise / sunset">${escapeHtml(formatShortTime(p.sunrise))} · ${escapeHtml(formatShortTime(p.sunset))}</span>${daylightH != null ? `<br><span class="forecast-metric" title="Daylight duration">${daylightH} h daylight</span>` : ''}</div>
         </div>`;
     }).join('');
     return `
@@ -5295,7 +5348,7 @@ function renderForecastBlock(data, startTime) {
         <div class="hour">${escapeHtml(formatShortTime(p.time))}</div>
         ${weatherIconHtml(p.code, 'icon')}
         <div class="temp"><span class="forecast-metric" title="Temperature">${Math.round(p.temp)}°</span><span class="feels-line forecast-metric" title="Feels like">feels ${Math.round(p.feels)}°</span></div>
-        <div class="meta"><span class="forecast-metric" title="Wind speed">${Math.round(p.wind || 0)} km/h</span><br><span class="forecast-metric" title="Precipitation amount / chance">${round1(p.precip || 0)} mm · ${Math.round(p.precipProb || 0)}%</span>${isFiniteNumber(p.uv) ? `<br>${renderUvValueBadge(p.uv, true)}` : ''}</div>
+        <div class="meta"><span class="forecast-metric" title="Wind speed">${Math.round(p.wind || 0)} km/h</span><br><span class="forecast-metric" title="Precipitation amount / chance">${round1(p.precip || 0)} mm · ${Math.round(p.precipProb || 0)}%</span>${isFiniteNumber(p.uv) ? `<br>${renderUvValueBadge(p.uv, true)}` : ''}${isFiniteNumber(p.aqi) ? `<br>${renderAqiBadge(p.aqi, true)}` : ''}</div>
       </div>`;
   }).join('');
   return `
@@ -6268,7 +6321,8 @@ function bindForecastChartTooltips(root = resultInner) {
       <div class="tt-row"><span>Precip chance</span><strong>${precipChance}</strong></div>
       <div class="tt-row"><span>Wind</span><strong>${hit.dataset.wind} km/h ${dirHtml}</strong></div>
       <div class="tt-row"><span>Gusts</span><strong>${gustText}</strong></div>
-      <div class="tt-row"><span>UV</span><strong>${hit.dataset.uvValue ? `UV ${escapeHtml(formatUvValue(Number(hit.dataset.uvValue)))}` : '—'}</strong></div>`;
+      <div class="tt-row"><span>UV</span><strong>${hit.dataset.uvValue ? `UV ${escapeHtml(formatUvValue(Number(hit.dataset.uvValue)))}` : '—'}</strong></div>
+      ${hit.dataset.aqi ? `<div class="tt-row"><span>AQI</span><strong>${renderAqiBadge(Number(hit.dataset.aqi), true)}</strong></div>` : ''}`;
     tooltip.classList.add('visible');
     positionTooltip(event);
   };
@@ -6381,6 +6435,8 @@ function renderAdvice(data, activity) {
   ];
   const uvInfo = getUvRiskInfo(getUvDisplayValue(point, data));
   if (uvInfo) metaLines.push(`☀ ${renderUvBadge(uvInfo.value)}`);
+  const aqiInfo = getAqiInfo(point.aqi ?? data.current.aqi);
+  if (aqiInfo) metaLines.push(`💨 ${renderAqiBadge(aqiInfo.value)}`);
 
   const weatherMetaDay = getDayRecord(data, point.time || startTime || data.currentTime);
   if (weatherMetaDay?.sunrise || weatherMetaDay?.sunset) {
@@ -6464,7 +6520,7 @@ function renderAdvice(data, activity) {
     return;
   }
 
-  const wizard = augmentWizardWithUvContext(buildWizard(data, activity), data, activity);
+  const wizard = augmentWizardWithAqiContext(augmentWizardWithUvContext(buildWizard(data, activity), data, activity), data, activity);
   const selectionForWarnings = getForecastSelection(data, wizard.startTime);
   const weatherWarningsHtml = renderWeatherHazardWarnings(data, selectionForWarnings, point, activity);
   resultInner.innerHTML = `

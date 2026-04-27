@@ -859,6 +859,60 @@
     background: color-mix(in srgb, #7b3fb2 14%, var(--surface2));
   }
 
+  .aqi-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    white-space: nowrap;
+    vertical-align: 0.08em;
+  }
+  .aqi-badge.compact {
+    padding-inline: 6px;
+    font-size: 0.68rem;
+  }
+  .aqi-good,
+  .mini-chip.aqi-good {
+    color: #167a3a;
+    border-color: color-mix(in srgb, #167a3a 42%, var(--border));
+    background: color-mix(in srgb, #167a3a 10%, var(--surface2));
+  }
+  .aqi-moderate,
+  .mini-chip.aqi-moderate {
+    color: #a17a00;
+    border-color: color-mix(in srgb, #d6a700 55%, var(--border));
+    background: color-mix(in srgb, #d6a700 14%, var(--surface2));
+  }
+  .aqi-sensitive,
+  .mini-chip.aqi-sensitive {
+    color: #be5b00;
+    border-color: color-mix(in srgb, #f28c28 58%, var(--border));
+    background: color-mix(in srgb, #f28c28 14%, var(--surface2));
+  }
+  .aqi-unhealthy,
+  .mini-chip.aqi-unhealthy {
+    color: #b62222;
+    border-color: color-mix(in srgb, #d83a2e 58%, var(--border));
+    background: color-mix(in srgb, #d83a2e 13%, var(--surface2));
+  }
+  .aqi-very-unhealthy,
+  .mini-chip.aqi-very-unhealthy {
+    color: #7b3fb2;
+    border-color: color-mix(in srgb, #7b3fb2 62%, var(--border));
+    background: color-mix(in srgb, #7b3fb2 14%, var(--surface2));
+  }
+  .aqi-hazardous,
+  .mini-chip.aqi-hazardous {
+    color: #5a1a1a;
+    border-color: color-mix(in srgb, #7a1a1a 62%, var(--border));
+    background: color-mix(in srgb, #7a1a1a 14%, var(--surface2));
+  }
+
   .skeleton {
     background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
     background-size: 200% 100%;
