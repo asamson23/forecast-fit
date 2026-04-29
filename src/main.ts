@@ -126,6 +126,7 @@ import { stravaRouteGpxToImportedRoute } from './features/strava/stravaRouteAdap
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
+inject();
 if (consumeStravaOAuthCallback()) {
   setTimeout(() => renderStravaConnectionState(), 0);
 }
