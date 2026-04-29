@@ -103,10 +103,11 @@ export function buildImportedRoute(name: string, points: RoutePoint[]): Imported
   const end = timed[timed.length - 1]?.time ? new Date(timed[timed.length - 1].time as string).getTime() : NaN;
   const durationMinutes = Number.isFinite(start) && Number.isFinite(end) && end > start ? (end - start) / 60000 : null;
   return {
+    provider: 'manual',
     name,
-    points,
-    distanceKm: calculateRouteDistanceKm(points),
-    hasTimeData: timed.length > 1,
-    durationMinutes,
+    geometry: points,
+    distanceMeters: calculateRouteDistanceKm(points) * 1000,
+    hasRealTimestamps: timed.length > 1,
+    estimatedMovingTimeSeconds: durationMinutes != null ? durationMinutes * 60 : null,
   };
 }
