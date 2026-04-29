@@ -20,7 +20,7 @@ const isGithubPagesHost = typeof window !== 'undefined' && window.location.hostn
 
 const normalizeStravaBackendUrl = (url: string | undefined) => {
   if (!url) return null;
-  if (url.includes('forecast-fit.vercel.app')) return DEFAULT_STRAVA_BACKEND_URL;
+  if (url.includes('forecast-fit-zeta.vercel.app')) return DEFAULT_STRAVA_BACKEND_URL;
   return url;
 };
 
