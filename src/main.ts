@@ -8,6 +8,7 @@ import './styles/forecast.css';
 import './styles/map.css';
 import './styles/responsive.css';
 import { registerServiceWorker } from './registerServiceWorker';
+import { inject } from '@vercel/analytics';
 import * as L from 'leaflet';
 import flatpickr from 'flatpickr';
 import JSZip from 'jszip';
@@ -121,6 +122,7 @@ import {
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
+inject();
 
 /**
  * Forecast Fit
