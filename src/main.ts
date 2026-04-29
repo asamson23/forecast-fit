@@ -118,9 +118,16 @@ import {
   getBestWindowTimelineTickConfig as getBestWindowTimelineTickConfigFromModule,
   renderBestWindowResults as renderBestWindowResultsFromModule,
 } from './components/BestWindowPanel';
+import { STRAVA_BACKEND_URL } from './data/constants';
+import { clearStravaSession, consumeStravaOAuthCallback, getStravaSession } from './features/strava/stravaAuth';
+import { fetchStravaRouteGpx, fetchStravaRoutes } from './features/strava/stravaClient';
+import { stravaRouteGpxToImportedRoute } from './features/strava/stravaRouteAdapter';
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
+if (consumeStravaOAuthCallback()) {
+  setTimeout(() => renderStravaConnectionState(), 0);
+}
 
 /**
  * Forecast Fit
@@ -270,6 +277,8 @@ const checkpointModelStatus = document.getElementById('checkpoint-model-status')
 const routeFileInput = document.getElementById('route-file-input');
 const clearRouteBtn = document.getElementById('clear-route-btn');
 const routeStatus = document.getElementById('route-status');
+const stravaConnectPanel = document.getElementById('strava-connect-panel');
+const stravaStatus = document.getElementById('strava-status');
 const mapCard = document.getElementById('map-card');
 const routeSummary = document.getElementById('route-summary');
 const locationCardToggleBtn = document.getElementById('location-card-toggle-btn');
@@ -6943,6 +6952,60 @@ Object.assign(window, {
   jumpToQuickStartTarget,
 });
 
+
+async function importStravaFirstRoute() {
+  const routes = await fetchStravaRoutes(STRAVA_BACKEND_URL);
+  if (!Array.isArray(routes) || !routes.length) throw new Error('No saved Strava routes found');
+  const route = routes[0];
+  const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
+  const importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+  routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
+  clearError();
+  clearRouteMapLayers();
+  renderRouteMap();
+  renderRouteParameterHints();
+  const durationState = getDurationState();
+  renderDurationButtons(durationState);
+  renderEventButtons();
+  renderDistanceAndDurationFields();
+  renderRouteSummary();
+  routeStatus.textContent = `${importedRoute.name} imported from Strava · ${formatKm(routeState.totalKm)} · ${routeState.points.length} points`;
+  if (routeState?.points?.[0]) {
+    await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
+  }
+}
+
+function renderStravaConnectionState() {
+  if (!stravaConnectPanel) return;
+  const session = getStravaSession();
+  if (!session) {
+    stravaConnectPanel.innerHTML = `<button class="btn btn-secondary" type="button" data-action="connectStrava">Connect Strava</button>`;
+    if (stravaStatus) stravaStatus.textContent = 'Import a saved route or recent activity.';
+    return;
+  }
+  stravaConnectPanel.innerHTML = `<div class="inline-fields"><button class="btn btn-secondary" type="button" data-action="openStravaPicker">Import first saved route</button><button class="reset-btn clear-btn" type="button" data-action="disconnectStrava">Disconnect</button></div>`;
+  if (stravaStatus) stravaStatus.textContent = `Connected: ${session.athleteName}`;
+}
+
+function handleConnectStrava() {
+  window.location.href = `${STRAVA_BACKEND_URL}/api/strava/auth`;
+}
+
+function handleDisconnectStrava() {
+  clearStravaSession();
+  renderStravaConnectionState();
+}
+
+async function handleOpenStravaPicker() {
+  if (stravaStatus) stravaStatus.textContent = 'Loading Strava routes…';
+  try {
+    await importStravaFirstRoute();
+    renderStravaConnectionState();
+  } catch (error) {
+    if (stravaStatus) stravaStatus.textContent = error instanceof Error ? error.message : 'Unable to import Strava route';
+  }
+}
+
 function bindDomActions() {
   document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
@@ -6957,6 +7020,9 @@ function bindDomActions() {
     else if (action === 'clearAllTool') clearAllTool();
     else if (action === 'useCurrentLocation') useCurrentLocation();
     else if (action === 'clearRoute') clearRoute();
+    else if (action === 'connectStrava') handleConnectStrava();
+    else if (action === 'disconnectStrava') handleDisconnectStrava();
+    else if (action === 'openStravaPicker') handleOpenStravaPicker();
     else if (action === 'resetActivitySection') resetActivitySection();
     else if (action === 'toggleRaceDayMode') toggleRaceDayMode();
     else if (action === 'selectActivity') selectActivity(trigger);
@@ -6972,4 +7038,5 @@ function bindDomActions() {
   });
 }
 
+renderStravaConnectionState();
 bindDomActions();

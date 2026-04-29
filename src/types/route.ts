@@ -7,9 +7,13 @@ export interface RoutePoint {
 }
 
 export interface ImportedRoute {
+  provider: 'manual' | 'strava' | 'ridewithgps';
+  providerRouteId?: string;
   name: string;
-  points: RoutePoint[];
-  distanceKm: number;
-  hasTimeData: boolean;
-  durationMinutes?: number | null;
+  distanceMeters?: number;
+  elevationGainMeters?: number;
+  estimatedMovingTimeSeconds?: number;
+  hasRealTimestamps: boolean;
+  geometry: RoutePoint[];
+  sourceUrl?: string;
 }
