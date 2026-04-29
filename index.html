@@ -59,6 +59,14 @@
         </div>
         <p class="status-line compact" id="route-status">Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when the file contains time data.</p>
       </div>
+      <div class="location-choice-or" aria-hidden="true">OR</div>
+      <div class="location-choice-panel">
+        <label class="sub-label">Strava</label>
+        <div id="strava-connect-panel">
+          <button class="btn btn-secondary" type="button" data-action="connectStrava">Connect Strava</button>
+        </div>
+        <p class="status-line compact" id="strava-status">Import a saved route or recent activity.</p>
+      </div>
     </div>
     <p id="error-msg"></p>
   </div>
