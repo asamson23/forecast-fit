@@ -14,4 +14,4 @@ export const NORTH_AMERICA_COUNTRY_CODES = ['CA', 'US', 'MX'];
 export const WESTERN_EUROPE_COUNTRY_CODES = [
   'AD', 'AT', 'BE', 'CH', 'DE', 'DK', 'ES', 'FI', 'FR', 'GB', 'IE', 'IS', 'IT', 'LI', 'LU', 'MC', 'NL', 'NO', 'PT', 'SE',
 ];
-export const STRAVA_BACKEND_URL = import.meta.env.VITE_STRAVA_BACKEND_URL ?? 'https://forecast-fit.vercel.app';
+export const STRAVA_BACKEND_URL = import.meta.env.VITE_STRAVA_BACKEND_URL ?? 'https://forecast-fit-zeta.vercel.app';
