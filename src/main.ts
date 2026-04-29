@@ -93,6 +93,31 @@ import { getSegmentTimeFactor as getSegmentTimeFactorFromModule } from './featur
 import { haversineKm } from './utils/distance';
 import { fetchAirQuality, matchAqiToHourlyTime } from './features/weather/airQualityClient';
 import { getAqiInfo } from './data/aqiScale';
+import {
+  bindForecastChartTooltips as bindForecastChartTooltipsFromModule,
+  buildForecastChart as buildForecastChartFromModule,
+  getForecastChartTooltipPortal as getForecastChartTooltipPortalFromModule,
+} from './components/ForecastChart';
+import { renderForecastBlock as renderForecastBlockFromModule } from './components/ForecastCells';
+import {
+  bestWindowRangeOverrunMinutes as bestWindowRangeOverrunMinutesFromModule,
+  buildBestWindowReasons as buildBestWindowReasonsFromModule,
+  formatBestWindowOverrunWarning as formatBestWindowOverrunWarningFromModule,
+  formatBestWindowSpan as formatBestWindowSpanFromModule,
+  formatBestWindowTimelineTickLabel as formatBestWindowTimelineTickLabelFromModule,
+  getBestWindowActivityRange as getBestWindowActivityRangeFromModule,
+  getBestWindowClusterStartRangeInfo as getBestWindowClusterStartRangeInfoFromModule,
+  getBestWindowComfortBand as getBestWindowComfortBandFromModule,
+  getBestWindowPresetLabel as getBestWindowPresetLabelFromModule,
+  getBestWindowPrioritySummary as getBestWindowPrioritySummaryFromModule,
+  getBestWindowRankClass as getBestWindowRankClassFromModule,
+  getBestWindowRankEmoji as getBestWindowRankEmojiFromModule,
+  getBestWindowRankLabel as getBestWindowRankLabelFromModule,
+  getBestWindowTimelineDayBoundaryTicks as getBestWindowTimelineDayBoundaryTicksFromModule,
+  getBestWindowTimelineHtml as getBestWindowTimelineHtmlFromModule,
+  getBestWindowTimelineTickConfig as getBestWindowTimelineTickConfigFromModule,
+  renderBestWindowResults as renderBestWindowResultsFromModule,
+} from './components/BestWindowPanel';
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
@@ -3027,12 +3052,7 @@ function formatWeekdayTime(str) {
 }
 
 function formatBestWindowSpan(startStr, endStr) {
-  const start = parseLocalString(startStr);
-  const end = parseLocalString(endStr);
-  if (!start || !end) return `${startStr}–${endStr}`;
-  const sameDay = formatDateOnlyLocal(start) === formatDateOnlyLocal(end);
-  if (sameDay) return `${formatWeekdayTime(startStr)}–${formatShortTime(endStr)}`;
-  return `${formatWeekdayTime(startStr)}–${formatWeekdayTime(endStr)}`;
+  return formatBestWindowSpanFromModule(startStr, endStr);
 }
 
 function getBestWindowTimelineTickMinutes(totalMinutes) {
@@ -3040,7 +3060,7 @@ function getBestWindowTimelineTickMinutes(totalMinutes) {
 }
 
 function getBestWindowTimelineTickConfig(totalMinutes) {
-  return getSharedTimelineTickConfig(totalMinutes);
+  return getBestWindowTimelineTickConfigFromModule(totalMinutes);
 }
 
 function ceilDateToStep(date, stepMinutes) {
@@ -3054,16 +3074,7 @@ function ceilDateToStep(date, stepMinutes) {
 }
 
 function formatBestWindowTimelineTickLabel(dateOrStr, tickInfo, multiDay, tickType = 'major') {
-  const d = typeof dateOrStr === 'string' ? parseLocalString(dateOrStr) : new Date(dateOrStr.getTime());
-  if (!d) return '';
-  const tickMinutes = typeof tickInfo === 'object' ? firstFinite(tickInfo.major, 60) : firstFinite(tickInfo, 60);
-  const weekday = d.toLocaleDateString([], { weekday: 'short' });
-  const dateLabel = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  if (tickType === 'date') return dateLabel;
-  if (tickMinutes >= 1440) return weekday;
-  if (multiDay || tickMinutes >= 720) return `${weekday} ${time}`;
-  return time;
+  return formatBestWindowTimelineTickLabelFromModule(dateOrStr, tickInfo, multiDay, tickType);
 }
 
 // Shorter outings can use finer picker steps; long or multi-day events stay coarser.
@@ -4115,26 +4126,11 @@ function getBestWindowActivityName(activity) {
 }
 
 function getBestWindowPresetLabel(priority) {
-  return ({
-    best_overall: 'Best overall',
-    driest: 'Driest',
-    calmest: 'Calmest',
-    warmest: 'Warmest',
-    fastest: 'Fastest conditions',
-    safest: 'Safest'
-  })[priority] || 'Best overall';
+  return getBestWindowPresetLabelFromModule(priority);
 }
 
 function getBestWindowPrioritySummary(priority, activity) {
-  if (priority === 'driest') return 'Biases strongly toward the driest full activity window.';
-  if (priority === 'calmest') return 'Biases toward lower wind and lower gusts.';
-  if (priority === 'warmest') return 'Biases toward warmer, more comfortable conditions.';
-  if (priority === 'fastest') return activity === 'cycling' || activity === 'running'
-    ? 'Biases toward quicker-feeling conditions: lower wind penalties, lower gusts, and lower rain risk.'
-    : 'Biases toward smoother, easier-moving conditions for the chosen activity.';
-  if (priority === 'safest') return 'Biases toward lower risk: less rain, lower gusts, better daylight, and fewer nasty surprises.';
-  if (activity === 'triathlon') return 'Best overall stays available for training or self-directed sessions; race starts are usually fixed.';
-  return `Best overall quietly adapts to ${getBestWindowActivityName(activity)}.`;
+  return getBestWindowPrioritySummaryFromModule(priority, activity);
 }
 
 function getBestWindowDayRange(data, dateStr) {
@@ -4215,15 +4211,7 @@ function getBestWindowConfigKey(data) {
 }
 
 function getBestWindowComfortBand(activity) {
-  if (activity === 'cycling') return { low: 7, high: 20 };
-  if (activity === 'running') return { low: 4, high: 18 };
-  if (activity === 'triathlon') return { low: 7, high: 21 };
-  if (isWaterExposureActivity(activity)) return { low: 10, high: 24 };
-  if (isPoolSwimmingActivity(activity)) return { low: 14, high: 28 };
-  if (activity === 'fishing' || activity === 'hunting') return { low: 6, high: 18 };
-  if (activity === 'camping') return { low: 8, high: 22 };
-  if (activity === 'road_trip') return { low: 10, high: 25 };
-  return { low: 10, high: 23 };
+  return getBestWindowComfortBandFromModule(activity);
 }
 
 function getBestWindowWeights(priority, activity) {
@@ -4680,27 +4668,7 @@ function scoreBestWindowCandidate(candidate, routeMetrics, options) {
 }
 
 function buildBestWindowReasons(candidate, options) {
-  const bits = [];
-  const domain = candidate.domain || {};
-  const route = candidate.routeMetrics || null;
-  const light = candidate.light || {};
-  const meanFeels = firstFinite(domain.meanFeels, candidate.point?.feels, candidate.point?.temp);
-  if (firstFinite(route?.maxPrecipProb, domain.maxPrecipProb, 100) < 25 && firstFinite(route?.maxPrecip, domain.maxPrecip, 9) < 0.2) bits.push('mostly dry');
-  else if (firstFinite(route?.maxPrecipProb, domain.maxPrecipProb, 100) < 40) bits.push('lower rain risk');
-  if (firstFinite(route?.maxGust, domain.maxGust, 99) < 25) bits.push('lower gusts');
-  else if (firstFinite(route?.maxGust, domain.maxGust, 99) < 32) bits.push('manageable gusts');
-  if (isFiniteNumber(meanFeels)) {
-    const band = getBestWindowComfortBand(options.activity);
-    if (meanFeels >= band.low && meanFeels <= band.high) bits.push('comfortable temperatures');
-    else if (options.priority === 'warmest') bits.push('warmer than the cooler options');
-  }
-  if (route && firstFinite(route.avgHeadwind, 99) < 8) bits.push('less headwind on route');
-  const maxUv = firstFinite(route?.maxUv, domain.maxUv, candidate.point?.uv, null);
-  if (isOutdoorUvRelevantActivity(options.activity) && isFiniteNumber(maxUv) && maxUv < 6) bits.push('UV manageable');
-  if (route && firstFinite(route.avgCrosswind, 99) < 10 && options.activity === 'cycling') bits.push('tamer crosswinds');
-  if (!/dark/i.test(light.label || '')) bits.push('full daylight');
-  else if (!/mostly dark/i.test(light.label || '')) bits.push('better daylight coverage');
-  return bits.slice(0, 3);
+  return buildBestWindowReasonsFromModule(candidate, options);
 }
 
 function getBestWindowCondenseMinutes(stepMinutes, durationMinutes) {
@@ -4716,95 +4684,31 @@ function clusterBestWindowCandidates(candidates, stepMinutes, maxWindows = 6, mi
 }
 
 function getBestWindowRankClass(index) {
-  return index < 3 ? `rank-${index + 1}` : 'rank-runner';
+  return getBestWindowRankClassFromModule(index);
 }
 
 function getBestWindowRankEmoji(index) {
-  return ['🥇', '🥈', '🥉'][index] || '';
+  return getBestWindowRankEmojiFromModule(index);
 }
 
 function getBestWindowRankLabel(index, priority) {
-  const emoji = getBestWindowRankEmoji(index);
-  const suffix = index === 0 ? getBestWindowPresetLabel(priority) : (index < 3 ? 'Podium pick' : 'Runner-up');
-  return `${emoji ? `${emoji} ` : ''}#${index + 1} ${suffix}`;
+  return getBestWindowRankLabelFromModule(index, priority);
 }
 
 function getBestWindowClusterStartRangeInfo(cluster, maxSpanMinutes = 30) {
-  const rep = cluster?.representative;
-  const repMs = parseAnyTime(rep?.startTime);
-  if (!rep || !Number.isFinite(repMs) || !Array.isArray(cluster?.items) || cluster.items.length < 2) return null;
-
-  // A cluster can contain several nearly-equivalent start times. Surface the
-  // densest 30-minute pocket as a readable start range instead of listing
-  // every 15-minute variant as a separate option.
-  const byStart = new Map();
-  cluster.items.forEach(item => {
-    const startMs = parseAnyTime(item.startTime);
-    if (!Number.isFinite(startMs)) return;
-    const existing = byStart.get(item.startTime);
-    if (!existing || firstFinite(item.score, -Infinity) > firstFinite(existing.score, -Infinity)) byStart.set(item.startTime, item);
-  });
-  const sorted = [...byStart.values()].sort((a, b) => parseAnyTime(a.startTime) - parseAnyTime(b.startTime));
-  if (sorted.length < 2) return null;
-
-  const maxSpanMs = Math.max(1, maxSpanMinutes) * 60000;
-  let bestSlice = null;
-  for (let i = 0; i < sorted.length; i += 1) {
-    const startMs = parseAnyTime(sorted[i].startTime);
-    const slice = [];
-    for (let j = i; j < sorted.length; j += 1) {
-      const itemMs = parseAnyTime(sorted[j].startTime);
-      if (itemMs - startMs > maxSpanMs) break;
-      slice.push(sorted[j]);
-    }
-    if (slice.length < 2) continue;
-    const containsRep = slice.some(item => item.startTime === rep.startTime);
-    const avgScore = slice.reduce((sum, item) => sum + firstFinite(item.score, 0), 0) / slice.length;
-    const current = { slice, containsRep, avgScore };
-    if (!bestSlice ||
-        current.slice.length > bestSlice.slice.length ||
-        (current.slice.length === bestSlice.slice.length && Number(current.containsRep) > Number(bestSlice.containsRep)) ||
-        (current.slice.length === bestSlice.slice.length && current.containsRep === bestSlice.containsRep && current.avgScore > bestSlice.avgScore)) {
-      bestSlice = current;
-    }
-  }
-
-  if (!bestSlice) return null;
-  const first = bestSlice.slice[0];
-  const last = bestSlice.slice[bestSlice.slice.length - 1];
-  if (first.startTime === last.startTime) return null;
-  const spanMinutes = Math.round((parseAnyTime(last.startTime) - parseAnyTime(first.startTime)) / 60000);
-  return {
-    start: first.startTime,
-    end: last.startTime,
-    count: bestSlice.slice.length,
-    spanMinutes,
-    label: formatBestWindowSpan(first.startTime, last.startTime)
-  };
+  return getBestWindowClusterStartRangeInfoFromModule(cluster, maxSpanMinutes);
 }
 
 function getBestWindowActivityRange(startTime, durationMinutes) {
-  const startMs = parseAnyTime(startTime);
-  const durMs = Math.max(1, firstFinite(durationMinutes, 0)) * 60000;
-  if (!Number.isFinite(startMs)) return { startMs: NaN, endMs: NaN, startTime, endTime: startTime };
-  const end = new Date(startMs + durMs);
-  return {
-    startMs,
-    endMs: end.getTime(),
-    startTime,
-    endTime: formatDateTimeLocal(end).slice(0, 16)
-  };
+  return getBestWindowActivityRangeFromModule(startTime, durationMinutes);
 }
 
 function bestWindowRangeOverrunMinutes(activityRange, analysis) {
-  const rangeEndMs = parseAnyTime(analysis?.range?.end);
-  if (!Number.isFinite(activityRange?.endMs) || !Number.isFinite(rangeEndMs)) return 0;
-  return Math.max(0, Math.ceil((activityRange.endMs - rangeEndMs) / 60000));
+  return bestWindowRangeOverrunMinutesFromModule(activityRange, analysis);
 }
 
 function formatBestWindowOverrunWarning(minutes) {
-  if (!Number.isFinite(minutes) || minutes <= 0) return '';
-  return `⚠ extends ${formatDurationDisplay(minutes)} past search end`;
+  return formatBestWindowOverrunWarningFromModule(minutes);
 }
 
 function makeBestWindowClusterFromCandidate(candidate, index) {
@@ -4816,147 +4720,14 @@ function addMinimumBestWindowFallbacks(selected, validCandidates, minWindows, ma
 }
 
 function getBestWindowTimelineDayBoundaryTicks(startMs, endMs) {
-  const ticks = [];
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return ticks;
-  const cursor = new Date(startMs);
-  cursor.setHours(24, 0, 0, 0);
-  while (cursor.getTime() < endMs) {
-    ticks.push(new Date(cursor.getTime()));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return ticks;
+  return getBestWindowTimelineDayBoundaryTicksFromModule(startMs, endMs);
 }
 function getBestWindowTimelineHtml(analysis) {
-  if (!analysis?.topWindows?.length || !analysis.range) return '';
-  const baseStartMs = parseAnyTime(analysis.range.start);
-  const baseEndMs = parseAnyTime(analysis.range.end);
-  const durationMinutes = firstFinite(analysis.options?.durationMinutes, getBestWindowDurationMinutes(), 0);
-  const activityRanges = analysis.topWindows.map(cluster => getBestWindowActivityRange(cluster.representative?.startTime, durationMinutes));
-  const startMs = baseStartMs;
-  const endMs = Math.max(baseEndMs, ...activityRanges.map(range => firstFinite(range.endMs, baseEndMs)));
-  const totalMs = Math.max(1, endMs - startMs);
-  const totalMinutes = Math.max(1, Math.round(totalMs / 60000));
-  const tickConfig = getBestWindowTimelineTickConfig(totalMinutes);
-  const multiDay = formatDateOnlyLocal(new Date(startMs)) !== formatDateOnlyLocal(new Date(endMs));
-  const currentSelected = bestWindowSelectedStart || analysis.topWindows[0]?.representative?.startTime || null;
-  const drawOrder = analysis.topWindows
-    .map((cluster, index) => ({ cluster, index, range: activityRanges[index], active: currentSelected === cluster.representative?.startTime }))
-    .sort((a, b) => Number(a.active) - Number(b.active));
-
-  const bands = drawOrder.map(({ cluster, index, range, active }) => {
-    const rawLeft = ((range.startMs - startMs) / totalMs) * 100;
-    const rawRight = ((range.endMs - startMs) / totalMs) * 100;
-    const left = clamp(rawLeft, 0, 100);
-    const right = clamp(rawRight, 0, 100);
-    const width = Math.max(1.2, right - left);
-    const rank = getBestWindowRankClass(index);
-    const activeClass = active ? 'active' : '';
-    const overrun = bestWindowRangeOverrunMinutes(range, analysis);
-    const overrunClass = overrun > 0 ? 'extends-past-range' : '';
-    const warning = overrun > 0 ? ` · ${formatBestWindowOverrunWarning(overrun)}` : '';
-    const startRange = getBestWindowClusterStartRangeInfo(cluster);
-    const startRangeText = startRange ? ` · good starts ${startRange.label}` : '';
-    const title = `${getBestWindowRankLabel(index, analysis.options?.priority)} · ${formatWeekdayTime(range.startTime)}–${formatShortTime(range.endTime)}${startRangeText}${warning}`;
-    return `<div class="best-window-strip-band ${rank} ${activeClass} ${overrunClass}" style="left:${left.toFixed(2)}%; width:${width.toFixed(2)}%;" title="${escapeHtml(title)}" data-action="applyBestWindowResult" data-start-time="${escapeHtml(cluster.representative?.startTime || '')}"></div>`;
-  }).join('');
-
-  const markers = drawOrder.map(({ cluster, index, active }) => {
-    const rep = cluster.representative;
-    const left = ((parseAnyTime(rep.startTime) - startMs) / totalMs) * 100;
-    const activeClass = active ? 'active' : '';
-    const rank = getBestWindowRankClass(index);
-    const edgeClass = left <= 4 ? 'edge-start' : (left >= 96 ? 'edge-end' : '');
-    const label = index < 3 ? getBestWindowRankEmoji(index) : `#${index + 1}`;
-    return `<div class="best-window-strip-marker ${rank} ${activeClass}" style="left:${left.toFixed(2)}%;" data-action="applyBestWindowResult" data-start-time="${escapeHtml(rep.startTime)}"><span class="best-window-strip-label ${edgeClass}">${escapeHtml(label)}</span></div>`;
-  }).join('');
-
-  const tickItems = [];
-  const addTick = (date, type) => {
-    const time = date.getTime();
-    if (!Number.isFinite(time) || time < startMs || time > endMs) return;
-    tickItems.push({ date: new Date(time), type });
-  };
-
-  addTick(new Date(startMs), 'major');
-  let minorCursor = ceilDateToStep(new Date(startMs), tickConfig.minor);
-  while (minorCursor.getTime() < endMs) {
-    addTick(minorCursor, 'minor');
-    minorCursor = new Date(minorCursor.getTime() + tickConfig.minor * 60000);
-  }
-  let majorCursor = ceilDateToStep(new Date(startMs), tickConfig.major);
-  while (majorCursor.getTime() < endMs) {
-    addTick(majorCursor, 'major');
-    majorCursor = new Date(majorCursor.getTime() + tickConfig.major * 60000);
-  }
-  getBestWindowTimelineDayBoundaryTicks(startMs, endMs).forEach(date => addTick(date, 'date'));
-  addTick(new Date(endMs), 'major');
-
-  const priority = { minor: 1, major: 2, date: 3 };
-  const dedupedTicks = new Map();
-  tickItems.forEach(item => {
-    const key = formatDateTimeLocal(item.date).slice(0, 16);
-    const existing = dedupedTicks.get(key);
-    if (!existing || priority[item.type] > priority[existing.type]) dedupedTicks.set(key, item);
-  });
-  const orderedTicks = [...dedupedTicks.values()].sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  const gridlines = orderedTicks.map(item => {
-    const left = ((item.date.getTime() - startMs) / totalMs) * 100;
-    return `<div class="best-window-strip-gridline is-${item.type}" style="left:${left.toFixed(2)}%;"></div>`;
-  }).join('');
-
-  const axis = orderedTicks.map(item => {
-    const left = ((item.date.getTime() - startMs) / totalMs) * 100;
-    const edgeClass = left <= 4 ? 'edge-start' : (left >= 96 ? 'edge-end' : '');
-    const label = item.type === 'minor' ? '' : formatBestWindowTimelineTickLabel(item.date, tickConfig, multiDay, item.type);
-    return `<div class="best-window-strip-tick is-${item.type}" style="left:${left.toFixed(2)}%;"></div>${label ? `<div class="best-window-strip-tick-label is-${item.type} ${edgeClass}" style="left:${left.toFixed(2)}%;">${escapeHtml(label)}</div>` : ''}`;
-  }).join('');
-
-  return `
-    <div class="best-window-strip" aria-label="Best activity windows timeline">
-      ${gridlines}
-      ${bands}
-      ${markers}
-    </div>
-    <div class="best-window-strip-axis">
-      ${axis}
-    </div>`;
+  return getBestWindowTimelineHtmlFromModule(analysis, bestWindowSelectedStart);
 }
+
 function renderBestWindowResults(analysis) {
-  if (!bestWindowResults) return;
-  if (!analysis?.topWindows?.length) {
-    bestWindowResults.innerHTML = `<div class="best-window-empty">No strong weather windows found inside the current range. Try widening the search, loosening the limits, or using a different priority preset.</div>`;
-    return;
-  }
-  const currentSelected = bestWindowSelectedStart || analysis.topWindows[0]?.representative?.startTime || null;
-  bestWindowResults.innerHTML = `
-    ${getBestWindowTimelineHtml(analysis)}
-    <div class="best-window-grid">
-      ${analysis.topWindows.map((cluster, index) => {
-        const rep = cluster.representative;
-        const active = currentSelected === rep.startTime;
-        const reasons = buildBestWindowReasons(rep, analysis.options);
-        const windowLabel = cluster.start === cluster.end
-          ? `Start ${formatWeekdayTime(cluster.start)}`
-          : formatBestWindowSpan(cluster.start, cluster.end);
-        const startRangeInfo = getBestWindowClusterStartRangeInfo(cluster);
-        const startRangeHtml = startRangeInfo
-          ? `<div class="best-window-start-range">⏱ good starts ${escapeHtml(startRangeInfo.label)} · ${escapeHtml(startRangeInfo.count)} slots</div>`
-          : '';
-        const activityRange = getBestWindowActivityRange(rep.startTime, analysis.options.durationMinutes);
-        const overrun = bestWindowRangeOverrunMinutes(activityRange, analysis);
-        const overrunWarning = formatBestWindowOverrunWarning(overrun);
-        return `
-          <button type="button" class="best-window-card ${getBestWindowRankClass(index)} ${active ? 'active' : ''}" data-action="applyBestWindowResult" data-start-time="${escapeHtml(rep.startTime)}">
-            <div class="best-window-rank">${escapeHtml(getBestWindowRankLabel(index, analysis.options.priority))}</div>
-            <div class="best-window-time">${escapeHtml(formatWeekdayTime(rep.startTime))}</div>
-            <div class="best-window-window">Activity ${escapeHtml(formatWeekdayTime(rep.startTime))}–${escapeHtml(formatShortTime(activityRange.endTime))} · ${startRangeInfo ? 'best start' : 'start window'} ${escapeHtml(startRangeInfo ? formatWeekdayTime(rep.startTime) : windowLabel)} · score ${escapeHtml(rep.score)}</div>
-            ${startRangeHtml}
-            ${overrunWarning ? `<div class="best-window-overrun-warning">${escapeHtml(overrunWarning)}</div>` : ''}
-            <div class="best-window-why">${escapeHtml(reasons.join(' · ') || 'Balanced full-window conditions.')}</div>
-          </button>`;
-      }).join('')}
-    </div>`;
+  renderBestWindowResultsFromModule(analysis, bestWindowResults, bestWindowSelectedStart);
 }
 
 function setBestWindowPanelEnabled(enabled) {
@@ -5206,166 +4977,12 @@ function describeLight(data, startTime, forecastSelection) {
   return { label, tone, sunrise: day?.sunrise || null, sunset: day?.sunset || null, isDay: !!startPoint.isDay };
 }
 
-/**
- * Build the SVG forecast chart.
- * Left axis: temperature / feels-like. Right axis: precipitation in mm.
- * The visible tooltip is a real HTML element layered over the SVG.
- * Hover targets are wide invisible vertical slices so the chart is easier to read.
- */
 function buildForecastChart(data, selection) {
-  const points = selection.points;
-  if (!points.length) return '';
-  const width = 760;
-  const height = 210;
-  const pad = { top: 20, right: 42, bottom: 34, left: 30 };
-  const tempValues = points.flatMap(p => [p.temp, p.feels]).filter(isFiniteNumber);
-  const precipValues = points.map(p => isFiniteNumber(p.precip) ? p.precip : 0);
-  const minTemp = Math.floor(Math.min(...tempValues) - 1);
-  const maxTemp = Math.ceil(Math.max(...tempValues) + 1);
-  const maxPrecip = Math.max(0.5, Math.ceil(Math.max(...precipValues, 0) * 2) / 2);
-  const innerW = width - pad.left - pad.right;
-  const innerH = height - pad.top - pad.bottom;
-  const stepX = points.length > 1 ? innerW / (points.length - 1) : 0;
-  const xForIndex = i => pad.left + (stepX * i);
-  const yForTemp = v => pad.top + (maxTemp - v) / Math.max(1, maxTemp - minTemp) * innerH;
-  const yForPrecip = v => pad.top + (maxPrecip - Math.max(0, Math.min(maxPrecip, v || 0))) / Math.max(0.1, maxPrecip) * innerH;
-  const linePath = (key, yForFn) => points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xForIndex(i).toFixed(1)} ${yForFn(p[key]).toFixed(1)}`).join(' ');
-  const tempGrid = [minTemp, Math.round((minTemp + maxTemp) / 2), maxTemp];
-  const precipGrid = [0, round1(maxPrecip / 2), maxPrecip];
-  const labelEvery = points.length > 14 ? Math.ceil(points.length / 8) : 1;
-  const startMs = parseAnyTime(selection.startTime);
-  const endMs = parseAnyTime(selection.endTime);
-  const markerLines = [];
-
-  for (const day of data.daily) {
-    for (const marker of [
-      { key: 'sunrise', label: 'sunrise', cls: 'chart-sun-line' },
-      { key: 'sunset', label: 'sunset', cls: 'chart-sunset-line' }
-    ]) {
-      if (!day?.[marker.key]) continue;
-      const ms = parseAnyTime(day[marker.key]);
-      if (!Number.isFinite(ms) || ms < startMs || ms > endMs) continue;
-      const ratio = startMs === endMs ? 0 : (ms - startMs) / Math.max(1, endMs - startMs);
-      const x = pad.left + (ratio * innerW);
-      markerLines.push(`
-        <line x1="${x.toFixed(1)}" y1="${pad.top}" x2="${x.toFixed(1)}" y2="${height - pad.bottom}" class="${marker.cls}"></line>
-        <text x="${x.toFixed(1)}" y="${pad.top - 6}" text-anchor="middle" class="chart-marker-label">${marker.label === 'sunrise' ? '↑' : '↓'}</text>
-      `);
-    }
-  }
-
-  const checkpointMarkers = (routeState?.samples || [])
-    .filter(cp => cp.eta)
-    .map(cp => {
-      const ms = parseAnyTime(cp.eta);
-      if (!Number.isFinite(ms) || ms < startMs || ms > endMs) return '';
-      const ratio = startMs === endMs ? 0 : (ms - startMs) / Math.max(1, endMs - startMs);
-      const x = pad.left + (ratio * innerW);
-      const label = escapeHtml(cp.markerShort || '•');
-      const title = escapeHtml(`${cp.label} · ${formatShortTime(cp.eta)}`);
-      return `
-        <g>
-          <line x1="${x.toFixed(1)}" y1="${pad.top}" x2="${x.toFixed(1)}" y2="${height - pad.bottom}" class="chart-checkpoint-line"></line>
-          <circle cx="${x.toFixed(1)}" cy="${height - pad.bottom}" r="3.4" class="chart-checkpoint-dot"></circle>
-          <text x="${x.toFixed(1)}" y="${pad.top + 10}" text-anchor="middle" class="chart-checkpoint-label">${label}</text>
-          <title>${title}</title>
-        </g>`;
-    }).join('');
-
-  const hitRects = points.map((p, i) => {
-    const prevMid = i === 0 ? pad.left : (xForIndex(i - 1) + xForIndex(i)) / 2;
-    const nextMid = i === points.length - 1 ? width - pad.right : (xForIndex(i) + xForIndex(i + 1)) / 2;
-    return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit data-time="${escapeHtml(formatShortDateTime(p.time))}" data-temp="${escapeHtml(round1(p.temp))}" data-feels="${escapeHtml(round1(p.feels))}" data-precip="${escapeHtml(round1(p.precip || 0))}" data-precip-prob="${escapeHtml(Math.round(p.precipProb || 0))}" data-wind="${escapeHtml(Math.round(p.wind || 0))}" data-wind-gust="${isFiniteNumber(p.gusts) ? escapeHtml(Math.round(p.gusts)) : ''}" data-wind-dir="${isFiniteNumber(p.windDir) ? escapeHtml(Math.round(p.windDir)) : ''}" data-uv="${isFiniteNumber(p.uv) ? escapeHtml(formatUvValue(p.uv)) : ''}" data-uv-value="${isFiniteNumber(p.uv) ? escapeHtml(p.uv) : ''}" data-aqi="${isFiniteNumber(p.aqi) ? escapeHtml(String(Math.round(p.aqi))) : ''}" data-aqi-category="${isFiniteNumber(p.aqi) ? escapeHtml(getAqiInfo(p.aqi)?.category ?? '') : ''}"></rect>`;
-  }).join('');
-
-  return `
-    <div class="chart-wrap" data-chart-wrap>
-      <svg viewBox="0 0 ${width} ${height}" class="forecast-chart" aria-label="Forecast chart">
-        <g class="chart-grid">
-          ${tempGrid.map(v => `<line x1="${pad.left}" y1="${yForTemp(v).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(v).toFixed(1)}"></line>`).join('')}
-          ${minTemp <= 0 && maxTemp >= 0 ? `<line x1="${pad.left}" y1="${yForTemp(0).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(0).toFixed(1)}" class="chart-zero-line"></line>` : ''}
-        </g>
-        <g>${markerLines.join('')}</g>
-        <g>${checkpointMarkers}</g>
-        <g class="chart-axis">
-          ${tempGrid.map(v => `<text x="4" y="${(yForTemp(v) + 4).toFixed(1)}">${Math.round(v)}°</text>`).join('')}
-          ${minTemp <= 0 && maxTemp >= 0 && !tempGrid.includes(0) ? `<text x="4" y="${(yForTemp(0) + 4).toFixed(1)}">0°</text>` : ''}
-          ${precipGrid.map(v => `<text x="${width - pad.right + 8}" y="${(yForPrecip(v) + 4).toFixed(1)}">${escapeHtml(round1(v))} mm</text>`).join('')}
-          ${points.map((p, i) => {
-            const show = i === 0 || i === points.length - 1 || i % labelEvery === 0;
-            return show ? `<text x="${xForIndex(i).toFixed(1)}" y="${height - 8}" text-anchor="middle">${escapeHtml(formatShortTime(p.time))}</text>` : '';
-          }).join('')}
-        </g>
-        <path d="${linePath('temp', yForTemp)}" class="chart-line-temp"></path>
-        <path d="${linePath('feels', yForTemp)}" class="chart-line-feels"></path>
-        <path d="${linePath('precip', yForPrecip)}" class="chart-line-precip"></path>
-        ${points.map((p, i) => `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForTemp(p.temp).toFixed(1)}" r="3.4" class="chart-dot-temp"></circle>`).join('')}
-        ${points.map((p, i) => `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForTemp(p.feels).toFixed(1)}" r="3.1" class="chart-dot-feels"></circle>`).join('')}
-        ${points.map((p, i) => `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForPrecip(p.precip).toFixed(1)}" r="2.9" class="chart-dot-precip"></circle>`).join('')}
-        ${hitRects}
-      </svg>
-      <div class="chart-tooltip" data-chart-tooltip></div>
-    </div>
-    <div class="chart-legend">
-      <span class="temp"><i></i> Temp</span>
-      <span class="feels"><i></i> Feels like</span>
-      <span class="precip"><i></i> Precip mm + chance %</span>
-      <span class="sunrise"><i></i> Sunrise</span>
-      <span class="sunset"><i></i> Sunset</span>
-      ${(routeState?.samples || []).some(cp => cp.eta) ? `<span class="checkpoints"><i></i> Route checkpoints</span>` : ''}
-    </div>`;
+  return buildForecastChartFromModule(data, selection, routeState?.samples || []);
 }
+
 function renderForecastBlock(data, startTime) {
-  const selection = getForecastSelection(data, startTime);
-  const profile = getDurationProfile();
-  if (!selection.points.length) return '';
-  if (selection.mode === 'daily') {
-    const cells = selection.points.map(p => {
-      const daylightH = isFiniteNumber(p.daylightDuration) ? round1(p.daylightDuration / 3600) : null;
-      return `
-        <div class="daily-forecast-cell">
-          <div class="day">${escapeHtml(p.date)}</div>
-          ${weatherIconHtml(p.code, 'icon')}
-          <div class="temps"><span class="forecast-metric" title="High / low temperature">${Math.round(p.tMax)}° / ${Math.round(p.tMin)}°</span><span class="feels-line forecast-metric" title="Feels-like high / low">feels ${Math.round(p.feelsMax)}° / ${Math.round(p.feelsMin)}°</span></div>
-          <div class="meta"><span class="forecast-metric" title="Precipitation chance / amount">${Math.round(p.precipProbMax || 0)}% · ${round1(p.precipSum || 0)} mm</span>${isFiniteNumber(p.uvMax) ? `<br>${renderUvValueBadge(p.uvMax, true)}` : ''}${isFiniteNumber(p.aqiMax) ? `<br>${renderAqiBadge(p.aqiMax, true)}` : ''}<br><span class="forecast-metric" title="Sunrise / sunset">${escapeHtml(formatShortTime(p.sunrise))} · ${escapeHtml(formatShortTime(p.sunset))}</span>${daylightH != null ? `<br><span class="forecast-metric" title="Daylight duration">${daylightH} h daylight</span>` : ''}</div>
-        </div>`;
-    }).join('');
-    return `
-      <div class="forecast-box">
-        <div class="forecast-header">
-          <strong>Forecast over the planned duration</strong>
-          <span>${escapeHtml(profile.label)} · daily overview</span>
-        </div>
-        <div class="forecast-scroll">
-          <div class="daily-forecast-grid">${cells}</div>
-        </div>
-      </div>`;
-  }
-  const points = selection.points;
-  const showEvery = points.length > 12 ? Math.max(1, Math.ceil(points.length / 10)) : 1;
-  const tablePoints = points.filter((_, index) => index === 0 || index === points.length - 1 || index % showEvery === 0);
-  const table = tablePoints.map(p => {
-    return `
-      <div class="forecast-cell">
-        <div class="hour">${escapeHtml(formatShortTime(p.time))}</div>
-        ${weatherIconHtml(p.code, 'icon')}
-        <div class="temp"><span class="forecast-metric" title="Temperature">${Math.round(p.temp)}°</span><span class="feels-line forecast-metric" title="Feels like">feels ${Math.round(p.feels)}°</span></div>
-        <div class="meta"><span class="forecast-metric" title="Wind speed">${Math.round(p.wind || 0)} km/h</span><br><span class="forecast-metric" title="Precipitation amount / chance">${round1(p.precip || 0)} mm · ${Math.round(p.precipProb || 0)}%</span>${isFiniteNumber(p.uv) ? `<br>${renderUvValueBadge(p.uv, true)}` : ''}${isFiniteNumber(p.aqi) ? `<br>${renderAqiBadge(p.aqi, true)}` : ''}</div>
-      </div>`;
-  }).join('');
-  return `
-    <div class="forecast-box">
-      <div class="forecast-header">
-        <strong>Forecast over the planned duration</strong>
-        <span>${escapeHtml(profile.label)} · ${selection.interpolated ? `${selection.sliceMinutes}-min slices` : (profile.minutes === 1440 ? '24-hour chart' : 'temp / feels / precip mm + %')}</span>
-      </div>
-      <div class="forecast-scroll">
-        <div>
-          ${buildForecastChart(data, selection)}
-          <div class="forecast-table">${table}</div>
-        </div>
-      </div>
-    </div>`;
+  return renderForecastBlockFromModule(data, getForecastSelection(data, startTime), getDurationProfile(), selectedActivity, routeState?.samples || []);
 }
 
 function makeChoiceStep(title, help, options) {
@@ -6280,90 +5897,11 @@ function resetAllWizard() {
 let chartTooltipGlobalDismissBound = false;
 
 function getForecastChartTooltipPortal() {
-  let tooltip = document.getElementById('chart-tooltip-portal');
-  if (!tooltip) {
-    tooltip = document.createElement('div');
-    tooltip.id = 'chart-tooltip-portal';
-    tooltip.className = 'chart-tooltip chart-tooltip-portal';
-    tooltip.setAttribute('role', 'tooltip');
-    document.body.appendChild(tooltip);
-  }
-  return tooltip;
+  return getForecastChartTooltipPortalFromModule();
 }
 
 function bindForecastChartTooltips(root = resultInner) {
-  const tooltip = getForecastChartTooltipPortal();
-
-  const positionTooltip = event => {
-    const margin = 12;
-    const gap = 14;
-    const width = tooltip.offsetWidth || 210;
-    const height = tooltip.offsetHeight || 150;
-    const clientX = Number.isFinite(event.clientX) ? event.clientX : window.innerWidth / 2;
-    const clientY = Number.isFinite(event.clientY) ? event.clientY : window.innerHeight / 2;
-    let x = clientX + gap;
-    let y = clientY - height - gap;
-    if (x + width > window.innerWidth - margin) x = clientX - width - gap;
-    if (y < margin) y = clientY + gap;
-    x = Math.max(margin, Math.min(window.innerWidth - width - margin, x));
-    y = Math.max(margin, Math.min(window.innerHeight - height - margin, y));
-    tooltip.style.left = `${x}px`;
-    tooltip.style.top = `${y}px`;
-  };
-
-  const show = (hit, event) => {
-    const gustText = hit.dataset.windGust ? `${hit.dataset.windGust} km/h` : '—';
-    const dirHtml = hit.dataset.windDir ? windDirectionHtml(Number(hit.dataset.windDir), 'wind-dir-inline', true) : windDirectionHtml(NaN, 'wind-dir-inline', true);
-    const precipChance = hit.dataset.precipProb ? `${hit.dataset.precipProb}%` : '—';
-    tooltip.innerHTML = `
-      <div class="tt-time">${hit.dataset.time}</div>
-      <div class="tt-row"><span>Temp</span><strong>${hit.dataset.temp}°C</strong></div>
-      <div class="tt-row"><span>Feels like</span><strong>${hit.dataset.feels}°C</strong></div>
-      <div class="tt-row"><span>Precip amount</span><strong>${hit.dataset.precip} mm</strong></div>
-      <div class="tt-row"><span>Precip chance</span><strong>${precipChance}</strong></div>
-      <div class="tt-row"><span>Wind</span><strong>${hit.dataset.wind} km/h ${dirHtml}</strong></div>
-      <div class="tt-row"><span>Gusts</span><strong>${gustText}</strong></div>
-      <div class="tt-row"><span>UV</span><strong>${hit.dataset.uvValue ? `UV ${escapeHtml(formatUvValue(Number(hit.dataset.uvValue)))}` : '—'}</strong></div>
-      ${hit.dataset.aqi ? `<div class="tt-row"><span>AQI</span><strong>${renderAqiBadge(Number(hit.dataset.aqi), true)}</strong></div>` : ''}`;
-    tooltip.classList.add('visible');
-    positionTooltip(event);
-  };
-
-  const hide = () => tooltip.classList.remove('visible');
-
-  root.querySelectorAll('[data-chart-hit]').forEach(hit => {
-    if (hit.dataset.chartTooltipBound === '1') return;
-    hit.dataset.chartTooltipBound = '1';
-
-    // Bind directly to the transparent SVG hit rectangles. Delegating from the
-    // wrapper looked tidy, but it proved less reliable across SVG/event edge
-    // cases. Direct binding keeps the body-level portal and restores hover.
-    hit.addEventListener('mouseenter', event => show(hit, event));
-    hit.addEventListener('mousemove', event => show(hit, event));
-    hit.addEventListener('mouseleave', hide);
-    hit.addEventListener('touchstart', event => {
-      const touch = event.touches[0];
-      if (touch) show(hit, touch);
-    }, { passive: true });
-    hit.addEventListener('touchmove', event => {
-      const touch = event.touches[0];
-      if (touch) positionTooltip(touch);
-    }, { passive: true });
-    hit.addEventListener('touchend', hide, { passive: true });
-    hit.addEventListener('touchcancel', hide, { passive: true });
-  });
-
-  root.querySelectorAll('[data-chart-wrap]').forEach(wrap => {
-    if (wrap.dataset.chartWrapDismissBound === '1') return;
-    wrap.dataset.chartWrapDismissBound = '1';
-    wrap.addEventListener('mouseleave', hide);
-  });
-
-  if (!chartTooltipGlobalDismissBound) {
-    chartTooltipGlobalDismissBound = true;
-    window.addEventListener('scroll', hide, { passive: true });
-    window.addEventListener('resize', hide, { passive: true });
-  }
+  return bindForecastChartTooltipsFromModule(root);
 }
 /**
  * Render an indoor-only clothing guide without requiring a location first.
