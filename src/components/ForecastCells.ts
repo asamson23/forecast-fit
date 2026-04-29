@@ -1,6 +1,6 @@
 import { isFiniteNumber, round1 } from '../utils/math';
 import { escapeHtml, weatherIconHtml } from '../utils/format';
-import { formatShortTime } from '../utils/dateTime';
+import { formatShortTime, formatHumanDate } from '../utils/dateTime';
 import { renderUvValueBadge, renderAqiBadge } from './WarningPanel';
 import { buildForecastChart } from './ForecastChart';
 
@@ -33,7 +33,7 @@ export function renderForecastBlock(
       const daylightH = isFiniteNumber(p.daylightDuration) ? round1((p.daylightDuration as number) / 3600) : null;
       return `
         <div class="daily-forecast-cell">
-          <div class="day">${escapeHtml(p.date)}</div>
+          <div class="day">${escapeHtml(formatHumanDate(p.date))}</div>
           ${weatherIconHtml(p.code, 'icon')}
           <div class="temps"><span class="forecast-metric" title="High / low temperature">${Math.round(p.tMax as number)}° / ${Math.round(p.tMin as number)}°</span><span class="feels-line forecast-metric" title="Feels-like high / low">feels ${Math.round(p.feelsMax as number)}° / ${Math.round(p.feelsMin as number)}°</span></div>
           <div class="meta"><span class="forecast-metric" title="Precipitation chance / amount">${Math.round((p.precipProbMax as number) || 0)}% · ${round1((p.precipSum as number) || 0)} mm</span>${isFiniteNumber(p.uvMax) ? `<br>${renderUvValueBadge(p.uvMax, true)}` : ''}${isFiniteNumber(p.aqiMax) ? `<br>${renderAqiBadge(p.aqiMax, true)}` : ''}<br><span class="forecast-metric" title="Sunrise / sunset">${escapeHtml(formatShortTime(p.sunrise))} · ${escapeHtml(formatShortTime(p.sunset))}</span>${daylightH != null ? `<br><span class="forecast-metric" title="Daylight duration">${daylightH} h daylight</span>` : ''}</div>

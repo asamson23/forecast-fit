@@ -92,6 +92,12 @@ export function formatWeatherDateTime(str: unknown): string {
   return d.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+export function formatHumanDate(str: unknown): string {
+  const d = parseLocalString(str as string);
+  if (!d) return String(str ?? '');
+  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 export function formatWeekdayTime(str: unknown): string {
   const d = parseLocalString(str as string);
   if (!d) return String(str ?? '');
