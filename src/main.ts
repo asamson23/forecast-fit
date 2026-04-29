@@ -9,6 +9,7 @@ import './styles/map.css';
 import './styles/responsive.css';
 import { registerServiceWorker } from './registerServiceWorker';
 import { inject } from '@vercel/analytics';
+import { injectSpeedInsights } from '@vercel/speed-insights';
 import * as L from 'leaflet';
 import flatpickr from 'flatpickr';
 import JSZip from 'jszip';
@@ -127,6 +128,7 @@ import { stravaRouteGpxToImportedRoute } from './features/strava/stravaRouteAdap
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
 inject();
+injectSpeedInsights();
 if (consumeStravaOAuthCallback()) {
   setTimeout(() => renderStravaConnectionState(), 0);
 }
