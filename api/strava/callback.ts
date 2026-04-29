@@ -1,5 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+function resolveRedirectUri(req: VercelRequest): string {
+  const configured = process.env.STRAVA_REDIRECT_URI;
+  if (configured) return configured;
+  const protoHeader = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
+  const hostHeader = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim() || req.headers.host;
+  const protocol = protoHeader || 'https';
+  return `${protocol}://${hostHeader}/api/strava/callback`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = String(req.query.code ?? '');
   const clientId = process.env.STRAVA_CLIENT_ID;
@@ -14,7 +23,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const tokenResponse = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code, grant_type: 'authorization_code' }),
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: resolveRedirectUri(req),
+    }),
   });
 
   if (!tokenResponse.ok) {
