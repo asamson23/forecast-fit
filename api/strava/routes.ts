@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getBearerToken, getErrorMessage, handleOptions, proxyJsonResponse, readResponsePayload, respondWithProxyError, setCors, stravaFetch } from './_utils';
+import { getBearerToken, getErrorMessage, handleOptions, proxyJsonResponse, readResponsePayload, respondWithProxyError, setCors, stravaFetch } from './stravaUtils';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
