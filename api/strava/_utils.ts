@@ -27,7 +27,7 @@ export async function stravaFetch(path: string, init: RequestInit = {}) {
 }
 
 export async function readResponsePayload(response: Response): Promise<unknown> {
-  const contentType = response.headers.get('content-type') || '';
+  const contentType = response?.headers?.get?.('content-type') || '';
   try {
     if (contentType.includes('application/json')) return await response.json();
     return await response.text();
@@ -61,7 +61,7 @@ export function getErrorMessage(payload: unknown, fallback: string): string {
 
 export async function proxyJsonResponse(res: VercelResponse, response: Response) {
   const payload = await readResponsePayload(response);
-  if (!response.ok) {
+  if (!response?.ok) {
     return res.status(response.status).json({
       error: getErrorMessage(payload, `Strava API request failed (${response.status})`),
     });
@@ -71,7 +71,7 @@ export async function proxyJsonResponse(res: VercelResponse, response: Response)
 
 export async function proxyTextResponse(res: VercelResponse, response: Response, contentType: string) {
   const payload = await readResponsePayload(response);
-  if (!response.ok) {
+  if (!response?.ok) {
     return res.status(response.status).json({
       error: getErrorMessage(payload, `Strava API request failed (${response.status})`),
     });
@@ -84,4 +84,9 @@ export async function proxyTextResponse(res: VercelResponse, response: Response,
 export function respondWithProxyError(res: VercelResponse, error: unknown) {
   const message = error instanceof Error ? error.message : 'Unable to reach Strava';
   return res.status(502).json({ error: message });
+}
+
+export function parsePositiveInteger(value: unknown, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
