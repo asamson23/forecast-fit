@@ -23,7 +23,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    approval_prompt: 'auto',
+    approval_prompt: 'force',
     scope: 'read_all,activity:read_all',
   });
 
