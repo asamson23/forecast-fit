@@ -189,6 +189,8 @@ if (consumeStravaOAuthCallback()) {
  * - v9.8.12 aligns UV categories with ECCC / Health Canada guidance,
  *   adds UV colour badges, and uses official Environment Canada weather alerts
  *   for Canadian locations when available.
+ * - v10.3 sharpens the route checkpoint callout copy and adds a bit more
+ *   breathing room below the route weather slot inside the forecast result.
  * - v10.2 adds a selected Best Window score explainer below the result
  *   cards so the chosen time shows the main scoring tradeoffs.
  * - v10.1.7 makes Strava-loaded running activities use the same minutes
@@ -2607,8 +2609,16 @@ function buildRouteWeatherHtml() {
   if (!routeState?.points?.length) return '';
   const samples = Array.isArray(routeState.samples) ? routeState.samples : [];
   const ready = samples.filter(cp => cp.weather);
-  if (!samples.length) return `<div class="route-callout">Load a GPX or GeoJSON route to sample weather at a few checkpoints.</div>`;
-  if (!hasPlannedDurationSelection()) return `<div class="route-callout">Choose a planned duration or enter a custom duration to time the weather checkpoints along the route.</div>`;
+  const durationState = getDurationState(getSelectedEvent());
+  const routeName = routeState.fileName || 'this route';
+  const routeLabel = `${routeName}${routeState.totalKm > 0 ? ` (${formatKm(routeState.totalKm)})` : ''}`;
+  const timingLabel = routeHasDurationOverride()
+    ? `using the route's recorded ${formatMinutesShort(routeState.elapsedMinutes)}`
+    : durationState?.label
+      ? `for your planned ${durationState.label}`
+      : '';
+  if (!samples.length) return `<div class="route-callout">${escapeHtml(routeLabel)} is loaded. Add checkpoints to compare the start forecast with the weather farther along the route.</div>`;
+  if (!hasPlannedDurationSelection()) return `<div class="route-callout">${escapeHtml(routeLabel)} is loaded. Set a planned duration so the checkpoints line up with when you expect to reach each part of the route.</div>`;
 
   const summary = ready.length ? (() => {
     const feels = ready
@@ -2627,7 +2637,7 @@ function buildRouteWeatherHtml() {
 
   return `
     <div class="block-title">Route checkpoints</div>
-    <div class="route-callout">Main kit still follows the start or main location. Route checkpoints help catch colder, windier, wetter, sunnier, or darker sections farther along the route.${summary ? `<br>${summary}` : ''}</div>
+    <div class="route-callout">${escapeHtml(routeLabel)} is being timed ${escapeHtml(timingLabel || 'along the route')}. These checkpoints are meant to catch where conditions drift away from the start forecast later in the outing.${summary ? `<br><strong>Along this route:</strong> ${summary}` : ''}</div>
     ${renderRouteCheckpointHazardWarnings(ready)}
     <div class="route-weather-grid">
       ${samples.map(cp => {
@@ -6132,7 +6142,7 @@ function renderAdvice(data, activity) {
           </div>` : ''}
           ${showWaterUi ? renderWaterTempDisclaimer(point) : ''}
           <div class="block-title">Weather & forecast</div>
-          <div class="route-callout">Choose a planned duration or enter a custom duration to render the forecast window and weather checkpoints.</div>
+          <div class="route-callout">With a route loaded, set a planned duration to time both the forecast window and the route checkpoints.</div>
           ${routeState?.points?.length ? `<div id="route-weather-slot">${buildRouteWeatherHtml()}</div>` : ''}
         </section>
         <section class="result-panel">

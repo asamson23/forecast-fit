@@ -79,6 +79,10 @@
     color: var(--text-soft);
     line-height: 1.55;
   }
+  #route-weather-slot {
+    margin-top: 14px;
+    padding-bottom: 8px;
+  }
 
 
   /* ── Road trip itinerary panel ────────────────────────────────── */
