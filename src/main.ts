@@ -189,6 +189,8 @@ if (consumeStravaOAuthCallback()) {
  * - v9.8.12 aligns UV categories with ECCC / Health Canada guidance,
  *   adds UV colour badges, and uses official Environment Canada weather alerts
  *   for Canadian locations when available.
+ * - v10.1.6 defaults running activity custom durations to minutes instead of
+ *   hours.
  * - v9.8.15 adds Strava planner autofill for sport, average, and duration
  *   when import data supports it.
  * - v9.8.14 trims UV display inside forecast cells to the category/rating
@@ -660,6 +662,10 @@ function renderDurationFieldMeta() {
     : unit === 'd'
       ? 'Optional · 2 or 2.5'
       : 'Optional · 5:38 or 5.5';
+}
+
+function getPreferredDurationUnit(activity = selectedActivity) {
+  return ['running', 'indoor_running', 'trail_running'].includes(activity) ? 'min' : 'h';
 }
 
 // Re-render unit pickers whenever the activity changes so pace vs speed stays sensible.
@@ -3594,6 +3600,7 @@ function selectActivity(btn) {
   btn.classList.add('active');
   selectedActivity = btn.dataset.activity;
   selectedEventKey = null;
+  if (durationUnitSelect) durationUnitSelect.value = getPreferredDurationUnit(selectedActivity);
   if (poolTypeSelect) {
     if (selectedActivity === 'swimming_pool_indoor') poolTypeSelect.value = 'indoor_heated';
     if (selectedActivity === 'swimming_pool_outdoor' && poolTypeSelect.value === 'indoor_heated') poolTypeSelect.value = 'outdoor_unheated';
