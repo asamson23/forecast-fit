@@ -183,6 +183,7 @@
   font-style: italic;
 }
 #location-card-body[hidden] { display: none !important; }
+#planner-card-body[hidden] { display: none !important; }
 .wind-dir-inline {
   display: inline-flex;
   align-items: center;

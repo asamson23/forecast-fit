@@ -288,6 +288,8 @@ const routeSummary = document.getElementById('route-summary');
 const locationCardToggleBtn = document.getElementById('location-card-toggle-btn');
 const locationCardBody = document.getElementById('location-card-body');
 const locationCardSummary = document.getElementById('location-card-summary');
+const plannerCardToggleBtn = document.getElementById('planner-card-toggle-btn');
+const plannerCardBody = document.getElementById('planner-card-body');
 const quickStartOverlay = document.getElementById('quick-start-overlay');
 const quickStartSteps = document.getElementById('quick-start-steps');
 const quickStartCloseBtn = document.getElementById('quick-start-close-btn');
@@ -347,6 +349,7 @@ let laterPicker = null;
 let bestWindowStartPicker = null;
 let bestWindowEndPicker = null;
 let locationCardCollapsed = false;
+let plannerCardCollapsed = false;
 let bestWindowAnalysis = null;
 let bestWindowAnalysisKey = '';
 let bestWindowSelectedStart = null;
@@ -780,6 +783,21 @@ function toggleLocationCardCollapse() {
   updateLocationCardCollapseUi();
 }
 window.toggleLocationCardCollapse = toggleLocationCardCollapse;
+
+function updatePlannerCardCollapseUi() {
+  if (plannerCardToggleBtn) {
+    plannerCardToggleBtn.textContent = plannerCardCollapsed ? 'Expand' : 'Collapse';
+    plannerCardToggleBtn.classList.toggle('active', !!plannerCardCollapsed);
+    plannerCardToggleBtn.setAttribute('aria-pressed', plannerCardCollapsed ? 'true' : 'false');
+  }
+  if (plannerCardBody) plannerCardBody.hidden = plannerCardCollapsed;
+}
+
+function togglePlannerCardCollapse() {
+  plannerCardCollapsed = !plannerCardCollapsed;
+  updatePlannerCardCollapseUi();
+}
+window.togglePlannerCardCollapse = togglePlannerCardCollapse;
 
 
 function toggleRaceDayMode() {
@@ -3282,6 +3300,7 @@ renderPlannerState();
 updateRaceDayModeUi();
 updateManualWeatherToggleUi();
 updateLocationCardCollapseUi();
+updatePlannerCardCollapseUi();
 updateManualWeatherStatus();
 updateTemperaturePreferenceUi();
 updatePlannedEffortUi();
@@ -3480,10 +3499,12 @@ function resetActivitySection() {
   raceDayMode = false;
   temperaturePreference = 0;
   plannedEffort = 'steady';
+  plannerCardCollapsed = false;
   clearPlannerCustomFields();
   document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
   renderCustomControlOptions(true);
   updateRaceDayModeUi();
+  updatePlannerCardCollapseUi();
   renderPlannerState();
   if (!weatherData) resultCard.style.display = 'none';
   if (weatherData) configureLaterInput(weatherData);
@@ -7292,6 +7313,7 @@ function bindDomActions() {
     const action = trigger.dataset.action;
     if (action === 'openQuickStartGuide') openQuickStartGuide();
     else if (action === 'toggleLocationCardCollapse') toggleLocationCardCollapse();
+    else if (action === 'togglePlannerCardCollapse') togglePlannerCardCollapse();
     else if (action === 'forceRefreshWeather') forceRefreshWeather();
     else if (action === 'resetLocationSection') resetLocationSection();
     else if (action === 'clearAllTool') clearAllTool();

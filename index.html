@@ -76,10 +76,12 @@
   <div class="section-label-row planner-heading-row">
     <label>Activity &amp; parameters</label>
     <div class="section-actions-row">
+      <button class="mode-toggle-btn quiet-btn" type="button" id="planner-card-toggle-btn" data-action="togglePlannerCardCollapse">Collapse</button>
       <button class="reset-btn" type="button" data-action="resetActivitySection">Reset section</button>
     </div>
   </div>
-  <div class="setup-grid">
+  <div id="planner-card-body">
+    <div class="setup-grid">
     <div>
       <div class="section-label-row" id="activity-section">
         <label>Activity</label>
@@ -501,7 +503,8 @@
     <p class="status-line compact" id="checkpoint-model-status">Smart = time-based, terrain/daylight/weather-aware checkpoints with route-aware wind notes. Old = evenly spaced by route progress.</p>
   </div>
 
-  <p class="field-note">Start time drives the forecast and daylight. Water temperature uses measured data first, then estimated fallback when possible, with manual override available when you have a better local reading. Loaded routes override preset distance, and route timing overrides duration when available.</p>
+    <p class="field-note">Start time drives the forecast and daylight. Water temperature uses measured data first, then estimated fallback when possible, with manual override available when you have a better local reading. Loaded routes override preset distance, and route timing overrides duration when available.</p>
+  </div>
 </div>
 
 <div class="card" id="map-card">
