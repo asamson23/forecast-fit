@@ -2215,7 +2215,8 @@ async function fetchRouteCheckpointForecast(cp) {
   const cache = routeState.weatherCache[cacheKey] || (routeState.weatherCache[cacheKey] = {});
   if (!cache.hourly) {
     const url = `${WEATHER_API}?latitude=${cp.lat}&longitude=${cp.lon}&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,is_day,uv_index&forecast_days=7&wind_speed_unit=kmh&timezone=auto`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, 12000, 'Route checkpoint weather');
+    if (!res.ok) throw new Error(`Route checkpoint weather HTTP ${res.status}`);
     const json = await res.json();
     cache.hourly = (json.hourly?.time || []).map((time, i) => ({
       time,
@@ -2254,13 +2255,23 @@ async function refreshRouteWeatherIfPossible() {
   }
   routeSummary.textContent = `${routeState.fileName} · loading checkpoint weather…`;
   await Promise.all(routeState.samples.map(async cp => {
-    const cache = await fetchRouteCheckpointForecast(cp);
-    cp.placeLabel = cache.label || 'Nearby area';
-    cp.weather = cp.eta ? getInterpolatedForecastPointFromHourly(cache.hourly, cp.eta) : null;
-    cp.windowWeather = cp.eta ? summarizeCheckpointWeatherWindow(cache.hourly, cp.eta, checkpointModel === 'smart' ? 15 : 10) : null;
-    cp.relativeWind = cp.weather ? describeRelativeWind(cp.bearing, cp.weather.windDir, cp.weather.wind) : null;
-    cp.ecccAlerts = cache.ecccAlerts || [];
-    cp.ecccAlertStatus = cache.ecccAlertStatus || 'not_canada';
+    try {
+      const cache = await withTimeout(fetchRouteCheckpointForecast(cp), 12000, 'Route checkpoint forecast');
+      cp.placeLabel = cache.label || 'Nearby area';
+      cp.weather = cp.eta ? getInterpolatedForecastPointFromHourly(cache.hourly, cp.eta) : null;
+      cp.windowWeather = cp.eta ? summarizeCheckpointWeatherWindow(cache.hourly, cp.eta, checkpointModel === 'smart' ? 15 : 10) : null;
+      cp.relativeWind = cp.weather ? describeRelativeWind(cp.bearing, cp.weather.windDir, cp.weather.wind) : null;
+      cp.ecccAlerts = cache.ecccAlerts || [];
+      cp.ecccAlertStatus = cache.ecccAlertStatus || 'not_canada';
+    } catch (error) {
+      console.warn('Route checkpoint forecast failed', error);
+      cp.placeLabel = cp.placeLabel || 'Nearby area';
+      cp.weather = null;
+      cp.windowWeather = null;
+      cp.relativeWind = null;
+      cp.ecccAlerts = [];
+      cp.ecccAlertStatus = 'error';
+    }
   }));
   markSmartWeatherEventCheckpoints(routeState.samples);
   renderRouteMap();
@@ -2449,6 +2460,49 @@ function setLoading(isLoading) {
     fetchBtn.innerHTML = isLoading ? '<span class="spinner"></span>Fetching…' : 'Refresh';
   }
   updateRefreshWeatherButtonUi(isLoading);
+}
+
+function timeoutError(label, timeoutMs) {
+  return new Error(`${label} timed out after ${timeoutMs} ms`);
+}
+
+async function withTimeout(promise, timeoutMs, label = 'Request') {
+  let timer = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = window.setTimeout(() => reject(timeoutError(label, timeoutMs)), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer != null) window.clearTimeout(timer);
+  }
+}
+
+async function fetchWithTimeout(resource, options = {}, timeoutMs = 12000, label = 'Request') {
+  if (typeof AbortController === 'undefined') {
+    return withTimeout(fetch(resource, options), timeoutMs, label);
+  }
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(timeoutError(label, timeoutMs)), timeoutMs);
+  try {
+    return await fetch(resource, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === 'AbortError') throw timeoutError(label, timeoutMs);
+    throw error;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+async function settleOptional(promise, fallbackValue, timeoutMs, label) {
+  try {
+    return await withTimeout(promise, timeoutMs, label);
+  } catch (error) {
+    console.warn(`${label} failed`, error);
+    return fallbackValue;
+  }
 }
 
 function distanceKm(lat1, lon1, lat2, lon2) {
@@ -2975,7 +3029,7 @@ function parseAnyTime(value) {
 async function reverseGeocodeLabel(lat, lon) {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=10&addressdetails=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const res = await fetchWithTimeout(url, { headers: { 'Accept-Language': 'en' } }, 8000, 'Reverse geocode');
     if (!res.ok) throw new Error('reverse geocode failed');
     const data = await res.json();
     const addr = data.address || {};
@@ -3661,7 +3715,7 @@ function parseLooseNumber(value) {
 async function fetchNdbcActiveStations() {
   if (Array.isArray(ndbcActiveStationsCache)) return ndbcActiveStationsCache;
   try {
-    const res = await fetch(NOAA_NDBC_ACTIVE_XML);
+    const res = await fetchWithTimeout(NOAA_NDBC_ACTIVE_XML, {}, 8000, 'NOAA buoy station list');
     if (!res.ok) throw new Error('ndbc active stations unavailable');
     const xmlText = await res.text();
     const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
@@ -3688,7 +3742,7 @@ function sortStationsByDistance(stations, latitude, longitude) {
 
 async function fetchNdbcStationObservation(station) {
   try {
-    const res = await fetch(`${NOAA_NDBC_REALTIME_BASE}/${encodeURIComponent(station.id)}.txt`);
+    const res = await fetchWithTimeout(`${NOAA_NDBC_REALTIME_BASE}/${encodeURIComponent(station.id)}.txt`, {}, 8000, 'NOAA buoy observation');
     if (!res.ok) return null;
     const text = await res.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
@@ -3722,7 +3776,7 @@ async function fetchEcccMarineFallback(latitude, longitude) {
   const nearby = sortStationsByDistance(ECCC_MARINE_STATIONS, latitude, longitude).filter(station => station.distanceKm <= 450).slice(0, 3);
   for (const station of nearby) {
     try {
-      const res = await fetch(station.url);
+      const res = await fetchWithTimeout(station.url, {}, 8000, 'ECCC marine fallback');
       if (!res.ok) continue;
       const html = await res.text();
       const parsed = parseEcccMarineHtml(html);
@@ -3763,7 +3817,7 @@ function describeMarineSource(marinePayload) {
 async function fetchMarineDataWithFallback(latitude, longitude) {
   let primary = null;
   try {
-    const res = await fetch(`${MARINE_API}?latitude=${latitude}&longitude=${longitude}&current=sea_surface_temperature,wave_height&hourly=sea_surface_temperature,wave_height&forecast_days=7&timezone=auto`);
+    const res = await fetchWithTimeout(`${MARINE_API}?latitude=${latitude}&longitude=${longitude}&current=sea_surface_temperature,wave_height&hourly=sea_surface_temperature,wave_height&forecast_days=7&timezone=auto`, {}, 10000, 'Marine forecast');
     const json = await res.json().catch(() => null);
     primary = buildMarinePayloadFromOpenMeteo(json);
   } catch (_) {}
@@ -3872,14 +3926,18 @@ async function fetchWeatherCore(place) {
   const { latitude, longitude, name, country_code, admin1, country } = place;
   const weatherUrl = buildOpenMeteoForecastUrl(latitude, longitude);
 
-  const [weatherRes, marinePayload, ecccAlertPayload, aqiPayload] = await Promise.all([
-    fetch(weatherUrl),
-    fetchMarineDataWithFallback(latitude, longitude),
-    fetchEcccWeatherAlertsForPoint(latitude, longitude, country_code),
-    fetchAirQuality(latitude, longitude)
+  const weatherRes = await fetchWithTimeout(weatherUrl, {}, 12000, 'Weather forecast');
+  if (!weatherRes.ok) throw new Error(`Weather forecast HTTP ${weatherRes.status}`);
+  const [marinePayload, ecccAlertPayload, aqiPayload] = await Promise.all([
+    settleOptional(fetchMarineDataWithFallback(latitude, longitude), { primary: null, eccc: null, noaa: null, sourceLabel: 'Marine data unavailable' }, 12000, 'Marine lookup'),
+    settleOptional(fetchEcccWeatherAlertsForPoint(latitude, longitude, country_code), { source: 'eccc', status: 'error', alerts: [] }, 8000, 'ECCC alerts'),
+    settleOptional(fetchAirQuality(latitude, longitude), null, 8000, 'Air quality lookup')
   ]);
 
   const weatherJson = await weatherRes.json();
+  if (!weatherJson?.current || !weatherJson?.hourly?.time || !weatherJson?.daily?.time) {
+    throw new Error('Weather forecast response was incomplete.');
+  }
   const c = weatherJson.current;
 
   const daily = (weatherJson.daily?.time || []).map((time, i) => ({
@@ -4038,9 +4096,9 @@ function getSelectedStartTime(data) {
 
 function getHourlyPointForStart(data, startTime) {
   if (!data.hourly.length) return data.current;
-  let point = data.hourly.find(h => h.time >= startTime) || data.hourly[data.hourly.length - 1];
-  if (!point) point = data.current;
-  return { ...point, time: startTime === data.currentTime ? data.current.time : point.time, humidity: data.current.humidity, gusts: data.current.gusts };
+  if (startTime === data.currentTime) return data.current;
+  const point = getInterpolatedHourlyPoint(data, startTime);
+  return { ...point, humidity: data.current.humidity };
 }
 
 function interpolateNumber(a, b, ratio, key, fallback = 0) {
