@@ -64,7 +64,6 @@ export async function proxyJsonResponse(res: VercelResponse, response: Response)
   if (!response.ok) {
     return res.status(response.status).json({
       error: getErrorMessage(payload, `Strava API request failed (${response.status})`),
-      details: payload,
     });
   }
   return res.status(response.status).json(payload);
@@ -75,7 +74,6 @@ export async function proxyTextResponse(res: VercelResponse, response: Response,
   if (!response.ok) {
     return res.status(response.status).json({
       error: getErrorMessage(payload, `Strava API request failed (${response.status})`),
-      details: payload,
     });
   }
 
