@@ -1,8 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+function resolveAllowedOrigin(): string {
+  const configured = process.env.FRONTEND_URL?.trim();
+  if (!configured) return '*';
+
+  try {
+    return new URL(configured).origin;
+  } catch {
+    return configured;
+  }
+}
+
 export function setCors(res: VercelResponse) {
-  const origin = process.env.FRONTEND_URL ?? '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Origin', resolveAllowedOrigin());
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type');
 }

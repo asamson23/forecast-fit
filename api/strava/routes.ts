@@ -7,10 +7,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     setCors(res);
     const token = getBearerToken(req);
     if (!token) return res.status(401).json({ error: 'Missing bearer token' });
+    const headers = { Authorization: `Bearer ${token}` };
 
-    const athleteResponse = await stravaFetch('/athlete', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const directRoutesResponse = await stravaFetch('/athlete/routes?page=1&per_page=50', { headers });
+    if (directRoutesResponse.ok) {
+      return proxyJsonResponse(res, directRoutesResponse);
+    }
+    const directRoutesPayload = await readResponsePayload(directRoutesResponse);
+
+    const athleteResponse = await stravaFetch('/athlete', { headers });
     const athletePayload = await readResponsePayload(athleteResponse);
     if (!athleteResponse.ok) {
       return res.status(athleteResponse.status).json({
@@ -23,10 +28,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: 'Unable to resolve the authenticated Strava athlete ID' });
     }
 
-    const response = await stravaFetch(`/athletes/${athleteId}/routes?page=1&per_page=50`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const athleteRoutesResponse = await stravaFetch(`/athletes/${athleteId}/routes?page=1&per_page=50`, { headers });
+    if (athleteRoutesResponse.ok) {
+      return proxyJsonResponse(res, athleteRoutesResponse);
+    }
+
+    const athleteRoutesPayload = await readResponsePayload(athleteRoutesResponse);
+    const directError = getErrorMessage(directRoutesPayload, `Strava route lookup failed (${directRoutesResponse.status})`);
+    const athleteError = getErrorMessage(athleteRoutesPayload, `Strava athlete route lookup failed (${athleteRoutesResponse.status})`);
+
+    return res.status(athleteRoutesResponse.status).json({
+      error: directError === athleteError ? directError : `${directError} | ${athleteError}`,
     });
-    return proxyJsonResponse(res, response);
   } catch (error) {
     return respondWithProxyError(res, error);
   }
