@@ -123,7 +123,7 @@ import {
 import { STRAVA_BACKEND_URL } from './data/constants';
 import { clearStravaSession, consumeStravaOAuthCallback, getStravaAuthError, getStravaSession } from './features/strava/stravaAuth';
 import { fetchStravaActivities, fetchStravaActivityStreams, fetchStravaRouteGpx, fetchStravaRoutes } from './features/strava/stravaClient';
-import { stravaActivityStreamsToImportedRoute, stravaRouteGpxToImportedRoute } from './features/strava/stravaRouteAdapter';
+import { stravaActivityStreamsToImportedRoute, stravaRouteGpxToImportedRoute, stravaRouteSummaryToImportedRoute } from './features/strava/stravaRouteAdapter';
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
@@ -7062,10 +7062,17 @@ async function importStravaFirstRoute() {
   const routes = await fetchStravaRoutes(STRAVA_BACKEND_URL);
   if (!Array.isArray(routes) || !routes.length) throw new Error('No saved Strava routes found');
   const route = routes[0];
-  const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
-  const importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+  let importedRoute;
+  try {
+    const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
+    importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    const isMissingExport = /resource not found|strava request failed \(404\)/i.test(message);
+    if (!isMissingExport) throw error;
+    importedRoute = stravaRouteSummaryToImportedRoute(route);
+  }
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
-  clearError();
   clearRouteMapLayers();
   renderRouteMap();
   renderRouteParameterHints();
@@ -7113,7 +7120,6 @@ async function handleOpenStravaPicker() {
 
 async function applyImportedStravaRoute(importedRoute, sourceLabel) {
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
-  clearError();
   clearRouteMapLayers();
   renderRouteMap();
   renderRouteParameterHints();
@@ -7281,8 +7287,16 @@ function closeStravaPicker() {
 async function importStravaRouteById(routeId) {
   const route = stravaPickerRoutes.find((item) => String(item?.id) === String(routeId));
   if (!route) throw new Error('Selected Strava route was not found.');
-  const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
-  const importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+  let importedRoute;
+  try {
+    const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
+    importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    const isMissingExport = /resource not found|strava request failed \(404\)/i.test(message);
+    if (!isMissingExport) throw error;
+    importedRoute = stravaRouteSummaryToImportedRoute(route);
+  }
   await applyImportedStravaRoute(importedRoute, 'Strava route');
 }
 

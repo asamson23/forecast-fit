@@ -8,6 +8,10 @@ export interface StravaRouteSummary {
   estimated_moving_time?: number;
   updated_at?: string;
   permalink_url?: string;
+  map?: {
+    summary_polyline?: string;
+    polyline?: string;
+  };
 }
 
 export interface StravaActivitySummary {
