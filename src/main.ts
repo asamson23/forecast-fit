@@ -122,15 +122,15 @@ import {
 } from './components/BestWindowPanel';
 import { STRAVA_BACKEND_URL } from './data/constants';
 import { clearStravaSession, consumeStravaOAuthCallback, getStravaSession } from './features/strava/stravaAuth';
-import { fetchStravaRouteGpx, fetchStravaRoutes } from './features/strava/stravaClient';
-import { stravaRouteGpxToImportedRoute } from './features/strava/stravaRouteAdapter';
+import { fetchStravaActivities, fetchStravaActivityStreams, fetchStravaRouteGpx, fetchStravaRoutes } from './features/strava/stravaClient';
+import { stravaActivityStreamsToImportedRoute, stravaRouteGpxToImportedRoute } from './features/strava/stravaRouteAdapter';
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
 inject();
 injectSpeedInsights();
 if (consumeStravaOAuthCallback()) {
-  setTimeout(() => renderStravaConnectionState(), 0);
+  setTimeout(() => renderStravaConnectionStateEnhanced(), 0);
 }
 
 /**
@@ -291,6 +291,11 @@ const locationCardSummary = document.getElementById('location-card-summary');
 const quickStartOverlay = document.getElementById('quick-start-overlay');
 const quickStartSteps = document.getElementById('quick-start-steps');
 const quickStartCloseBtn = document.getElementById('quick-start-close-btn');
+const stravaPickerOverlay = document.getElementById('strava-picker-overlay');
+const stravaPickerTabs = document.getElementById('strava-picker-tabs');
+const stravaPickerStatus = document.getElementById('strava-picker-status');
+const stravaPickerList = document.getElementById('strava-picker-list');
+const stravaPickerCloseBtn = document.getElementById('strava-picker-close-btn');
 const customMultisportSection = document.getElementById('custom-multisport-section');
 const customMultisportSummary = document.getElementById('custom-multisport-summary');
 const customMultisportStatus = document.getElementById('custom-multisport-status');
@@ -325,6 +330,13 @@ let customMultisportSelections = {
 };
 
 let routeState = null;
+let stravaPickerTab = 'routes';
+let stravaPickerLoading = false;
+let stravaPickerImporting = false;
+let stravaPickerRoutes = [];
+let stravaPickerActivities = [];
+let stravaPickerRouteError = '';
+let stravaPickerActivityError = '';
 let routeMap = null;
 let routeLayer = null;
 let routeMarkersLayer = null;
@@ -6538,7 +6550,12 @@ quickStartOverlay?.addEventListener('click', event => {
 quickStartCloseBtn?.addEventListener('click', closeQuickStartGuide);
 
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && quickStartOverlay && !quickStartOverlay.hidden) closeQuickStartGuide();
+  if (event.key !== 'Escape') return;
+  if (stravaPickerOverlay && !stravaPickerOverlay.hidden) {
+    closeStravaPicker();
+    return;
+  }
+  if (quickStartOverlay && !quickStartOverlay.hidden) closeQuickStartGuide();
 });
 
 // Initial UI state and event wiring.
@@ -7010,6 +7027,242 @@ async function handleOpenStravaPicker() {
   }
 }
 
+async function applyImportedStravaRoute(importedRoute, sourceLabel) {
+  routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
+  clearError();
+  clearRouteMapLayers();
+  renderRouteMap();
+  renderRouteParameterHints();
+  const durationState = getDurationState();
+  renderDurationButtons(durationState);
+  renderEventButtons();
+  renderDistanceAndDurationFields();
+  renderRouteSummary();
+  routeStatus.textContent = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)} · ${routeState.points.length} points`;
+  if (routeState?.points?.[0]) {
+    await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
+  }
+}
+
+function getStravaPickerItems() {
+  return stravaPickerTab === 'activities' ? stravaPickerActivities : stravaPickerRoutes;
+}
+
+function getStravaPickerCurrentError() {
+  return stravaPickerTab === 'activities' ? stravaPickerActivityError : stravaPickerRouteError;
+}
+
+function formatStravaDate(value) {
+  if (!value) return '';
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? formatShortDateTime(new Date(parsed).toISOString()) : '';
+}
+
+function describeStravaRoute(route) {
+  const bits = [];
+  if (Number.isFinite(Number(route?.distance)) && Number(route.distance) > 0) bits.push(formatKm(Number(route.distance) / 1000));
+  if (Number.isFinite(Number(route?.elevation_gain)) && Number(route.elevation_gain) > 0) bits.push(`+${Math.round(Number(route.elevation_gain))} m`);
+  if (Number.isFinite(Number(route?.estimated_moving_time)) && Number(route.estimated_moving_time) > 0) bits.push(`${formatMinutesShort(Math.round(Number(route.estimated_moving_time) / 60))} est.`);
+  return bits.join(' · ');
+}
+
+function describeStravaActivity(activity) {
+  const bits = [];
+  const kind = activity?.sport_type || activity?.type;
+  if (kind) bits.push(String(kind).replaceAll('_', ' '));
+  if (Number.isFinite(Number(activity?.distance)) && Number(activity.distance) > 0) bits.push(formatKm(Number(activity.distance) / 1000));
+  if (Number.isFinite(Number(activity?.moving_time)) && Number(activity.moving_time) > 0) bits.push(`${formatMinutesShort(Math.round(Number(activity.moving_time) / 60))} moving`);
+  if (Number.isFinite(Number(activity?.total_elevation_gain)) && Number(activity.total_elevation_gain) > 0) bits.push(`+${Math.round(Number(activity.total_elevation_gain))} m`);
+  if (activity?.trainer) bits.push('trainer');
+  return bits.join(' · ');
+}
+
+function renderStravaPicker() {
+  if (!stravaPickerTabs || !stravaPickerList || !stravaPickerStatus) return;
+
+  const tabs = [
+    { key: 'routes', label: `Routes${stravaPickerRoutes.length ? ` (${stravaPickerRoutes.length})` : ''}` },
+    { key: 'activities', label: `Activities${stravaPickerActivities.length ? ` (${stravaPickerActivities.length})` : ''}` },
+  ];
+
+  stravaPickerTabs.innerHTML = tabs.map((tab) => `
+    <button
+      class="strava-picker-tab ${stravaPickerTab === tab.key ? 'active' : ''}"
+      type="button"
+      role="tab"
+      aria-selected="${stravaPickerTab === tab.key ? 'true' : 'false'}"
+      data-action="selectStravaTab"
+      data-strava-tab="${tab.key}"
+    >${escapeHtml(tab.label)}</button>`).join('');
+
+  if (stravaPickerLoading) {
+    stravaPickerStatus.textContent = 'Loading Strava items…';
+  } else if (stravaPickerImporting) {
+    stravaPickerStatus.textContent = stravaPickerTab === 'activities' ? 'Importing Strava activity…' : 'Importing Strava route…';
+  } else {
+    stravaPickerStatus.textContent = getStravaPickerCurrentError() || (stravaPickerTab === 'activities'
+      ? 'Choose a recent activity with GPS data.'
+      : 'Choose a saved route to import.');
+  }
+
+  const items = getStravaPickerItems();
+  if (!items.length) {
+    const emptyMessage = getStravaPickerCurrentError()
+      ? 'Try reconnecting Strava, then reopen this importer.'
+      : (stravaPickerTab === 'activities' ? 'No recent Strava activities were found.' : 'No saved Strava routes were found.');
+    stravaPickerList.innerHTML = `<div class="strava-picker-empty">${escapeHtml(emptyMessage)}</div>`;
+    return;
+  }
+
+  stravaPickerList.innerHTML = items.map((item) => {
+    if (stravaPickerTab === 'activities') {
+      const subtitle = describeStravaActivity(item);
+      const dateLabel = formatStravaDate(item?.start_date_local || item?.start_date);
+      return `
+        <button class="strava-picker-item" type="button" data-action="importStravaActivity" data-strava-activity-id="${escapeHtml(String(item.id))}">
+          <div class="strava-picker-item-head">
+            <strong>${escapeHtml(item?.name || 'Strava activity')}</strong>
+            <span class="strava-picker-item-kicker">${escapeHtml(item?.sport_type || item?.type || 'Activity')}</span>
+          </div>
+          <div class="strava-picker-item-sub">${escapeHtml(subtitle || 'Recorded activity')}</div>
+          <div class="strava-picker-item-meta">
+            <span>${escapeHtml(dateLabel || 'Recent activity')}</span>
+            <span>Import activity</span>
+          </div>
+        </button>`;
+    }
+
+    const subtitle = describeStravaRoute(item);
+    const dateLabel = formatStravaDate(item?.updated_at);
+    return `
+      <button class="strava-picker-item" type="button" data-action="importStravaRoute" data-strava-route-id="${escapeHtml(String(item.id))}">
+        <div class="strava-picker-item-head">
+          <strong>${escapeHtml(item?.name || 'Strava route')}</strong>
+          <span class="strava-picker-item-kicker">Route</span>
+        </div>
+        <div class="strava-picker-item-sub">${escapeHtml(subtitle || 'Saved route')}</div>
+        <div class="strava-picker-item-meta">
+          <span>${escapeHtml(dateLabel ? `Updated ${dateLabel}` : 'Saved route')}</span>
+          <span>Import route</span>
+        </div>
+      </button>`;
+  }).join('');
+}
+
+async function loadStravaPickerData() {
+  stravaPickerLoading = true;
+  stravaPickerRouteError = '';
+  stravaPickerActivityError = '';
+  renderStravaPicker();
+
+  const [routesResult, activitiesResult] = await Promise.allSettled([
+    fetchStravaRoutes(STRAVA_BACKEND_URL),
+    fetchStravaActivities(STRAVA_BACKEND_URL, 1),
+  ]);
+
+  stravaPickerRoutes = routesResult.status === 'fulfilled' && Array.isArray(routesResult.value) ? routesResult.value : [];
+  stravaPickerActivities = activitiesResult.status === 'fulfilled' && Array.isArray(activitiesResult.value) ? activitiesResult.value : [];
+  stravaPickerRouteError = routesResult.status === 'rejected' ? (routesResult.reason instanceof Error ? routesResult.reason.message : 'Unable to load Strava routes') : '';
+  stravaPickerActivityError = activitiesResult.status === 'rejected' ? (activitiesResult.reason instanceof Error ? activitiesResult.reason.message : 'Unable to load Strava activities') : '';
+  stravaPickerLoading = false;
+  renderStravaPicker();
+}
+
+function openStravaPicker() {
+  if (!stravaPickerOverlay) return;
+  stravaPickerOverlay.hidden = false;
+  document.body.classList.add('helper-open');
+  renderStravaPicker();
+  stravaPickerCloseBtn?.focus({ preventScroll: true });
+  void loadStravaPickerData();
+}
+
+function closeStravaPicker() {
+  if (!stravaPickerOverlay) return;
+  stravaPickerOverlay.hidden = true;
+  document.body.classList.remove('helper-open');
+}
+
+async function importStravaRouteById(routeId) {
+  const route = stravaPickerRoutes.find((item) => String(item?.id) === String(routeId));
+  if (!route) throw new Error('Selected Strava route was not found.');
+  const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
+  const importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+  await applyImportedStravaRoute(importedRoute, 'Strava route');
+}
+
+async function importStravaActivityById(activityId) {
+  const activity = stravaPickerActivities.find((item) => String(item?.id) === String(activityId));
+  if (!activity) throw new Error('Selected Strava activity was not found.');
+  const streams = await fetchStravaActivityStreams(STRAVA_BACKEND_URL, activity.id);
+  const importedRoute = stravaActivityStreamsToImportedRoute(activity, streams);
+  await applyImportedStravaRoute(importedRoute, 'Strava activity');
+}
+
+function renderStravaConnectionStateEnhanced() {
+  if (!stravaConnectPanel) return;
+  const session = getStravaSession();
+  if (!session) {
+    stravaConnectPanel.innerHTML = `<button class="btn btn-secondary" type="button" data-action="connectStrava">Connect Strava</button>`;
+    if (stravaStatus) stravaStatus.textContent = 'Import a saved route or recent activity.';
+    return;
+  }
+  stravaConnectPanel.innerHTML = `<div class="inline-fields"><button class="btn btn-secondary" type="button" data-action="openStravaPicker">Browse Strava imports</button><button class="reset-btn clear-btn" type="button" data-action="disconnectStrava">Disconnect</button></div>`;
+  if (stravaStatus) stravaStatus.textContent = `Connected: ${session.athleteName} · import a route or activity.`;
+}
+
+function handleConnectStravaEnhanced() {
+  window.location.href = `${STRAVA_BACKEND_URL}/api/strava/auth`;
+}
+
+function handleDisconnectStravaEnhanced() {
+  clearStravaSession();
+  closeStravaPicker();
+  renderStravaConnectionStateEnhanced();
+}
+
+async function handleOpenStravaPickerEnhanced() {
+  openStravaPicker();
+}
+
+function handleSelectStravaTab(tab) {
+  if (tab !== 'routes' && tab !== 'activities') return;
+  stravaPickerTab = tab;
+  renderStravaPicker();
+}
+
+async function handleImportStravaRoute(routeId) {
+  stravaPickerTab = 'routes';
+  stravaPickerImporting = true;
+  renderStravaPicker();
+  try {
+    await importStravaRouteById(routeId);
+    closeStravaPicker();
+    renderStravaConnectionStateEnhanced();
+  } catch (error) {
+    stravaPickerRouteError = error instanceof Error ? error.message : 'Unable to import Strava route';
+  } finally {
+    stravaPickerImporting = false;
+    renderStravaPicker();
+  }
+}
+
+async function handleImportStravaActivity(activityId) {
+  stravaPickerTab = 'activities';
+  stravaPickerImporting = true;
+  renderStravaPicker();
+  try {
+    await importStravaActivityById(activityId);
+    closeStravaPicker();
+    renderStravaConnectionStateEnhanced();
+  } catch (error) {
+    stravaPickerActivityError = error instanceof Error ? error.message : 'Unable to import Strava activity';
+  } finally {
+    stravaPickerImporting = false;
+    renderStravaPicker();
+  }
+}
+
 function bindDomActions() {
   document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
@@ -7024,9 +7277,13 @@ function bindDomActions() {
     else if (action === 'clearAllTool') clearAllTool();
     else if (action === 'useCurrentLocation') useCurrentLocation();
     else if (action === 'clearRoute') clearRoute();
-    else if (action === 'connectStrava') handleConnectStrava();
-    else if (action === 'disconnectStrava') handleDisconnectStrava();
-    else if (action === 'openStravaPicker') handleOpenStravaPicker();
+    else if (action === 'connectStrava') handleConnectStravaEnhanced();
+    else if (action === 'disconnectStrava') handleDisconnectStravaEnhanced();
+    else if (action === 'openStravaPicker') handleOpenStravaPickerEnhanced();
+    else if (action === 'closeStravaPicker') closeStravaPicker();
+    else if (action === 'selectStravaTab') handleSelectStravaTab(trigger.dataset.stravaTab);
+    else if (action === 'importStravaRoute') handleImportStravaRoute(trigger.dataset.stravaRouteId);
+    else if (action === 'importStravaActivity') handleImportStravaActivity(trigger.dataset.stravaActivityId);
     else if (action === 'resetActivitySection') resetActivitySection();
     else if (action === 'toggleRaceDayMode') toggleRaceDayMode();
     else if (action === 'selectActivity') selectActivity(trigger);
@@ -7042,5 +7299,5 @@ function bindDomActions() {
   });
 }
 
-renderStravaConnectionState();
+renderStravaConnectionStateEnhanced();
 bindDomActions();

@@ -517,7 +517,7 @@
 <footer class="site-footer">
   <div class="attribution-card">
     <div class="block-title">Credits & attributions</div>
-    <p><strong>Forecast Fit</strong> <strong>v10</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
+    <p><strong>Forecast Fit</strong> <strong>v10.1</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
     <p>Implementation and iteration assistance: <strong>ChatGPT</strong> (including <strong>GPT-5.3-Codex</strong>) and <strong>Claude by Anthropic</strong>. This build does not use any live third-party AI integrations.</p>
     <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, and Google Fonts for DM Sans / DM Mono.</p>
     <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>
@@ -540,6 +540,23 @@
     <p class="helper-intro" id="quick-start-intro">Follow the steps in the same order as the page. Tap a step to jump to that section.</p>
     <div class="helper-steps" id="quick-start-steps"></div>
     <p class="helper-footer-note">The guide adapts slightly to your current setup. Indoor activities can skip location; route and water-temperature steps only matter when those features are relevant.</p>
+  </section>
+</div>
+<div id="strava-picker-overlay" class="helper-overlay" hidden>
+  <div class="helper-backdrop" data-action="closeStravaPicker"></div>
+  <section class="helper-panel strava-picker-panel" role="dialog" aria-modal="true" aria-labelledby="strava-picker-title">
+    <div class="helper-head">
+      <div>
+        <span class="helper-kicker">Strava</span>
+        <h2 id="strava-picker-title">Import from your account</h2>
+      </div>
+      <button class="helper-close-btn" type="button" id="strava-picker-close-btn" data-action="closeStravaPicker" aria-label="Close Strava import">×</button>
+    </div>
+    <p class="helper-intro">Choose a saved route GPX export or a recent activity with recorded coordinates.</p>
+    <div class="strava-picker-tabs" id="strava-picker-tabs" role="tablist" aria-label="Strava import type"></div>
+    <p class="status-line compact strava-picker-status" id="strava-picker-status"></p>
+    <div class="strava-picker-list" id="strava-picker-list"></div>
+    <p class="helper-footer-note">Routes come from Strava route exports. Activities use recorded GPS streams, so indoor or trainer sessions may not be importable.</p>
   </section>
 </div>
 <script type="module" src="/src/main.ts"></script>

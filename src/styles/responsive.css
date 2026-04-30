@@ -1,3 +1,4 @@
+  .helper-step-state {
     font-size: 0.65rem;
     letter-spacing: 0.03em;
     color: var(--text-soft);
@@ -495,5 +496,9 @@
     #location-card > .section-label-row .reset-btn {
       padding-inline: 8px;
       font-size: 0.64rem;
+    }
+    .strava-picker-item-head,
+    .strava-picker-item-meta {
+      align-items: flex-start;
     }
   }
