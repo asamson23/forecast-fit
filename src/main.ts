@@ -802,6 +802,7 @@ window.togglePlannerCardCollapse = togglePlannerCardCollapse;
 
 function toggleRaceDayMode() {
   raceDayMode = !raceDayMode;
+  syncDurationFromEvent(getSelectedEvent());
   updateRaceDayModeUi();
   renderPlannerState();
   updateRaceDayModeUi();
@@ -825,6 +826,11 @@ window.toggleManualWeatherOverride = toggleManualWeatherOverride;
 
 function getVisibleEventPresets() {
   return selectedActivity ? (eventPresetsByActivity[selectedActivity] || []).filter(p => !/_race_day$/.test(p.key)) : [];
+}
+
+function getRaceDayEventPreset(activity = selectedActivity) {
+  if (!activity) return null;
+  return (eventPresetsByActivity[activity] || []).find(p => /_race_day$/.test(p.key)) || null;
 }
 
 function formatDistanceLabel(value, unit) {
@@ -1450,6 +1456,8 @@ function refreshSelectionNotes() {
 }
 
 function getSelectedEvent() {
+  const racePreset = raceDayMode ? getRaceDayEventPreset() : null;
+  if (racePreset) return racePreset;
   const presets = getEventPresets();
   if (!presets.length) return null;
   let preset = presets.find(p => p.key === selectedEventKey);
@@ -1484,7 +1492,7 @@ function renderEventButtons() {
   }
   const selected = getSelectedEvent();
   container.innerHTML = presets.map(p => `
-    <button class="event-btn ${!customDistanceActive && selected?.key === p.key ? 'active' : ''} ${distanceLocked ? 'locked' : ''}" type="button" ${distanceLocked ? 'disabled' : ''} data-action="selectEventPreset" data-event-key="${escapeHtml(p.key)}">
+    <button class="event-btn ${!raceDayMode && !customDistanceActive && selected?.key === p.key ? 'active' : ''} ${distanceLocked ? 'locked' : ''}" type="button" ${distanceLocked ? 'disabled' : ''} data-action="selectEventPreset" data-event-key="${escapeHtml(p.key)}">
       <div class="label">${escapeHtml(p.label)}</div>
       <div class="sublabel">${escapeHtml(p.sublabel)}</div>
     </button>`).join('');
@@ -1493,15 +1501,26 @@ function renderEventButtons() {
   } else {
     const distanceState = getDistanceState(selected);
     const sourceText = distanceState.source === 'custom' ? 'custom distance' : distanceState.source === 'derived' ? 'estimated from duration + average' : selected.detail;
+    const summaryLead = raceDayMode && getRaceDayEventPreset() ? `Race day mode Â· ${selected.label}` : selected.label;
     summary.textContent = distanceState.source === 'custom'
       ? `Custom distance · ${distanceState.label}`
       : `${selected.label} · ${distanceState.label}${sourceText ? ` — ${sourceText}` : ''}`;
+  }
+  if (!distanceLocked && raceDayMode && getRaceDayEventPreset()) {
+    const distanceState = getDistanceState(selected);
+    const sourceText = distanceState.source === 'custom' ? 'custom distance' : distanceState.source === 'derived' ? 'estimated from duration + average' : selected.detail;
+    summary.textContent = distanceState.source === 'custom'
+      ? `Custom distance · ${distanceState.label}`
+      : `Race day mode · ${selected.label} · ${distanceState.label}${sourceText ? ` — ${sourceText}` : ''}`;
   }
   refreshSelectionNotes();
 }
 
 function syncDurationFromEvent(preset) {
-  return;
+  if (routeHasDurationOverride()) return;
+  if (isFiniteNumber(getCustomDurationMinutes())) return;
+  const defaultDuration = preset?.defaultDuration;
+  if (defaultDuration && durationProfiles[defaultDuration]) selectedDuration = defaultDuration;
 }
 
 function updateCustomInputLocks() {
@@ -5236,22 +5255,6 @@ function buildWizard(data, activity) {
         option('Thermal base + race top + tights', 'Better when the start is cold and exposed.', false, ['race']),
         option('Warm-up layers over race kit', 'Useful before the start, then ditch them.', false, ['race'])
       ];
-      if (!hasSwimLeg) {
-        const dryRaceMainOptions = t >= 18 ? [
-          option('Light bike/run race kit', 'Clean no-swim race-day default.', true, ['race']),
-          option('Aero top + bibs / shorts + run shoes ready', 'Best if the bike/run split matters most.', false, ['race']),
-          option('Run-first kit + bike layer plan', 'Good when the run leg is the main event.', false, ['race'])
-        ] : t >= 10 ? [
-          option('Light kit + arm warmers', 'Probably the best no-swim cool-weather compromise.', true, ['race']),
-          option('Bike gilet + run-ready base kit', 'Great if the bike start feels chilly.', false, ['race']),
-          option('Longer-coverage top + shorts/tights choice', 'Simple if you dislike removable layers.', false, ['race'])
-        ] : [
-          option('Thermal selected-leg kit + shell / gilet', 'Race-first, but realistic in cold air without a swim.', true, ['race']),
-          option('Bike thermal kit + dry run layer ready', 'Makes sense when bike wind is the problem.', false, ['race']),
-          option('Warm-up layers before the start', 'A real pre-race comfort move, not just fluff.', false, ['race'])
-        ];
-        raceMainOptions.splice(0, raceMainOptions.length, ...dryRaceMainOptions);
-      }
       mainOptions.splice(0, mainOptions.length, ...raceMainOptions);
       core.unshift(
         item('Number bib plan (bib belt, pins, or magnets)', 'Decide this before race morning so you are not fighting paper and safety pins in the corral.', ['race day']),
