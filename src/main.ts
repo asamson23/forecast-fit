@@ -7073,14 +7073,12 @@ async function importStravaFirstRoute() {
     importedRoute = stravaRouteSummaryToImportedRoute(route);
   }
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
+  locationCardCollapsed = true;
+  updateLocationCardCollapseUi();
+  clearRouteBtn.style.display = 'inline-block';
+  renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  renderRouteParameterHints();
-  const durationState = getDurationState();
-  renderDurationButtons(durationState);
-  renderEventButtons();
-  renderDistanceAndDurationFields();
-  renderRouteSummary();
   routeStatus.textContent = `${importedRoute.name} imported from Strava · ${formatKm(routeState.totalKm)} · ${routeState.points.length} points`;
   if (routeState?.points?.[0]) {
     await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
@@ -7120,14 +7118,12 @@ async function handleOpenStravaPicker() {
 
 async function applyImportedStravaRoute(importedRoute, sourceLabel) {
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
+  locationCardCollapsed = true;
+  updateLocationCardCollapseUi();
+  clearRouteBtn.style.display = 'inline-block';
+  renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  renderRouteParameterHints();
-  const durationState = getDurationState();
-  renderDurationButtons(durationState);
-  renderEventButtons();
-  renderDistanceAndDurationFields();
-  renderRouteSummary();
   routeStatus.textContent = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)} · ${routeState.points.length} points`;
   if (routeState?.points?.[0]) {
     await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
