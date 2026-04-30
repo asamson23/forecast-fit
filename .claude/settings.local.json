@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm run *)",
-      "Bash(node -e \"console.log\\('Number.isFinite\\(\\\\\"3\\\\\"\\):', Number.isFinite\\('3'\\)\\); console.log\\('Number.isFinite\\(3\\):', Number.isFinite\\(3\\)\\); console.log\\('typeof \\\\\"3\\\\\":', typeof '3'\\); console.log\\('typeof 3:', typeof 3\\);\")",
-      "Bash(xargs grep *)"
-    ]
-  }
-}
