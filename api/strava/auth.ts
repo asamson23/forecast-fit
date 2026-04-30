@@ -24,7 +24,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     redirect_uri: redirectUri,
     response_type: 'code',
     approval_prompt: 'force',
-    scope: 'read_all,activity:read_all',
+    scope: 'read_all,activity:read_all,profile:read_all',
   });
 
   res.redirect(`https://www.strava.com/oauth/authorize?${params.toString()}`);

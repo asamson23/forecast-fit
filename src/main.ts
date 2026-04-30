@@ -121,7 +121,7 @@ import {
   renderBestWindowResults as renderBestWindowResultsFromModule,
 } from './components/BestWindowPanel';
 import { STRAVA_BACKEND_URL } from './data/constants';
-import { clearStravaSession, consumeStravaOAuthCallback, getStravaSession } from './features/strava/stravaAuth';
+import { clearStravaSession, consumeStravaOAuthCallback, getStravaAuthError, getStravaSession } from './features/strava/stravaAuth';
 import { fetchStravaActivities, fetchStravaActivityStreams, fetchStravaRouteGpx, fetchStravaRoutes } from './features/strava/stravaClient';
 import { stravaActivityStreamsToImportedRoute, stravaRouteGpxToImportedRoute } from './features/strava/stravaRouteAdapter';
 
@@ -7299,7 +7299,7 @@ function renderStravaConnectionStateEnhanced() {
   const session = getStravaSession();
   if (!session) {
     stravaConnectPanel.innerHTML = `<button class="btn btn-secondary" type="button" data-action="connectStrava">Connect Strava</button>`;
-    if (stravaStatus) stravaStatus.textContent = 'Import a saved route or recent activity.';
+    if (stravaStatus) stravaStatus.textContent = getStravaAuthError() || 'Import a saved route or recent activity.';
     return;
   }
   stravaConnectPanel.innerHTML = `<div class="inline-fields" style="grid-template-columns:minmax(0,1fr)"><button class="btn btn-secondary" type="button" data-action="openStravaPicker">Browse Strava imports</button><button class="reset-btn clear-btn" type="button" data-action="disconnectStrava">Disconnect</button></div>`;

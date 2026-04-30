@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+const REQUIRED_SCOPES = ['read_all', 'activity:read_all', 'profile:read_all'];
+
 function resolveRedirectUri(req: VercelRequest): string {
   const configured = process.env.STRAVA_REDIRECT_URI;
   if (configured) return configured;
@@ -11,12 +13,25 @@ function resolveRedirectUri(req: VercelRequest): string {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = String(req.query.code ?? '');
+  const grantedScope = String(req.query.scope ?? '');
   const clientId = process.env.STRAVA_CLIENT_ID;
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
   const frontendUrl = process.env.FRONTEND_URL;
 
-  if (!code || !clientId || !clientSecret || !frontendUrl) {
+  if (!clientId || !clientSecret || !frontendUrl) {
     res.status(400).send('Missing OAuth callback parameters or server config');
+    return;
+  }
+
+  const grantedScopes = new Set(grantedScope.split(',').map((scope) => scope.trim()).filter(Boolean));
+  const missingScopes = REQUIRED_SCOPES.filter((scope) => !grantedScopes.has(scope));
+  if (!code || missingScopes.length) {
+    const hash = new URLSearchParams({
+      strava_auth_error: missingScopes.length
+        ? `Strava did not grant the required permissions: ${missingScopes.join(', ')}`
+        : 'Strava authorization did not return a code.',
+    });
+    res.redirect(`${frontendUrl}#${hash.toString()}`);
     return;
   }
 
@@ -45,6 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     strava_refresh_token: String(payload.refresh_token ?? ''),
     strava_expires_at: String(payload.expires_at ?? ''),
     strava_athlete_name: athleteName,
+    strava_scope: grantedScope,
   });
 
   res.redirect(`${frontendUrl}#${hash.toString()}`);

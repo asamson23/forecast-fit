@@ -2,6 +2,7 @@ const KEY_ACCESS = 'strava_access_token';
 const KEY_REFRESH = 'strava_refresh_token';
 const KEY_EXPIRES = 'strava_expires_at';
 const KEY_ATHLETE = 'strava_athlete_name';
+const KEY_ERROR = 'strava_auth_error';
 
 export interface StravaSession {
   accessToken: string;
@@ -23,15 +24,27 @@ export function saveStravaSession(session: StravaSession) {
   localStorage.setItem(KEY_REFRESH, session.refreshToken);
   localStorage.setItem(KEY_EXPIRES, String(session.expiresAt));
   localStorage.setItem(KEY_ATHLETE, session.athleteName || 'Athlete');
+  localStorage.removeItem(KEY_ERROR);
+}
+
+export function getStravaAuthError(): string {
+  return localStorage.getItem(KEY_ERROR) || '';
 }
 
 export function clearStravaSession() {
-  [KEY_ACCESS, KEY_REFRESH, KEY_EXPIRES, KEY_ATHLETE].forEach((key) => localStorage.removeItem(key));
+  [KEY_ACCESS, KEY_REFRESH, KEY_EXPIRES, KEY_ATHLETE, KEY_ERROR].forEach((key) => localStorage.removeItem(key));
 }
 
 export function consumeStravaOAuthCallback(): boolean {
   const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
   const params = new URLSearchParams(hash);
+  const authError = params.get('strava_auth_error');
+  if (authError) {
+    clearStravaSession();
+    localStorage.setItem(KEY_ERROR, authError);
+    history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    return true;
+  }
   const accessToken = params.get('strava_access_token');
   const refreshToken = params.get('strava_refresh_token');
   const expiresAt = Number(params.get('strava_expires_at'));
