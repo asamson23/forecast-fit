@@ -44,6 +44,10 @@
   @media (max-width: 900px) {
     .setup-grid { grid-template-columns: 1fr; }
     .best-window-grid { grid-template-columns: 1fr; }
+    .best-window-explainer-header { flex-direction: column; }
+    .best-window-explainer-summary { align-self: flex-start; }
+    .best-window-explainer-row { grid-template-columns: 1fr; }
+    .best-window-explainer-score { justify-self: start; }
     .card-top-actions { justify-content: flex-end; }
   }
   @media (min-width: 721px) and (max-width: 900px) {

@@ -158,6 +158,282 @@ export function getBestWindowPrioritySummary(priority: string, activity: string 
 // Scoring helpers
 // ---------------------------------------------------------------------------
 
+function isBestWindowWaterExposureActivity(activity: string | null | undefined): boolean {
+  return waterExposureActivities.has(activity as any);
+}
+
+function isBestWindowOutdoorUvRelevantActivity(activity: string | null | undefined): boolean {
+  if (!activity) return true;
+  return !['gym', 'indoor_running', 'indoor_cycling', 'indoor_multisport', 'swimming_pool_indoor'].includes(activity);
+}
+
+function getBestWindowWeights(priority: string | null | undefined, activity: string | null | undefined): Record<string, number> {
+  const base = {
+    precipProb: 13,
+    precipMm: 14,
+    gust: 12,
+    wind: 7,
+    comfort: 12,
+    daylight: 10,
+    storm: 14,
+    routeHeadwind: 8,
+    routeCrosswind: 7,
+    tailwindBonus: 3,
+    water: 10,
+    uv: 5,
+  };
+
+  if (activity === 'cycling') {
+    base.gust += 3;
+    base.routeHeadwind += 6;
+    base.routeCrosswind += 5;
+    base.comfort -= 2;
+  } else if (activity === 'running') {
+    base.comfort += 2;
+    base.precipProb += 2;
+  } else if (isBestWindowWaterExposureActivity(activity)) {
+    base.water += 8;
+    base.wind += 4;
+    base.gust += 4;
+    base.daylight += 2;
+  } else if (activity === 'camping') {
+    base.precipMm += 4;
+    base.daylight -= 2;
+  } else if (activity === 'road_trip') {
+    base.routeHeadwind = 2;
+    base.routeCrosswind = 1;
+    base.wind = Math.max(0, base.wind - 2);
+  } else if (activity === 'triathlon') {
+    base.routeHeadwind += 2;
+    base.gust += 2;
+    base.precipProb += 1;
+  }
+
+  if (priority === 'driest') {
+    base.precipProb += 10;
+    base.precipMm += 12;
+    base.gust = Math.max(0, base.gust - 2);
+    base.comfort = Math.max(0, base.comfort - 3);
+  } else if (priority === 'calmest') {
+    base.gust += 12;
+    base.wind += 7;
+    base.routeHeadwind += 6;
+    base.routeCrosswind += 8;
+  } else if (priority === 'warmest') {
+    base.comfort += 14;
+    base.precipProb = Math.max(0, base.precipProb - 3);
+    base.gust = Math.max(0, base.gust - 2);
+  } else if (priority === 'fastest') {
+    base.gust += 6;
+    base.precipProb += 4;
+    base.routeHeadwind += 12;
+    base.routeCrosswind += 8;
+    base.tailwindBonus += 8;
+    base.comfort = Math.max(0, base.comfort - 3);
+  } else if (priority === 'safest') {
+    base.precipProb += 9;
+    base.precipMm += 8;
+    base.gust += 8;
+    base.daylight += 7;
+    base.storm += 10;
+    base.uv += 4;
+    base.routeCrosswind += 4;
+  }
+
+  return base;
+}
+
+function formatBestWindowMetric(value: number | null, suffix: string, fallback: string = 'n/a'): string {
+  if (!isFiniteNumber(value)) return fallback;
+  return `${round1(value)}${suffix}`;
+}
+
+function formatBestWindowSignedDelta(value: number): string {
+  if (!isFiniteNumber(value) || Math.abs(value) < 0.05) return 'steady';
+  return `${value > 0 ? '+' : '-'}${round1(Math.abs(value))}`;
+}
+
+function getBestWindowImpactTone(value: number): 'boost' | 'penalty' | 'neutral' {
+  if (value > 0.4) return 'boost';
+  if (value < -0.4) return 'penalty';
+  return 'neutral';
+}
+
+function buildBestWindowScoreExplainerRows(candidate: unknown, options: unknown): Array<Record<string, string>> {
+  const c = candidate as Record<string, any>;
+  const opts = options as Record<string, any>;
+  const priority = opts.priority || 'best_overall';
+  const activity = opts.activity || null;
+  const weights = getBestWindowWeights(priority, activity);
+  const band = getBestWindowComfortBand(activity);
+  const domain = c.domain || {};
+  const point = c.point || {};
+  const route = c.routeMetrics || null;
+  const light = c.light || {};
+  const rows: Array<Record<string, string>> = [];
+
+  const maxPrecipProb = firstFinite(route?.maxPrecipProb, domain.maxPrecipProb, 0);
+  const maxPrecip = firstFinite(route?.maxPrecip, domain.maxPrecip, 0);
+  const rainPenalty = weights.precipProb * clamp((firstFinite(maxPrecipProb, 0)! - 10) / 60, 0, 1.2)
+    + weights.precipMm * clamp((firstFinite(maxPrecip, 0)! - 0.05) / 1.75, 0, 1.2);
+  const rainBonus = priority === 'driest'
+    ? clamp((25 - firstFinite(maxPrecipProb, 25)!) / 25, 0, 1.2) * 10
+    : 0;
+  const rainNet = rainBonus - rainPenalty;
+  rows.push({
+    label: 'Rain risk',
+    tone: getBestWindowImpactTone(rainNet),
+    score: formatBestWindowSignedDelta(rainNet),
+    detail: priority === 'driest'
+      ? `Peak precip risk ${Math.round(firstFinite(maxPrecipProb, 0)!)}% with up to ${formatBestWindowMetric(maxPrecip, ' mm', '0 mm')}. Driest priority adds extra credit when that stays low.`
+      : `Peak precip risk ${Math.round(firstFinite(maxPrecipProb, 0)!)}% with up to ${formatBestWindowMetric(maxPrecip, ' mm', '0 mm')} during the activity window.`,
+  });
+
+  const maxWind = firstFinite(route?.maxWind, domain.maxWind, 0);
+  const maxGust = firstFinite(route?.maxGust, domain.maxGust, 0);
+  const windPenalty = weights.gust * clamp((firstFinite(maxGust, 0)! - 18) / 32, 0, 1.2)
+    + weights.wind * clamp((firstFinite(maxWind, 0)! - 10) / 25, 0, 1.2);
+  const calmBonus = priority === 'calmest'
+    ? clamp((24 - firstFinite(maxGust, 24)!) / 18, 0, 1.2) * 10
+    : 0;
+  const windNet = calmBonus - windPenalty;
+  rows.push({
+    label: 'Wind and gusts',
+    tone: getBestWindowImpactTone(windNet),
+    score: formatBestWindowSignedDelta(windNet),
+    detail: priority === 'calmest'
+      ? `Sustained wind peaks near ${formatBestWindowMetric(maxWind, ' km/h', '0 km/h')} with gusts to ${formatBestWindowMetric(maxGust, ' km/h', '0 km/h')}. Calmest priority rewards lower-gust windows.`
+      : `Sustained wind peaks near ${formatBestWindowMetric(maxWind, ' km/h', '0 km/h')} with gusts to ${formatBestWindowMetric(maxGust, ' km/h', '0 km/h')}.`,
+  });
+
+  if (route) {
+    const headwindPenalty = firstFinite(route?.avgHeadwind, 0)! > 0
+      ? weights.routeHeadwind * clamp(firstFinite(route?.avgHeadwind, 0)! / 22, 0, 1.3)
+      : 0;
+    const crosswindPenalty = firstFinite(route?.avgCrosswind, 0)! > 0
+      ? weights.routeCrosswind * clamp(firstFinite(route?.avgCrosswind, 0)! / 26, 0, 1.2)
+      : 0;
+    const tailwindBonus = firstFinite(route?.avgTailwind, 0)! > 0
+      ? weights.tailwindBonus * clamp(firstFinite(route?.avgTailwind, 0)! / 18, 0, 1)
+      : 0;
+    const routeWindNet = tailwindBonus - headwindPenalty - crosswindPenalty;
+    rows.push({
+      label: 'Route wind effect',
+      tone: getBestWindowImpactTone(routeWindNet),
+      score: formatBestWindowSignedDelta(routeWindNet),
+      detail: `Average route exposure is about ${formatBestWindowMetric(firstFinite(route?.avgHeadwind, 0), ' km/h', '0 km/h')} headwind, ${formatBestWindowMetric(firstFinite(route?.avgCrosswind, 0), ' km/h', '0 km/h')} crosswind, and ${formatBestWindowMetric(firstFinite(route?.avgTailwind, 0), ' km/h', '0 km/h')} tailwind.`,
+    });
+  }
+
+  const meanFeels = firstFinite(domain.meanFeels, point.feels, point.temp);
+  const minFeels = firstFinite(route?.minFeels, domain.minFeels, meanFeels);
+  const maxFeels = firstFinite(route?.maxFeels, domain.maxFeels, meanFeels);
+  let comfortPenalty = 0;
+  if (isFiniteNumber(meanFeels)) {
+    if (meanFeels < band.low) comfortPenalty += weights.comfort * clamp((band.low - meanFeels) / 12, 0, 1.25);
+    if (meanFeels > band.high) comfortPenalty += weights.comfort * clamp((meanFeels - band.high) / 12, 0, 1.25);
+  }
+  if (isFiniteNumber(minFeels) && minFeels < band.low - 2) comfortPenalty += weights.comfort * 0.35 * clamp((band.low - minFeels) / 10, 0, 1);
+  if (isFiniteNumber(maxFeels) && maxFeels > band.high + 2) comfortPenalty += weights.comfort * 0.3 * clamp((maxFeels - band.high) / 10, 0, 1);
+  const comfortBonus = priority === 'warmest' && isFiniteNumber(meanFeels)
+    ? clamp((meanFeels - band.low) / 8, 0, 1.4) * 12
+    : 0;
+  const comfortNet = comfortBonus - comfortPenalty;
+  rows.push({
+    label: 'Comfort band',
+    tone: getBestWindowImpactTone(comfortNet),
+    score: formatBestWindowSignedDelta(comfortNet),
+    detail: priority === 'warmest' && isFiniteNumber(meanFeels)
+      ? `Feels-like range ${formatBestWindowMetric(minFeels, ' C')} to ${formatBestWindowMetric(maxFeels, ' C')} against a target band of ${band.low}-${band.high} C. Warmest priority adds credit to warmer windows.`
+      : `Feels-like range ${formatBestWindowMetric(minFeels, ' C')} to ${formatBestWindowMetric(maxFeels, ' C')} against a target band of ${band.low}-${band.high} C for ${getBestWindowActivityName(activity)}.`,
+  });
+
+  const daylightPenalty = /mostly dark|starts after sunset|starts before sunrise/i.test(light.label || '')
+    ? weights.daylight * 0.95
+    : (/crosses sunset|crosses sunrise/i.test(light.label || '') ? weights.daylight * 0.45 : 0);
+  rows.push({
+    label: 'Daylight',
+    tone: getBestWindowImpactTone(-daylightPenalty),
+    score: formatBestWindowSignedDelta(-daylightPenalty),
+    detail: light.label
+      ? `Light coverage for this window: ${String(light.label)}.`
+      : 'Light coverage stays favorable across the activity window.',
+  });
+
+  const maxUv = firstFinite(route?.maxUv, domain.maxUv, point.uv, 0);
+  const uvPenalty = firstFinite(maxUv, 0)! >= 6 && isBestWindowOutdoorUvRelevantActivity(activity)
+    ? weights.uv * clamp((firstFinite(maxUv, 0)! - 5) / 6, 0, 1.25)
+    : 0;
+  rows.push({
+    label: 'UV exposure',
+    tone: getBestWindowImpactTone(-uvPenalty),
+    score: formatBestWindowSignedDelta(-uvPenalty),
+    detail: isBestWindowOutdoorUvRelevantActivity(activity)
+      ? `Peak UV is ${formatBestWindowMetric(maxUv, '', 'n/a')} for this window.`
+      : 'UV is not weighted heavily for this indoor-focused activity.',
+  });
+
+  const stormPenalty = domain.hasStorm ? weights.storm : 0;
+  rows.push({
+    label: 'Storm signal',
+    tone: getBestWindowImpactTone(-stormPenalty),
+    score: formatBestWindowSignedDelta(-stormPenalty),
+    detail: domain.hasStorm
+      ? 'A thunderstorm or severe-weather signal appears inside the planned window.'
+      : 'No storm signal is present inside the planned window.',
+  });
+
+  if (isBestWindowWaterExposureActivity(activity) && isFiniteNumber(firstFinite(point.waterTemp, null))) {
+    const waterTemp = firstFinite(point.waterTemp, null)!;
+    const waterNet = waterTemp < 16
+      ? -(weights.water * clamp((16 - waterTemp) / 8, 0, 1.2))
+      : clamp((waterTemp - 16) / 8, 0, 1) * 6;
+    rows.push({
+      label: 'Water temperature',
+      tone: getBestWindowImpactTone(waterNet),
+      score: formatBestWindowSignedDelta(waterNet),
+      detail: `Water temperature is ${formatBestWindowMetric(waterTemp, ' C')} for this start window.`,
+    });
+  }
+
+  rows.push({
+    label: 'Priority bias',
+    tone: 'neutral',
+    score: getBestWindowPresetLabel(priority),
+    detail: getBestWindowPrioritySummary(priority, activity),
+  });
+
+  return rows;
+}
+
+function getBestWindowScoreExplainerHtml(candidate: unknown, options: unknown): string {
+  if (!candidate || !options) return '';
+  const c = candidate as Record<string, any>;
+  const opts = options as Record<string, any>;
+  const rows = buildBestWindowScoreExplainerRows(candidate, options);
+  const score = firstFinite(c.score, 0);
+  const title = formatWeekdayTime(c.startTime || '');
+  return `
+    <div class="best-window-explainer" aria-live="polite">
+      <div class="best-window-explainer-header">
+        <div>
+          <div class="best-window-explainer-kicker">Selected score explainer</div>
+          <div class="best-window-explainer-title">${escapeHtml(title ? `Why ${title} scores ${String(score)}` : `Why this window scores ${String(score)}`)}</div>
+        </div>
+        <div class="best-window-explainer-summary">${escapeHtml(getBestWindowPresetLabel(opts.priority || 'best_overall'))}</div>
+      </div>
+      <div class="best-window-explainer-grid">
+        ${rows.map((row) => `
+          <div class="best-window-explainer-row tone-${escapeHtml(String(row.tone || 'neutral'))}">
+            <div class="best-window-explainer-factor">${escapeHtml(String(row.label || ''))}</div>
+            <div class="best-window-explainer-score">${escapeHtml(String(row.score || ''))}</div>
+            <div class="best-window-explainer-detail">${escapeHtml(String(row.detail || ''))}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+}
+
 export function buildBestWindowReasons(candidate: unknown, options: unknown): string[] {
   const c = candidate as Record<string, any>;
   const opts = options as Record<string, any>;
@@ -407,6 +683,8 @@ export function renderBestWindowResults(
     return;
   }
   const currentSelected = selectedStart || an.topWindows[0]?.representative?.startTime || null;
+  const selectedCluster = an.topWindows.find((cluster) => cluster?.representative?.startTime === currentSelected) || an.topWindows[0];
+  const selectedExplainerHtml = getBestWindowScoreExplainerHtml(selectedCluster?.representative, an.options);
   containerEl.innerHTML = `
     ${getBestWindowTimelineHtml(analysis, selectedStart)}
     <div class="best-window-grid">
@@ -434,5 +712,6 @@ export function renderBestWindowResults(
             <div class="best-window-why">${escapeHtml(reasons.join(' · ') || 'Balanced full-window conditions.')}</div>
           </button>`;
       }).join('')}
-    </div>`;
+    </div>
+    ${selectedExplainerHtml}`;
 }

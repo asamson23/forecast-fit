@@ -189,6 +189,8 @@ if (consumeStravaOAuthCallback()) {
  * - v9.8.12 aligns UV categories with ECCC / Health Canada guidance,
  *   adds UV colour badges, and uses official Environment Canada weather alerts
  *   for Canadian locations when available.
+ * - v10.2 adds a selected Best Window score explainer below the result
+ *   cards so the chosen time shows the main scoring tradeoffs.
  * - v10.1.7 makes Strava-loaded running activities use the same minutes
  *   duration default as manual running selection.
  * - v10.1.6 defaults running activity custom durations to minutes instead of

@@ -404,6 +404,83 @@ span.flatpickr-weekday,
     color: var(--text);
     line-height: 1.45;
   }
+  .best-window-explainer {
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--surface2) 84%, var(--surface) 16%);
+    padding: 12px;
+  }
+  .best-window-explainer-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .best-window-explainer-kicker {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .best-window-explainer-title {
+    margin-top: 4px;
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text);
+  }
+  .best-window-explainer-summary {
+    flex: 0 0 auto;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    color: color-mix(in srgb, var(--accent) 72%, var(--text));
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    line-height: 1.2;
+  }
+  .best-window-explainer-grid {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .best-window-explainer-row {
+    display: grid;
+    grid-template-columns: minmax(0, 160px) auto;
+    gap: 4px 12px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+    background: color-mix(in srgb, var(--surface) 88%, var(--surface2) 12%);
+  }
+  .best-window-explainer-row.tone-boost {
+    border-color: color-mix(in srgb, var(--ok) 34%, var(--border));
+    background: color-mix(in srgb, var(--ok) 8%, var(--surface));
+  }
+  .best-window-explainer-row.tone-penalty {
+    border-color: color-mix(in srgb, var(--warn) 34%, var(--border));
+    background: color-mix(in srgb, var(--warn) 7%, var(--surface));
+  }
+  .best-window-explainer-factor {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .best-window-explainer-score {
+    justify-self: end;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.74rem;
+    color: var(--text-soft);
+  }
+  .best-window-explainer-detail {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-soft);
+  }
   .best-window-strip {
     position: relative;
     margin-top: 10px;
