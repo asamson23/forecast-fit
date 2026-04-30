@@ -6,6 +6,8 @@ export interface StravaRouteSummary {
   distance?: number;
   elevation_gain?: number;
   estimated_moving_time?: number;
+  type?: number;
+  sub_type?: number;
   updated_at?: string;
   permalink_url?: string;
   map?: {
@@ -22,6 +24,7 @@ export interface StravaActivitySummary {
   distance?: number;
   moving_time?: number;
   elapsed_time?: number;
+  average_speed?: number;
   total_elevation_gain?: number;
   start_date?: string;
   start_date_local?: string;

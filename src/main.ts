@@ -189,6 +189,8 @@ if (consumeStravaOAuthCallback()) {
  * - v9.8.12 aligns UV categories with ECCC / Health Canada guidance,
  *   adds UV colour badges, and uses official Environment Canada weather alerts
  *   for Canadian locations when available.
+ * - v9.8.15 adds Strava planner autofill for sport, average, and duration
+ *   when import data supports it.
  * - v9.8.14 trims UV display inside forecast cells to the category/rating
  *   only, while keeping the rest of each cell's weather data intact.
  * - v9.8.9 keeps at least two best-window options when enough candidate
@@ -7058,6 +7060,111 @@ Object.assign(window, {
 });
 
 
+function setSelectedActivityButton(activityKey) {
+  document.querySelectorAll('.activity-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.activity === activityKey);
+  });
+}
+
+function mapStravaActivityToPlannerActivity(activity) {
+  const sport = String(activity?.sport_type || activity?.type || '').trim();
+  if (!sport) return null;
+
+  const directMap = {
+    Run: 'running',
+    TrailRun: 'trail_running',
+    Ride: 'cycling',
+    VirtualRide: 'indoor_cycling',
+    MountainBikeRide: 'mtb_gravel',
+    GravelRide: 'mtb_gravel',
+    EMountainBikeRide: 'mtb_gravel',
+    EBikeRide: 'cycling',
+    Hike: 'hiking',
+    Walk: 'walk',
+    Swim: 'swimming_open',
+    Surfing: 'surfing',
+    Kayaking: 'kayaking',
+    Canoeing: 'kayaking',
+    StandUpPaddling: 'sup',
+    Kitesurf: 'water_sports',
+    Windsurf: 'water_sports',
+    Sail: 'water_sports',
+    Workout: 'gym',
+    WeightTraining: 'gym',
+    HighIntensityIntervalTraining: 'gym',
+    Crossfit: 'gym',
+    Elliptical: 'gym',
+    StairStepper: 'gym',
+    Pilates: 'gym',
+    Yoga: 'gym',
+    VirtualRun: 'indoor_running',
+  };
+
+  return directMap[sport] || null;
+}
+
+function mapStravaRouteToPlannerActivity(route) {
+  const routeType = Number(route?.type);
+  const routeSubtype = Number(route?.sub_type);
+  if (routeType === 2) return routeSubtype === 4 ? 'trail_running' : 'running';
+  if (routeType === 1) return [2, 3, 4, 5].includes(routeSubtype) ? 'mtb_gravel' : 'cycling';
+  return null;
+}
+
+function formatStravaAverageForPlanner(kmh, activityKey) {
+  if (!isFiniteNumber(kmh) || kmh <= 0) return null;
+  const preferredUnit = getPreferredAverageUnit(activityKey);
+
+  if (preferredUnit === 'kmh') {
+    return { unit: 'kmh', value: round1(kmh).toFixed(1).replace(/\.0$/, '') };
+  }
+
+  const paceMinutes = preferredUnit === 'min_per_100m' ? (6 / kmh) : (60 / kmh);
+  const wholeMinutes = Math.floor(paceMinutes);
+  const seconds = Math.round((paceMinutes - wholeMinutes) * 60);
+  const safeMinutes = seconds === 60 ? wholeMinutes + 1 : wholeMinutes;
+  const safeSeconds = seconds === 60 ? 0 : seconds;
+
+  return {
+    unit: preferredUnit,
+    value: `${safeMinutes}:${String(safeSeconds).padStart(2, '0')}`,
+  };
+}
+
+function formatMinutesForPlannerInput(minutes) {
+  if (!isFiniteNumber(minutes) || minutes <= 0) return '';
+  const rounded = Math.round(minutes);
+  const hours = Math.floor(rounded / 60);
+  const mins = rounded % 60;
+  return hours > 0 ? `${hours}:${String(mins).padStart(2, '0')}` : String(rounded);
+}
+
+function applyStravaPlannerAutofill(details) {
+  const activityKey = details?.activityKey || null;
+  if (activityKey) {
+    selectedActivity = activityKey;
+    selectedEventKey = null;
+    if (poolTypeSelect && activityKey === 'swimming_pool_indoor') poolTypeSelect.value = 'indoor_heated';
+    setSelectedActivityButton(activityKey);
+  }
+
+  renderCustomControlOptions(true);
+
+  const average = activityKey ? formatStravaAverageForPlanner(Number(details?.averageKmh), activityKey) : null;
+  if (averageUnitSelect && average?.unit) averageUnitSelect.value = average.unit;
+  if (averageInput) averageInput.value = average?.value || '';
+
+  if (customDurationInput) {
+    customDurationInput.value = details?.shouldSetDuration
+      ? formatMinutesForPlannerInput(Number(details?.durationMinutes))
+      : '';
+    if (details?.shouldSetDuration && durationUnitSelect) durationUnitSelect.value = 'h';
+  }
+
+  syncDurationFromEvent(getSelectedEvent());
+  renderPlannerState();
+}
+
 async function importStravaFirstRoute() {
   const routes = await fetchStravaRoutes(STRAVA_BACKEND_URL);
   if (!Array.isArray(routes) || !routes.length) throw new Error('No saved Strava routes found');
@@ -7072,6 +7179,14 @@ async function importStravaFirstRoute() {
     if (!isMissingExport) throw error;
     importedRoute = stravaRouteSummaryToImportedRoute(route);
   }
+  applyStravaPlannerAutofill({
+    activityKey: mapStravaRouteToPlannerActivity(route),
+    averageKmh: Number(route?.distance) > 0 && Number(route?.estimated_moving_time) > 0
+      ? (Number(route.distance) / 1000) / (Number(route.estimated_moving_time) / 3600)
+      : null,
+    durationMinutes: Number(route?.estimated_moving_time) > 0 ? Number(route.estimated_moving_time) / 60 : null,
+    shouldSetDuration: !importedRoute?.hasRealTimestamps,
+  });
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
@@ -7116,7 +7231,8 @@ async function handleOpenStravaPicker() {
   }
 }
 
-async function applyImportedStravaRoute(importedRoute, sourceLabel) {
+async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutofill = null) {
+  applyStravaPlannerAutofill(plannerAutofill);
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
@@ -7293,7 +7409,14 @@ async function importStravaRouteById(routeId) {
     if (!isMissingExport) throw error;
     importedRoute = stravaRouteSummaryToImportedRoute(route);
   }
-  await applyImportedStravaRoute(importedRoute, 'Strava route');
+  await applyImportedStravaRoute(importedRoute, 'Strava route', {
+    activityKey: mapStravaRouteToPlannerActivity(route),
+    averageKmh: Number(route?.distance) > 0 && Number(route?.estimated_moving_time) > 0
+      ? (Number(route.distance) / 1000) / (Number(route.estimated_moving_time) / 3600)
+      : null,
+    durationMinutes: Number(route?.estimated_moving_time) > 0 ? Number(route.estimated_moving_time) / 60 : null,
+    shouldSetDuration: !importedRoute?.hasRealTimestamps,
+  });
 }
 
 async function importStravaActivityById(activityId) {
@@ -7301,7 +7424,12 @@ async function importStravaActivityById(activityId) {
   if (!activity) throw new Error('Selected Strava activity was not found.');
   const streams = await fetchStravaActivityStreams(STRAVA_BACKEND_URL, activity.id);
   const importedRoute = stravaActivityStreamsToImportedRoute(activity, streams);
-  await applyImportedStravaRoute(importedRoute, 'Strava activity');
+  await applyImportedStravaRoute(importedRoute, 'Strava activity', {
+    activityKey: mapStravaActivityToPlannerActivity(activity),
+    averageKmh: Number(activity?.average_speed) > 0 ? Number(activity.average_speed) * 3.6 : null,
+    durationMinutes: Number(activity?.moving_time) > 0 ? Number(activity.moving_time) / 60 : null,
+    shouldSetDuration: !importedRoute?.hasRealTimestamps,
+  });
 }
 
 function renderStravaConnectionStateEnhanced() {

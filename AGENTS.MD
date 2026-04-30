@@ -32,6 +32,11 @@ Run:
 - npm run typecheck if available
 - npm test if available
 
+## Versioning
+- Whenever a bugfix or feature addition is shipped, update the app version numbers in every user-facing/version-tracked location that this repo uses.
+- Keep at least `package.json` and the visible version string in `index.html` in sync.
+- If the current change also updates version notes or inline changelog comments, keep those aligned with the new version number.
+
 Also manually check:
 - app loads with no console errors
 - location input works
