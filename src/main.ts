@@ -2344,7 +2344,7 @@ async function fetchRouteCheckpointForecast(cp) {
   const cacheKey = `${cp.lat.toFixed(4)},${cp.lon.toFixed(4)}`;
   const cache = routeState.weatherCache[cacheKey] || (routeState.weatherCache[cacheKey] = {});
   if (!cache.hourly) {
-    const url = `${WEATHER_API}?latitude=${cp.lat}&longitude=${cp.lon}&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,is_day,uv_index&forecast_days=7&wind_speed_unit=kmh&timezone=auto`;
+    const url = `${WEATHER_API}?latitude=${cp.lat}&longitude=${cp.lon}&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,is_day,uv_index&forecast_days=7&wind_speed_unit=kmh&timezone=auto`;
     const res = await fetchWithTimeout(url, {}, 12000, 'Route checkpoint weather');
     if (!res.ok) throw new Error(`Route checkpoint weather HTTP ${res.status}`);
     const json = await res.json();
@@ -2352,6 +2352,7 @@ async function fetchRouteCheckpointForecast(cp) {
       time,
       temp: json.hourly.temperature_2m?.[i],
       feels: json.hourly.apparent_temperature?.[i],
+      humidity: json.hourly.relative_humidity_2m?.[i],
       precipProb: json.hourly.precipitation_probability?.[i],
       precip: json.hourly.precipitation?.[i],
       wind: json.hourly.wind_speed_10m?.[i],
@@ -4143,6 +4144,7 @@ async function fetchWeatherCore(place) {
       time,
       temp: weatherJson.hourly.temperature_2m?.[i],
       feels: weatherJson.hourly.apparent_temperature?.[i],
+      humidity: weatherJson.hourly.relative_humidity_2m?.[i],
       precipProb: weatherJson.hourly.precipitation_probability?.[i],
       precip: weatherJson.hourly.precipitation?.[i],
       wind: weatherJson.hourly.wind_speed_10m?.[i],
@@ -4278,8 +4280,7 @@ function getSelectedStartTime(data) {
 function getHourlyPointForStart(data, startTime) {
   if (!data.hourly.length) return data.current;
   if (startTime === data.currentTime) return data.current;
-  const point = getInterpolatedHourlyPoint(data, startTime);
-  return { ...point, humidity: data.current.humidity };
+  return getInterpolatedHourlyPoint(data, startTime);
 }
 
 function interpolateNumber(a, b, ratio, key, fallback = 0) {
@@ -4311,6 +4312,7 @@ function getInterpolatedHourlyPoint(data, timeStr) {
     time: timeStr,
     temp: interpolateNumber(before, after, ratio, 'temp'),
     feels: interpolateNumber(before, after, ratio, 'feels'),
+    humidity: interpolateNumber(before, after, ratio, 'humidity', null),
     precipProb: interpolateNumber(before, after, ratio, 'precipProb'),
     precip: interpolateNumber(before, after, ratio, 'precip'),
     wind: interpolateNumber(before, after, ratio, 'wind'),

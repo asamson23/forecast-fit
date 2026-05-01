@@ -732,3 +732,7 @@
 ## v11.0.2
 
 - Fixed: distance/event presets are now selectable while race day mode is active.
+
+## v11.0.3
+
+- Fixed: hourly humidity is now requested, mapped, and displayed in forecast cells and chart tooltips.
