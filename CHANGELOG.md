@@ -736,3 +736,8 @@
 ## v11.0.3
 
 - Fixed: hourly humidity is now requested, mapped, and displayed in forecast cells and chart tooltips.
+
+## v11.0.4
+
+- Fixed: AQI badges and chips now keep stronger contrast in dark theme so category text stays readable.
+- Fixed: NOAA NDBC station-list and realtime buoy requests now go through Forecast Fit backend proxy endpoints instead of failing browser-side on CORS.

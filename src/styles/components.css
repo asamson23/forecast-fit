@@ -912,6 +912,44 @@
     border-color: color-mix(in srgb, #7a1a1a 62%, var(--border));
     background: color-mix(in srgb, #7a1a1a 14%, var(--surface2));
   }
+  @media (prefers-color-scheme: dark) {
+    .aqi-good,
+    .mini-chip.aqi-good {
+      color: #8ee0aa;
+      border-color: color-mix(in srgb, #4cc889 58%, var(--border));
+      background: color-mix(in srgb, #4cc889 18%, var(--surface2));
+    }
+    .aqi-moderate,
+    .mini-chip.aqi-moderate {
+      color: #ffe08a;
+      border-color: color-mix(in srgb, #ffcf5a 62%, var(--border));
+      background: color-mix(in srgb, #ffcf5a 18%, var(--surface2));
+    }
+    .aqi-sensitive,
+    .mini-chip.aqi-sensitive {
+      color: #ffbf7b;
+      border-color: color-mix(in srgb, #ff9d4d 62%, var(--border));
+      background: color-mix(in srgb, #ff9d4d 18%, var(--surface2));
+    }
+    .aqi-unhealthy,
+    .mini-chip.aqi-unhealthy {
+      color: #ff9f9f;
+      border-color: color-mix(in srgb, #ff7272 62%, var(--border));
+      background: color-mix(in srgb, #ff7272 18%, var(--surface2));
+    }
+    .aqi-very-unhealthy,
+    .mini-chip.aqi-very-unhealthy {
+      color: #d9b4ff;
+      border-color: color-mix(in srgb, #b883ff 62%, var(--border));
+      background: color-mix(in srgb, #b883ff 18%, var(--surface2));
+    }
+    .aqi-hazardous,
+    .mini-chip.aqi-hazardous {
+      color: #ffc4c4;
+      border-color: color-mix(in srgb, #d95f5f 62%, var(--border));
+      background: color-mix(in srgb, #d95f5f 18%, var(--surface2));
+    }
+  }
 
   .skeleton {
     background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
