@@ -58,7 +58,7 @@ export function renderForecastBlock(
       <div class="forecast-cell">
         <div class="hour">${escapeHtml(formatShortTime(p.time))}</div>
         ${weatherIconHtml(p.code, 'icon')}
-        <div class="temp"><span class="forecast-metric" title="Temperature">${Math.round(p.temp as number)}°</span><span class="feels-line forecast-metric" title="Feels like">feels ${Math.round(p.feels as number)}°</span></div>
+        <div class="temp"><span class="forecast-metric" title="Temperature">${Math.round(p.temp as number)}°</span><span class="feels-line forecast-metric" title="Feels like">feels ${Math.round(p.feels as number)}°</span>${isFiniteNumber(p.humidity) ? `<span class="forecast-metric" title="Humidity">${Math.round(p.humidity as number)}% RH</span>` : ''}</div>
         <div class="meta"><span class="forecast-metric" title="Wind speed">${Math.round((p.wind as number) || 0)} km/h</span><br><span class="forecast-metric" title="Precipitation amount / chance">${round1((p.precip as number) || 0)} mm · ${Math.round((p.precipProb as number) || 0)}%</span>${isFiniteNumber(p.uv) ? `<br>${renderUvValueBadge(p.uv, true)}` : ''}${isFiniteNumber(p.aqi) ? `<br>${renderAqiBadge(p.aqi, true)}` : ''}</div>
       </div>`).join('');
 
