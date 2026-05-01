@@ -187,6 +187,11 @@ span.flatpickr-weekday,
     gap: 18px;
     align-items: start;
   }
+  #planner-parameters-column {
+    display: grid;
+    gap: 18px;
+    align-content: start;
+  }
 
   .activity-grid, .duration-grid, .event-grid {
     display: grid;

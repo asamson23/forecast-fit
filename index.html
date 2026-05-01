@@ -82,7 +82,7 @@
   </div>
   <div id="planner-card-body">
     <div class="setup-grid">
-    <div>
+    <div id="activity-setup-column">
       <div class="section-label-row" id="activity-section">
         <label>Activity</label>
         <div class="section-actions-row">
@@ -236,23 +236,28 @@
         <div class="pick-pill-list" id="custom-multisport-leg-list"></div>
       </div>
 
-      <div id="event-distance-section" style="margin-top:18px">
-        <label>Event / distance</label>
-        <div class="event-grid" id="event-grid"></div>
-        <p class="event-summary" id="event-summary">Pick an activity to load the usual event-distance presets.</p>
-        <div class="custom-grid best-window-range-grid">
-          <div>
-            <label class="sub-label">Custom distance</label>
-            <div class="inline-fields">
-              <input type="number" id="custom-distance-input" min="0" step="0.1" placeholder="Optional">
-              <select id="distance-unit-select"></select>
+      <div id="event-distance-section" class="planner-subsection" data-planner-subsection="eventDistance" data-planner-subsection-title="Event and distance" style="margin-top:18px">
+        <div class="activity-group-title planner-subsection-toggle" data-planner-subsection-toggle>
+          <span>Event / distance</span>
+        </div>
+        <div data-planner-subsection-body>
+          <div class="event-grid" id="event-grid"></div>
+          <p class="event-summary" id="event-summary">Pick an activity to load the usual event-distance presets.</p>
+          <div class="custom-grid best-window-range-grid">
+            <div>
+              <label class="sub-label">Custom distance</label>
+              <div class="inline-fields">
+                <input type="number" id="custom-distance-input" min="0" step="0.1" placeholder="Optional">
+                <select id="distance-unit-select"></select>
+              </div>
+              <p class="status-line compact" id="distance-status">Preset distance is used.</p>
             </div>
-            <p class="status-line compact" id="distance-status">Preset distance is used.</p>
           </div>
         </div>
       </div>
     </div>
 
+    <div id="planner-parameters-column">
     <div id="duration-section" class="planner-subsection" data-planner-subsection="duration" data-planner-subsection-title="Planned duration">
       <div class="activity-group-title planner-subsection-toggle" data-planner-subsection-toggle>
         <span>Planned duration</span>
@@ -283,6 +288,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 
   <div id="comfort-adjustments-section" class="comfort-adjustments-group">
@@ -338,6 +344,7 @@
         <span class="comfort-end-label">Cooler</span>
         <div class="comfort-ticks" aria-hidden="true"><span>max</span><span>+++</span><span>++</span><span>+</span><span>normal</span><span>−</span><span>−−</span><span>−−−</span><span>max</span></div>
       </div>
+    </div>
     </div>
         </div>
       </section>
@@ -532,7 +539,7 @@
 <footer class="site-footer">
   <div class="attribution-card">
     <div class="block-title">Credits & attributions</div>
-    <p><strong>Forecast Fit</strong> <strong>v10.4</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
+    <p><strong>Forecast Fit</strong> <strong>v10.5</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
     <p>Implementation and iteration assistance: <strong>ChatGPT</strong> (including <strong>GPT-5.3-Codex</strong>) and <strong>Claude by Anthropic</strong>. This build does not use any live third-party AI integrations.</p>
     <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, and Google Fonts for DM Sans / DM Mono.</p>
     <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>

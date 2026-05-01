@@ -498,12 +498,30 @@
     display: none !important;
   }
   @media (max-width: 640px) {
-    #location-card > .section-label-row { gap: 8px; }
-    #location-card > .section-label-row .section-actions-row { justify-content: flex-start; }
+    #location-card > .section-label-row {
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    #location-card > .section-label-row > label { width: 100%; }
+    #location-card > .section-label-row .section-actions-row {
+      flex: 1 1 100%;
+      min-width: 0;
+      flex-wrap: wrap;
+      overflow: visible;
+      justify-content: flex-start;
+      padding-bottom: 0;
+      gap: 8px;
+    }
+    #location-card-summary {
+      flex: 1 1 100% !important;
+      min-width: 0;
+    }
     #location-card > .section-label-row .mode-toggle-btn,
     #location-card > .section-label-row .reset-btn {
       padding-inline: 8px;
       font-size: 0.64rem;
+      flex: 0 1 auto;
     }
     .strava-picker-item-head,
     .strava-picker-item-meta {

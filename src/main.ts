@@ -195,6 +195,9 @@ if (consumeStravaOAuthCallback()) {
  *   temperature preference, and water controls, moves Start time to the bottom
  *   of Activity & parameters, and promotes Planned effort to Race when Race
  *   day mode is enabled.
+ * - v10.5 fixes mobile Location & route action-button wrapping, mirrors loaded
+ *   route distance into the disabled custom-distance input, and moves/collapses
+ *   Event / distance into the right planner column while a route is active.
  * - v10.2 adds a selected Best Window score explainer below the result
  *   cards so the chosen time shows the main scoring tradeoffs.
  * - v10.1.7 makes Strava-loaded running activities use the same minutes
@@ -316,6 +319,10 @@ const customMultisportSection = document.getElementById('custom-multisport-secti
 const customMultisportSummary = document.getElementById('custom-multisport-summary');
 const customMultisportStatus = document.getElementById('custom-multisport-status');
 const customMultisportLegList = document.getElementById('custom-multisport-leg-list');
+const activitySetupColumn = document.getElementById('activity-setup-column');
+const plannerParametersColumn = document.getElementById('planner-parameters-column');
+const eventDistanceSection = document.getElementById('event-distance-section');
+const durationSection = document.getElementById('duration-section');
 
 // Custom multisport builder state.
 // Triathlon and indoor multisport still keep their fast presets, but these
@@ -366,10 +373,12 @@ let locationCardCollapsed = false;
 let plannerCardCollapsed = false;
 const plannerSubsectionCollapsed: Record<string, boolean> = {
   duration: false,
+  eventDistance: false,
   effort: true,
   temperature: true,
   water: true
 };
+let routeDistanceInputSnapshot: null | { value: string; unit: string } = null;
 let bestWindowAnalysis = null;
 let bestWindowAnalysisKey = '';
 let bestWindowSelectedStart = null;
@@ -728,6 +737,46 @@ function updateCheckpointModelUi() {
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
   if (checkpointModelStatus) checkpointModelStatus.textContent = getCheckpointModelStatusText();
+}
+
+var eventDistanceLastRouteLoaded = false;
+
+function captureRouteDistanceInputSnapshot() {
+  if (routeDistanceInputSnapshot || routeState?.points?.length) return;
+  routeDistanceInputSnapshot = {
+    value: customDistanceInput?.value || '',
+    unit: distanceUnitSelect?.value || 'km'
+  };
+}
+
+function restoreRouteDistanceInputSnapshot() {
+  if (!routeDistanceInputSnapshot) return;
+  if (customDistanceInput) customDistanceInput.value = routeDistanceInputSnapshot.value;
+  if (distanceUnitSelect) distanceUnitSelect.value = routeDistanceInputSnapshot.unit || 'km';
+  routeDistanceInputSnapshot = null;
+}
+
+function updateEventDistancePlacementUi() {
+  const routeLoaded = !!routeState?.points?.length;
+  if (routeLoaded !== eventDistanceLastRouteLoaded) {
+    plannerSubsectionCollapsed.eventDistance = routeLoaded;
+    eventDistanceLastRouteLoaded = routeLoaded;
+  }
+
+  if (!eventDistanceSection || !durationSection) return;
+
+  if (routeLoaded) {
+    if (plannerParametersColumn && eventDistanceSection.parentElement !== plannerParametersColumn) {
+      plannerParametersColumn.insertBefore(eventDistanceSection, durationSection);
+    }
+    return;
+  }
+
+  if (!activitySetupColumn) return;
+  const insertBeforeNode = customMultisportSection?.nextElementSibling || null;
+  if (eventDistanceSection.parentElement !== activitySetupColumn || eventDistanceSection.previousElementSibling !== customMultisportSection) {
+    activitySetupColumn.insertBefore(eventDistanceSection, insertBeforeNode);
+  }
 }
 
 async function selectCheckpointModel(mode) {
@@ -1602,6 +1651,10 @@ function syncDurationFromEvent(preset) {
 
 function updateCustomInputLocks() {
   const distanceLocked = !!routeState?.points?.length;
+  if (distanceLocked) {
+    if (distanceUnitSelect) distanceUnitSelect.value = 'km';
+    if (customDistanceInput) customDistanceInput.value = isFiniteNumber(routeState?.totalKm) ? String(round1(routeState.totalKm)) : '';
+  }
   customDistanceInput.disabled = distanceLocked;
   distanceUnitSelect.disabled = distanceLocked;
   const durationLocked = routeHasDurationOverride();
@@ -1652,6 +1705,7 @@ function updateCustomStatusTexts() {
 }
 
 function renderPlannerState() {
+  updateEventDistancePlacementUi();
   renderCustomControlOptions();
   updateCustomInputLocks();
   renderEventButtons();
@@ -2382,6 +2436,7 @@ async function handleRouteFileChange(event) {
   try {
     const points = await parseRouteFile(file);
     if (!points.length) throw new Error('No route points found in that file.');
+    captureRouteDistanceInputSnapshot();
     routeState = buildRouteState(points, file.name);
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
@@ -2402,6 +2457,7 @@ async function handleRouteFileChange(event) {
 
 function clearRoute() {
   routeState = null;
+  restoreRouteDistanceInputSnapshot();
   routeFileInput.value = '';
   clearRouteBtn.style.display = 'none';
   routeStatus.textContent = 'Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when timing data exists.';
@@ -7325,6 +7381,7 @@ async function handleOpenStravaPicker() {
 
 async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutofill = null) {
   applyStravaPlannerAutofill(plannerAutofill);
+  captureRouteDistanceInputSnapshot();
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
