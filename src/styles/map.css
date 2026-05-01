@@ -307,6 +307,16 @@
   .strava-picker-panel {
     width: min(820px, 100%);
   }
+  .strava-picker-url-box {
+    margin-top: 14px;
+  }
+  .strava-picker-url-row {
+    align-items: stretch;
+  }
+  .strava-picker-url-row .btn {
+    min-height: 48px;
+    white-space: nowrap;
+  }
   .strava-picker-tabs {
     display: flex;
     gap: 10px;
@@ -342,6 +352,9 @@
     display: grid;
     gap: 12px;
     margin-top: 10px;
+  }
+  .strava-picker-load-more {
+    justify-self: start;
   }
   .strava-picker-empty {
     border: 1px dashed var(--border);

@@ -527,4 +527,10 @@
     .strava-picker-item-meta {
       align-items: flex-start;
     }
+    .strava-picker-url-row {
+      flex-direction: column;
+    }
+    .strava-picker-url-row .btn {
+      width: 100%;
+    }
   }

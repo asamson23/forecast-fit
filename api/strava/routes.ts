@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getBearerToken, getErrorMessage, handleOptions, proxyJsonResponse, readResponsePayload, respondWithProxyError, setCors, stravaFetch } from './stravaUtils.js';
+import { getBearerToken, getErrorMessage, handleOptions, parsePositiveInteger, proxyJsonResponse, readResponsePayload, respondWithProxyError, setCors, stravaFetch } from './stravaUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -8,8 +8,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const token = getBearerToken(req);
     if (!token) return res.status(401).json({ error: 'Missing bearer token' });
     const headers = { Authorization: `Bearer ${token}` };
+    const page = parsePositiveInteger(req.query.page, 1);
 
-    const directRoutesResponse = await stravaFetch('/athlete/routes?page=1&per_page=50', { headers });
+    const directRoutesResponse = await stravaFetch(`/athlete/routes?page=${page}&per_page=50`, { headers });
     if (directRoutesResponse.ok) {
       return proxyJsonResponse(res, directRoutesResponse);
     }
@@ -28,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: 'Unable to resolve the authenticated Strava athlete ID' });
     }
 
-    const athleteRoutesResponse = await stravaFetch(`/athletes/${athleteId}/routes?page=1&per_page=50`, { headers });
+    const athleteRoutesResponse = await stravaFetch(`/athletes/${athleteId}/routes?page=${page}&per_page=50`, { headers });
     if (athleteRoutesResponse.ok) {
       return proxyJsonResponse(res, athleteRoutesResponse);
     }

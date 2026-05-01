@@ -783,3 +783,9 @@
 
 - Added the missing `@vercel/node` and `@types/node` dependencies required for Vercel Strava function type resolution.
 - Expanded local TypeScript checking to include `api/` so missing server-side typings fail locally before deployment.
+
+## v11.1
+
+- Added Strava picker pagination so routes and activities can load beyond the first page inside the import overlay.
+- Added a Strava URL import field at the top of the picker so direct route and activity links can be pasted and imported immediately.
+- Added backend Strava detail proxy endpoints for direct route/activity lookup by ID and paginated the route list proxy.

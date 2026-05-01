@@ -68,8 +68,12 @@ async function authedFetch(url: string, backendUrl: string) {
   return response;
 }
 
-export function fetchStravaRoutes(backendUrl: string) {
-  return authedFetch(`${backendUrl}/api/strava/routes`, backendUrl).then((response) => response.json()) as Promise<StravaRouteSummary[]>;
+export function fetchStravaRoutes(backendUrl: string, page = 1) {
+  return authedFetch(`${backendUrl}/api/strava/routes?page=${encodeURIComponent(String(page))}`, backendUrl).then((response) => response.json()) as Promise<StravaRouteSummary[]>;
+}
+
+export function fetchStravaRoute(backendUrl: string, routeId: string | number) {
+  return authedFetch(`${backendUrl}/api/strava/route?routeId=${encodeURIComponent(String(routeId))}`, backendUrl).then((response) => response.json()) as Promise<StravaRouteSummary>;
 }
 
 export function fetchStravaRouteGpx(backendUrl: string, routeId: string | number) {
@@ -78,6 +82,10 @@ export function fetchStravaRouteGpx(backendUrl: string, routeId: string | number
 
 export function fetchStravaActivities(backendUrl: string, page = 1) {
   return authedFetch(`${backendUrl}/api/strava/activities?page=${encodeURIComponent(String(page))}`, backendUrl).then((response) => response.json()) as Promise<StravaActivitySummary[]>;
+}
+
+export function fetchStravaActivity(backendUrl: string, activityId: string | number) {
+  return authedFetch(`${backendUrl}/api/strava/activity?activityId=${encodeURIComponent(String(activityId))}`, backendUrl).then((response) => response.json()) as Promise<StravaActivitySummary>;
 }
 
 export function fetchStravaActivityStreams(backendUrl: string, activityId: string | number) {
