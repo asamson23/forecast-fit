@@ -290,6 +290,9 @@ span.flatpickr-weekday,
   .start-mode-row {
     grid-template-columns: repeat(3, 1fr);
   }
+  #start-time-section.forecast-only-active .start-mode-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
   .time-box {
     margin-top: 12px;

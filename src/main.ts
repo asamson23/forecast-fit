@@ -710,6 +710,8 @@ function updateForecastOnlyModeUi() {
     forecastOnlyBtn.setAttribute('aria-pressed', forecastOnlyMode ? 'true' : 'false');
     forecastOnlyBtn.textContent = forecastOnlyMode ? 'Exit forecast only' : 'Forecast only';
   }
+  const startTimeSection = document.getElementById('start-time-section');
+  if (startTimeSection) startTimeSection.classList.toggle('forecast-only-active', !!forecastOnlyMode);
   if (locationRouteChoiceGrid) locationRouteChoiceGrid.classList.toggle('forecast-only-active', !!forecastOnlyMode);
   if (routeFilePanel) routeFilePanel.hidden = !!forecastOnlyMode;
   if (routeChoiceDivider) routeChoiceDivider.hidden = !!forecastOnlyMode;

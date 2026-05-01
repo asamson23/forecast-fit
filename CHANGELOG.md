@@ -760,3 +760,7 @@
 ## v11.0.8
 
 - Extended forecast fetching and the forecast picker range from 7 days to 14 days so later start-time planning works for the full two-week window.
+
+## v11.0.9
+
+- Fixed forecast-only Start time layout so the remaining Now and Later buttons switch from a 3-column row to a full-width 2-column row.
