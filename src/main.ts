@@ -178,17 +178,39 @@ if (consumeStravaOAuthCallback()) {
  * - v9.7 adds Planned effort. It is an activity-context modifier: low-effort
  *   outings ask for more warmth, hard/race efforts ask for less, and the
  *   displayed weather remains untouched.
- * - v9.8.5 moves the Activity & parameters reset button into the section heading row.
- * - v9.8.3 fixes the v9.8.2 startup crash caused by accordion state being read before initialization.
+ * - v9.8 adds a custom multisport leg builder, collapsible/accordion activity
+ *   groups, automatic Location & route collapse after loading, route-only
+ *   checkpoint controls, and viewport-bound chart tooltips that no longer clip
+ *   at the top of the chart.
+ * - v9.8.1 restores chart tooltip reliability and re-adds precip chance
+ *   alongside precipitation amount in the hourly chart/table.
  * - v9.8.2 fixes two regressions from the v9.8.1 cleanup pass:
  *   activity accordion clicks now use a delegated event listener, and the chart
  *   tooltip binding is back on each SVG hit rectangle while still using the
  *   body-level portal so the tooltip does not clip.
- * - v9.8.1 restores chart tooltip reliability and re-adds precip chance
- *   alongside precipitation amount in the hourly chart/table.
+ * - v9.8.3 fixes the v9.8.2 startup crash caused by accordion state being read before initialization.
+ * - v9.8.5 moves the Activity & parameters reset button into the section heading row.
+ * - v9.8.7 hides water-temperature fallback chips/notes for non-water
+ *   activities and expands Best window with medal styling plus runner-ups.
+ * - v9.8.8 condenses nearby best-window starts into 2–6 distinct choices,
+ *   flags options whose activity extends past the search end, and brings the
+ *   selected timeline item above overlapping windows.
+ * - v9.8.9 keeps at least two best-window options when enough candidate
+ *   starts exist, adds adaptive major/minor timeline ticks, and adds date ticks
+ *   when activity windows cross into another day.
  * - v9.8.12 aligns UV categories with ECCC / Health Canada guidance,
  *   adds UV colour badges, and uses official Environment Canada weather alerts
  *   for Canadian locations when available.
+ * - v9.8.14 trims UV display inside forecast cells to the category/rating
+ *   only, while keeping the rest of each cell's weather data intact.
+ * - v9.8.15 adds Strava planner autofill for sport, average, and duration
+ *   when import data supports it.
+ * - v10.1.6 defaults running activity custom durations to minutes instead of
+ *   hours.
+ * - v10.1.7 makes Strava-loaded running activities use the same minutes
+ *   duration default as manual running selection.
+ * - v10.2 adds a selected Best Window score explainer below the result
+ *   cards so the chosen time shows the main scoring tradeoffs.
  * - v10.3 sharpens the route checkpoint callout copy and adds a bit more
  *   breathing room below the route weather slot inside the forecast result.
  * - v10.4 adds collapsible planner subsections for duration, effort,
@@ -201,37 +223,18 @@ if (consumeStravaOAuthCallback()) {
  * - v10.6 adds a forecast-only shortcut, collapses the planner for weather-only
  *   use, hides route/Strava import options while that shortcut is active, and
  *   renames the older checkpoint model to Standard.
- * - v10.9 hides water-temperature override controls while forecast-only mode is
- *   active, while still leaving the at-a-glance water signal visible.
+ * - v10.7 adds basic social sharing metadata in the app shell so shared links
+ *   include a title, description, and image hint on platforms that read Open
+ *   Graph and Twitter card tags.
  * - v10.8 makes forecast-only mode a real toggle, gives the location chooser a
  *   single-column forecast-only layout, removes leftover OR dividers in that
  *   mode, and surfaces water temperature in weather-only results as a useful
  *   at-a-glance signal.
- * - v10.7 adds basic social sharing metadata in the app shell so shared links
- *   include a title, description, and image hint on platforms that read Open
- *   Graph and Twitter card tags.
- * - v10.2 adds a selected Best Window score explainer below the result
- *   cards so the chosen time shows the main scoring tradeoffs.
- * - v10.1.7 makes Strava-loaded running activities use the same minutes
- *   duration default as manual running selection.
- * - v10.1.6 defaults running activity custom durations to minutes instead of
- *   hours.
- * - v9.8.15 adds Strava planner autofill for sport, average, and duration
- *   when import data supports it.
- * - v9.8.14 trims UV display inside forecast cells to the category/rating
- *   only, while keeping the rest of each cell's weather data intact.
- * - v9.8.9 keeps at least two best-window options when enough candidate
- *   starts exist, adds adaptive major/minor timeline ticks, and adds date ticks
- *   when activity windows cross into another day.
- * - v9.8.8 condenses nearby best-window starts into 2–6 distinct choices,
- *   flags options whose activity extends past the search end, and brings the
- *   selected timeline item above overlapping windows.
- * - v9.8.7 hides water-temperature fallback chips/notes for non-water
- *   activities and expands Best window with medal styling plus runner-ups.
- * - v9.8 adds a custom multisport leg builder, collapsible/accordion activity
- *   groups, automatic Location & route collapse after loading, route-only
- *   checkpoint controls, and viewport-bound chart tooltips that no longer clip
- *   at the top of the chart.
+ * - v10.9 hides water-temperature override controls while forecast-only mode is
+ *   active, while still leaving the at-a-glance water signal visible.
+ * - v11 hides the full water-settings section, hides Best window, restores
+ *   a visible water-temperature signal in forecast-only results, and removes
+ *   the empty Clothing & gear panel from forecast-only output.
  */
 const GEO_API = SHARED_GEO_API;
 const NOMINATIM_SEARCH_API = SHARED_NOMINATIM_SEARCH_API;
@@ -544,6 +547,13 @@ function shouldShowWaterTemperature(activity = selectedActivity, point = null) {
   return isWaterRelevantActivity(activity);
 }
 
+function shouldShowWaterTemperatureSignal(point, activity = selectedActivity) {
+  if (forecastOnlyMode) {
+    return !!point && (isFiniteNumber(point.waterTemp) || ['estimated', 'measured', 'manual', 'unknown'].includes(String(point.waterTempSource || '')));
+  }
+  return shouldShowWaterTemperature(activity, point);
+}
+
 function isWaterExposureActivity(activity = selectedActivity) {
   return waterExposureActivities.has(activity);
 }
@@ -765,6 +775,7 @@ function updateCheckpointModelUi() {
 }
 
 function updateForecastOnlyModeUi() {
+  if (forecastOnlyMode && startMode === 'best') startMode = 'now';
   if (forecastOnlyBtn) {
     forecastOnlyBtn.classList.toggle('active', !!forecastOnlyMode);
     forecastOnlyBtn.setAttribute('aria-pressed', forecastOnlyMode ? 'true' : 'false');
@@ -775,6 +786,17 @@ function updateForecastOnlyModeUi() {
   if (routeChoiceDivider) routeChoiceDivider.hidden = !!forecastOnlyMode;
   if (stravaPanel) stravaPanel.hidden = !!forecastOnlyMode;
   if (stravaChoiceDivider) stravaChoiceDivider.hidden = !!forecastOnlyMode;
+  const plannerWaterSection = document.getElementById('water-temp-section');
+  if (plannerWaterSection) plannerWaterSection.hidden = !!forecastOnlyMode;
+  const bestModeBtn = document.querySelector('[data-start-mode="best"]');
+  if (bestModeBtn instanceof HTMLElement) bestModeBtn.hidden = !!forecastOnlyMode;
+  document.querySelectorAll('.toggle-btn[data-start-mode]').forEach(btn => {
+    const active = btn.dataset.startMode === startMode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  laterBox?.classList.toggle('visible', startMode === 'later');
+  bestWindowBox?.classList.toggle('visible', !forecastOnlyMode && startMode === 'best');
 }
 
 var eventDistanceLastRouteLoaded = false;
@@ -1555,7 +1577,7 @@ function getWaterTemperatureChip(point, data = weatherData) {
 }
 
 function renderWaterTemperatureMetaLine(point, data = weatherData) {
-  if (!point || !shouldShowWaterTemperature(selectedActivity, point)) return '';
+  if (!point || !shouldShowWaterTemperatureSignal(point, selectedActivity)) return '';
   if (!isFiniteNumber(point.waterTemp)) {
     return `🌊 Water <strong>unknown</strong> ${renderWaterSignal('unknown')} <span class="water-source-label">unknown</span>`;
   }
@@ -1565,7 +1587,7 @@ function renderWaterTemperatureMetaLine(point, data = weatherData) {
 }
 
 function renderWaterTempDisclaimer(point) {
-  if (!point || !shouldShowWaterTemperature(selectedActivity, point) || !['estimated', 'manual'].includes(point.waterTempSource)) return '';
+  if (!point || !shouldShowWaterTemperatureSignal(point, selectedActivity) || !['estimated', 'manual'].includes(point.waterTempSource)) return '';
   const lead = point.waterTempSource === 'manual'
     ? 'Manual water temperature is user-entered and not verified by the app.'
     : 'Estimated water temperature is a fallback only, not a measured reading.';
@@ -3790,8 +3812,8 @@ function activateForecastOnlyMode() {
   selectedActivity = null;
   selectedEventKey = null;
   selectedDuration = 'h3';
+  if (startMode === 'best') startMode = 'now';
   raceDayMode = false;
-  plannerSubsectionCollapsed.water = false;
   clearPlannerCustomFields();
   document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
   plannerCardCollapsed = true;
@@ -3858,12 +3880,13 @@ function selectDurationKey(key) {
 window.selectDurationKey = selectDurationKey;
 
 function selectStartMode(btn) {
+  if (forecastOnlyMode && btn.dataset.startMode === 'best') return;
   document.querySelectorAll('.toggle-btn[data-start-mode]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   updateCheckpointModelUi();
   startMode = btn.dataset.startMode;
   laterBox.classList.toggle('visible', startMode === 'later');
-  bestWindowBox.classList.toggle('visible', startMode === 'best');
+  bestWindowBox.classList.toggle('visible', !forecastOnlyMode && startMode === 'best');
   if (!weatherData) refreshIndoorAdviceIfNeeded();
   if (weatherData) configureLaterInput(weatherData);
   if (startMode === 'best' && weatherData) scheduleBestWindowAnalysis(true);
@@ -6316,7 +6339,7 @@ function renderAdvice(data, activity) {
     if (sunBits.length) metaLines.push(sunBits.join(' · '));
   }
   const waterMetaLine = renderWaterTemperatureMetaLine(point, data);
-  const showWaterUi = forecastOnlyMode || shouldShowWaterTemperature(activity || selectedActivity, point);
+  const showWaterUi = shouldShowWaterTemperatureSignal(point, activity || selectedActivity);
   if (waterMetaLine) metaLines.push(waterMetaLine);
   if (isFiniteNumber(point.waveHeight)) metaLines.push(`〰️ Waves <strong>${escapeHtml(round1(point.waveHeight))} m</strong>`);
 
@@ -6343,10 +6366,10 @@ function renderAdvice(data, activity) {
           <div class="route-callout">With a route loaded, set a planned duration to time both the forecast window and the route checkpoints.</div>
           ${routeState?.points?.length ? `<div id="route-weather-slot">${buildRouteWeatherHtml()}</div>` : ''}
         </section>
-        <section class="result-panel">
+        ${forecastOnlyMode ? '' : `<section class="result-panel">
           <div class="block-title">Clothing & gear</div>
           <p class="summary">Choose a planned duration to time the outing, then choose an activity to turn the weather into clothing and gear suggestions.</p>
-        </section>
+        </section>`}
       </div>
     `;
     updateManualWeatherStatus();
@@ -6379,10 +6402,10 @@ function renderAdvice(data, activity) {
           ${renderForecastBlock(data, startTime)}
           ${routeState?.points?.length ? `<div id="route-weather-slot">${buildRouteWeatherHtml()}</div>` : ''}
         </section>
-        <section class="result-panel">
+        ${forecastOnlyMode ? '' : `<section class="result-panel">
           <div class="block-title">Clothing & gear</div>
           <p class="summary">Choose an activity to turn the weather into clothing and gear suggestions.</p>
-        </section>
+        </section>`}
       </div>
     `;
     updateManualWeatherStatus();
@@ -7772,3 +7795,4 @@ function bindDomActions() {
 
 renderStravaConnectionStateEnhanced();
 bindDomActions();
+
