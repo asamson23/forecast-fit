@@ -748,3 +748,11 @@
 - Switched weather-condition icons to `@bybas/weather-icons`.
 - Replaced selected UI emoji surfaces with bundled Fluent UI SVG assets for more stable rendering across browsers and operating systems.
 - Updated Credits & attributions, README, and `.env.example` to reflect the current icon and backend configuration.
+
+## v11.0.6
+
+- Switched Fluent UI emoji asset imports from the flat set to the modern set for the app's bundled SVG icon surfaces.
+
+## v11.0.7
+
+- Added native system-emoji fallback for bundled SVG icon surfaces so UI symbols still render if a Fluent or weather asset fails to load.

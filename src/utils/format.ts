@@ -8,44 +8,44 @@ import weather10dUrl from '@bybas/weather-icons/production/fill/openweathermap/1
 import weather11dUrl from '@bybas/weather-icons/production/fill/openweathermap/11d.svg?url';
 import weather13dUrl from '@bybas/weather-icons/production/fill/openweathermap/13d.svg?url';
 import weather50dUrl from '@bybas/weather-icons/production/fill/openweathermap/50d.svg?url';
-import globeShowingAmericasUrl from 'fluentui-emoji/icons/flat/globe-showing-americas.svg?url';
-import firstPlaceMedalUrl from 'fluentui-emoji/icons/flat/1st-place-medal.svg?url';
-import secondPlaceMedalUrl from 'fluentui-emoji/icons/flat/2nd-place-medal.svg?url';
-import thirdPlaceMedalUrl from 'fluentui-emoji/icons/flat/3rd-place-medal.svg?url';
-import automobileUrl from 'fluentui-emoji/icons/flat/automobile.svg?url';
-import campingUrl from 'fluentui-emoji/icons/flat/camping.svg?url';
-import canoeUrl from 'fluentui-emoji/icons/flat/canoe.svg?url';
-import cloudUrl from 'fluentui-emoji/icons/flat/cloud.svg?url';
-import cloudWithLightningAndRainUrl from 'fluentui-emoji/icons/flat/cloud-with-lightning-and-rain.svg?url';
-import cloudWithRainUrl from 'fluentui-emoji/icons/flat/cloud-with-rain.svg?url';
-import cloudWithSnowUrl from 'fluentui-emoji/icons/flat/cloud-with-snow.svg?url';
-import coatUrl from 'fluentui-emoji/icons/flat/coat.svg?url';
-import deerUrl from 'fluentui-emoji/icons/flat/deer.svg?url';
-import divingMaskUrl from 'fluentui-emoji/icons/flat/diving-mask.svg?url';
-import dropletUrl from 'fluentui-emoji/icons/flat/droplet.svg?url';
-import faceWithMedicalMaskUrl from 'fluentui-emoji/icons/flat/face-with-medical-mask.svg?url';
-import fishingPoleUrl from 'fluentui-emoji/icons/flat/fishing-pole.svg?url';
-import foggyUrl from 'fluentui-emoji/icons/flat/foggy.svg?url';
-import hikingBootUrl from 'fluentui-emoji/icons/flat/hiking-boot.svg?url';
-import houseUrl from 'fluentui-emoji/icons/flat/house.svg?url';
-import informationUrl from 'fluentui-emoji/icons/flat/information.svg?url';
-import kiteUrl from 'fluentui-emoji/icons/flat/kite.svg?url';
-import labelUrl from 'fluentui-emoji/icons/flat/label.svg?url';
-import personBikingUrl from 'fluentui-emoji/icons/flat/person-biking-default.svg?url';
-import personLiftingWeightsUrl from 'fluentui-emoji/icons/flat/person-lifting-weights-default.svg?url';
-import personRunningUrl from 'fluentui-emoji/icons/flat/person-running-default.svg?url';
-import personSurfingUrl from 'fluentui-emoji/icons/flat/person-surfing-default.svg?url';
-import personSwimmingUrl from 'fluentui-emoji/icons/flat/person-swimming-default.svg?url';
-import personWalkingUrl from 'fluentui-emoji/icons/flat/person-walking-default.svg?url';
-import skierUrl from 'fluentui-emoji/icons/flat/skier.svg?url';
-import stadiumUrl from 'fluentui-emoji/icons/flat/stadium.svg?url';
-import sunUrl from 'fluentui-emoji/icons/flat/sun.svg?url';
-import sunBehindRainCloudUrl from 'fluentui-emoji/icons/flat/sun-behind-rain-cloud.svg?url';
-import sunBehindSmallCloudUrl from 'fluentui-emoji/icons/flat/sun-behind-small-cloud.svg?url';
-import sunWithFaceUrl from 'fluentui-emoji/icons/flat/sun-with-face.svg?url';
-import warningUrl from 'fluentui-emoji/icons/flat/warning.svg?url';
-import waterWaveUrl from 'fluentui-emoji/icons/flat/water-wave.svg?url';
-import windFaceUrl from 'fluentui-emoji/icons/flat/wind-face.svg?url';
+import globeShowingAmericasUrl from 'fluentui-emoji/icons/modern/globe-showing-americas.svg?url';
+import firstPlaceMedalUrl from 'fluentui-emoji/icons/modern/1st-place-medal.svg?url';
+import secondPlaceMedalUrl from 'fluentui-emoji/icons/modern/2nd-place-medal.svg?url';
+import thirdPlaceMedalUrl from 'fluentui-emoji/icons/modern/3rd-place-medal.svg?url';
+import automobileUrl from 'fluentui-emoji/icons/modern/automobile.svg?url';
+import campingUrl from 'fluentui-emoji/icons/modern/camping.svg?url';
+import canoeUrl from 'fluentui-emoji/icons/modern/canoe.svg?url';
+import cloudUrl from 'fluentui-emoji/icons/modern/cloud.svg?url';
+import cloudWithLightningAndRainUrl from 'fluentui-emoji/icons/modern/cloud-with-lightning-and-rain.svg?url';
+import cloudWithRainUrl from 'fluentui-emoji/icons/modern/cloud-with-rain.svg?url';
+import cloudWithSnowUrl from 'fluentui-emoji/icons/modern/cloud-with-snow.svg?url';
+import coatUrl from 'fluentui-emoji/icons/modern/coat.svg?url';
+import deerUrl from 'fluentui-emoji/icons/modern/deer.svg?url';
+import divingMaskUrl from 'fluentui-emoji/icons/modern/diving-mask.svg?url';
+import dropletUrl from 'fluentui-emoji/icons/modern/droplet.svg?url';
+import faceWithMedicalMaskUrl from 'fluentui-emoji/icons/modern/face-with-medical-mask.svg?url';
+import fishingPoleUrl from 'fluentui-emoji/icons/modern/fishing-pole.svg?url';
+import foggyUrl from 'fluentui-emoji/icons/modern/foggy.svg?url';
+import hikingBootUrl from 'fluentui-emoji/icons/modern/hiking-boot.svg?url';
+import houseUrl from 'fluentui-emoji/icons/modern/house.svg?url';
+import informationUrl from 'fluentui-emoji/icons/modern/information.svg?url';
+import kiteUrl from 'fluentui-emoji/icons/modern/kite.svg?url';
+import labelUrl from 'fluentui-emoji/icons/modern/label.svg?url';
+import personBikingUrl from 'fluentui-emoji/icons/modern/person-biking-default.svg?url';
+import personLiftingWeightsUrl from 'fluentui-emoji/icons/modern/person-lifting-weights-default.svg?url';
+import personRunningUrl from 'fluentui-emoji/icons/modern/person-running-default.svg?url';
+import personSurfingUrl from 'fluentui-emoji/icons/modern/person-surfing-default.svg?url';
+import personSwimmingUrl from 'fluentui-emoji/icons/modern/person-swimming-default.svg?url';
+import personWalkingUrl from 'fluentui-emoji/icons/modern/person-walking-default.svg?url';
+import skierUrl from 'fluentui-emoji/icons/modern/skier.svg?url';
+import stadiumUrl from 'fluentui-emoji/icons/modern/stadium.svg?url';
+import sunUrl from 'fluentui-emoji/icons/modern/sun.svg?url';
+import sunBehindRainCloudUrl from 'fluentui-emoji/icons/modern/sun-behind-rain-cloud.svg?url';
+import sunBehindSmallCloudUrl from 'fluentui-emoji/icons/modern/sun-behind-small-cloud.svg?url';
+import sunWithFaceUrl from 'fluentui-emoji/icons/modern/sun-with-face.svg?url';
+import warningUrl from 'fluentui-emoji/icons/modern/warning.svg?url';
+import waterWaveUrl from 'fluentui-emoji/icons/modern/water-wave.svg?url';
+import windFaceUrl from 'fluentui-emoji/icons/modern/wind-face.svg?url';
 import { weatherCodeToEmoji } from '../features/weather/weatherCodes';
 import { isFiniteNumber } from './math';
 
@@ -160,15 +160,19 @@ function getIconAsset(token: string | null | undefined): IconAsset | null {
   return ICONS[token] ?? null;
 }
 
+function buildNativeEmojiFallbackHtml(token: string): string {
+  return `<span class="emoji-native-fallback" aria-hidden="true">${escapeHtml(token)}</span>`;
+}
+
 function buildIconImageHtml(token: string, label?: string): string {
   const asset = getIconAsset(token);
   if (!asset) return '';
   const title = escapeHtml(label || asset.label);
-  return `<img class="emoji-asset-img" src="${asset.url}" alt="" decoding="async" title="${title}">`;
+  return `<img class="emoji-asset-img" src="${asset.url}" alt="" decoding="async" title="${title}" onerror="this.hidden=true;this.parentElement&&this.parentElement.classList.add('emoji-asset-fallback')">${buildNativeEmojiFallbackHtml(token)}`;
 }
 
-function buildAssetImageHtml(url: string, label: string): string {
-  return `<img class="emoji-asset-img" src="${url}" alt="" decoding="async" title="${escapeHtml(label)}">`;
+function buildAssetImageHtml(url: string, label: string, fallbackToken: string): string {
+  return `<img class="emoji-asset-img" src="${url}" alt="" decoding="async" title="${escapeHtml(label)}" onerror="this.hidden=true;this.parentElement&&this.parentElement.classList.add('emoji-asset-fallback')">${buildNativeEmojiFallbackHtml(fallbackToken)}`;
 }
 
 export function renderSymbolIconHtml(
@@ -267,7 +271,7 @@ export function windDirectionHtml(deg: unknown, className = 'wind-dir-inline', s
 
 export function weatherIconHtml(code: unknown, className = 'icon'): string {
   const [, desc] = weatherCodeToEmoji(code as number);
-  return `<span class="${escapeHtml(className)} emoji-asset-icon" role="img" aria-label="${escapeHtml(desc)}" title="${escapeHtml(desc)}">${buildAssetImageHtml(getWeatherAssetUrl(code), desc)}</span>`;
+  return `<span class="${escapeHtml(className)} emoji-asset-icon" role="img" aria-label="${escapeHtml(desc)}" title="${escapeHtml(desc)}">${buildAssetImageHtml(getWeatherAssetUrl(code), desc, getWeatherToken(code))}</span>`;
 }
 
 export function formatWindTooltip(speed: unknown, gusts: unknown, dir: unknown): { speedText: string; gustText: string; dirHtml: string } {

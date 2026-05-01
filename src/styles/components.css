@@ -52,6 +52,17 @@
     height: 1em;
     object-fit: contain;
   }
+  .emoji-native-fallback {
+    display: none;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    line-height: 1;
+  }
+  .emoji-asset-icon.emoji-asset-fallback .emoji-asset-img {
+    display: none;
+  }
+  .emoji-asset-icon.emoji-asset-fallback .emoji-native-fallback {
+    display: inline-block;
+  }
   .country-flag-icon {
     --CountryFlagIcon-height: 0.9em;
     vertical-align: -0.08em;

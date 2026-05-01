@@ -53,7 +53,7 @@ The current icon and asset stack includes:
 
 - `@bybas/weather-icons` for weather-condition icons
 - `country-flag-icons` for SVG country flags
-- `fluentui-emoji` / Microsoft Fluent UI Emoji assets for selected non-weather SVG icon surfaces
+- `fluentui-emoji` / Microsoft Fluent UI Emoji modern assets, with native system-emoji fallback, for selected non-weather SVG icon surfaces
 - DM Sans and DM Mono from Google Fonts
 
 ## Architecture
