@@ -1,43 +1,97 @@
 # Forecast Fit
 
-Forecast Fit is a weather-aware activity planner for choosing when to go, what to wear, and how conditions change across a route. It combines location search, route import, forecast sampling, clothing guidance, UV and air-quality context, marine and water data where relevant, and weather warnings in a single Vite + TypeScript app.
+Forecast Fit is a weather-aware planner for activities, routes, clothing, UV exposure, air quality, water conditions, and official or forecast-derived warnings. It is built as a static Vite + TypeScript frontend with vanilla DOM rendering, with an optional backend layer for provider integrations such as Strava.
 
-## Current Project State
+## Current Scope
 
-- Frontend: Vite, TypeScript, vanilla DOM rendering, plain CSS, Leaflet, Flatpickr, JSZip
-- Hosting target: static frontend deployment, including GitHub Pages
-- Optional backend layer: Vercel serverless endpoints for Strava OAuth and Strava data proxying
-- PWA support: manifest plus service worker for app-shell/static asset caching
+- Outdoor, indoor, water, trail, travel, fishing, and hunting planning
+- Location search, current location, route upload, and Strava import
+- Route-aware checkpoint weather instead of only a single-point forecast
+- Clothing and gear guidance that adapts to activity, effort, temperature preference, precipitation, wind, exposure, and water context
+- Best-window analysis with ranked start-time options
+- Forecast-only mode for users who only want weather, water, and warning context
 
-## What The App Does
+## Main Features
 
-- Looks up locations with weather-aware planning focused on outdoor activities
-- Supports current-location use, manual place search, and Strava route/activity import
-- Imports GPX and GeoJSON routes and renders them on a Leaflet map
-- Samples route checkpoint conditions instead of only showing a single point forecast
-- Recommends clothing and gear based on activity, effort level, temperature preference, wind, and exposure
-- Planned effort (Low/standing → Race) and a temperature preference slider nudge clothing picks without altering real forecast values
-- Groups activities into: Outdoor & travel, Trail & mountain, Cycling, Swimming & water, Paddling & board sports, Indoor training, and Road trip
-- Indoor activities (gym, indoor running, velodrome, indoor pool, indoor multisport) work without a location
-- Custom multisport leg builder for Triathlon and Indoor multisport influences checklist wording, water relevance, and swim safety
-- Shows best-window analysis with up to six ranked options (gold/silver/bronze top three) and a score explainer
-- Includes UV index with hazard panels, air quality, marine data, and water-temperature context when relevant
-- Shows Environment and Climate Change Canada alerts for Canadian locations via MSC GeoMet, with a forecast-derived fallback
-- Includes a forecast-only mode that collapses the planner for weather-only use
-- Quick start guide with contextual steps and temporary section highlighting
-- Supports Strava import for saved routes and recent GPS activities through the backend/API layer
+- Location lookup with Open-Meteo geocoding plus current-location support
+- GPX and GeoJSON route import with Leaflet route rendering
+- Strava route and activity import through backend endpoints only
+- Hourly and daily forecast rendering with route checkpoint sampling
+- UV index, AQI, marine conditions, and water-temperature context where relevant
+- Environment and Climate Change Canada alert support for Canadian locations, with fallback hazard generation when official lookup fails
+- Indoor activities that can work without a location
+- Quick start helper overlay and forecast-only shortcut
+- Custom multisport leg builder for triathlon and indoor multisport
+
+## Activities
+
+The app currently groups activities into:
+
+- Performance & multisport
+- Indoor training
+- Outdoor swimming
+- Paddling & board sports
+- Trail & mountain
+- Hunting & fishing
+- Outdoor & travel
+
+Examples include running, cycling, triathlon, gym, indoor running, indoor cycling, indoor multisport, indoor and outdoor pool swimming, open-water swim, snorkeling, paddleboarding, kayaking, surfing, hiking, trail running, MTB/gravel, ski/snowboard, fishing, hunting, walking, casual use, road trip, and camping.
+
+## Tech Stack
+
+- Vite
+- TypeScript
+- Vanilla DOM rendering
+- Plain CSS
+- Leaflet
+- Flatpickr
+- JSZip
+
+## Visual Assets
+
+The current icon and asset stack includes:
+
+- `@bybas/weather-icons` for weather-condition icons
+- `country-flag-icons` for SVG country flags
+- `fluentui-emoji` / Microsoft Fluent UI Emoji assets for selected non-weather SVG icon surfaces
+- DM Sans and DM Mono from Google Fonts
 
 ## Architecture
 
 ### Frontend
 
-The main app lives in `src/` and is intentionally implemented with vanilla DOM rendering rather than a frontend framework. `index.html` preserves the app shell and visible version string. Feature logic is organized into TypeScript modules under `src/features`, `src/components`, `src/utils`, `src/app`, `src/data`, and `src/types`.
+The frontend lives in `src/` and remains framework-free by design. The app shell is in `index.html`, while the TypeScript code is split across:
 
-### Strava Integration
+- `src/components`
+- `src/data`
+- `src/features`
+- `src/styles`
+- `src/types`
+- `src/utils`
 
-Strava is not called directly from `src/`. The frontend talks to Forecast Fit backend endpoints, and the backend handles OAuth redirects, token exchange, token refresh, and Strava API proxying under `api/strava/`.
+### Backend / Provider Integrations
 
-This preserves the static frontend deployment model while keeping client secrets out of frontend code.
+The frontend must stay deployable as a static GitHub Pages app. Provider integrations that need secrets or OAuth flows are handled server-side.
+
+In the current repo, the backend layer lives under `api/` and is used for:
+
+- Strava OAuth callback handling
+- Strava token exchange and refresh
+- Strava API proxying
+- Backend-only provider calls that should not happen in the browser
+
+Do not put provider secrets, tokens, or server-only logic in `src/`.
+
+## Data Sources
+
+The app currently uses:
+
+- Open-Meteo geocoding, forecast, marine, and air-quality APIs
+- OpenStreetMap / Nominatim
+- NOAA NDBC
+- Environment and Climate Change Canada resources
+- CARTO basemaps with OpenStreetMap data
+- Strava through Forecast Fit backend endpoints only
 
 ## Local Development
 
@@ -47,13 +101,13 @@ Install dependencies:
 npm install
 ```
 
-Start the Vite dev server:
+Start the dev server:
 
 ```sh
 npm run dev
 ```
 
-Build the app:
+Build:
 
 ```sh
 npm run build
@@ -66,28 +120,31 @@ npm run typecheck
 npm test
 ```
 
-At the moment, `npm test` is a TypeScript validation pass rather than a separate test suite.
+At the moment, `npm test` is a TypeScript validation pass rather than a separate unit/integration test suite.
 
 ## Environment Variables
 
-Frontend and Strava backend configuration use environment variables. See `.env.example`.
+See `.env.example`.
 
-Relevant values include:
+Common values include:
 
-- `VITE_BASE_PATH` for Vite base-path control
-- `VITE_STRAVA_BACKEND_URL` for pointing the frontend at the Strava backend
+- `VITE_BASE_PATH`
+- `VITE_APP_BACKEND_URL`
+- `VITE_STRAVA_BACKEND_URL`
 - `STRAVA_CLIENT_ID`
 - `STRAVA_CLIENT_SECRET`
 - `STRAVA_REDIRECT_URI`
 - `FRONTEND_URL`
 
-Do not commit real secrets or tokens.
+Never commit real secrets.
 
-## Deployment Notes
+## Deployment
 
-### GitHub Pages Frontend
+### Static Frontend
 
-The frontend remains deployable as a static Vite build. For a GitHub project page, build with a repository base path such as:
+The frontend is intended to remain deployable as a static Vite build.
+
+For a GitHub project page:
 
 ```sh
 npm run build -- --base=/forecast-fit/
@@ -95,37 +152,32 @@ npm run build -- --base=/forecast-fit/
 
 For a custom domain or root deployment, use `/`.
 
-This repo also supports setting the base path through `VITE_BASE_PATH`.
+`VITE_BASE_PATH` can also be used to control the base path.
 
-### Strava Backend
+### Backend Layer
 
-The Strava integration expects a separate HTTPS backend deployment. In the current repo, that backend is implemented with Vercel serverless functions in `api/strava`.
-
-If the frontend is hosted on GitHub Pages, point `VITE_STRAVA_BACKEND_URL` at the deployed backend origin.
-
-## External Data Sources
-
-The app currently uses external weather and mapping-related services including:
-
-- Open-Meteo geocoding, forecast, marine, and air-quality APIs
-- OpenStreetMap Nominatim search
-- NOAA NDBC station/realtime data
-- Environment and Climate Change Canada alerts
-- Strava, through the backend layer only
+If Strava import or other secret-backed providers are enabled, deploy the backend/API layer separately over HTTPS and point the frontend at it with `VITE_APP_BACKEND_URL` or `VITE_STRAVA_BACKEND_URL`.
 
 ## Constraints
 
-- Do not move the frontend to React, Vue, or Svelte without explicit direction
-- Do not add provider secrets or tokens to `src/`
-- Do not add server-only code to frontend modules
-- Keep the frontend compatible with static hosting
+- Do not migrate the frontend to React, Vue, or Svelte without explicit direction
+- Do not add provider secrets or tokens to frontend code
+- Do not add Node/server-only logic to frontend modules
+- Keep the app compatible with static frontend hosting
 
-## Repo Validation Expectations
+## Validation Expectations
 
-Before shipping code changes, the project instructions require:
+Before shipping code changes, run:
 
 - `npm run build`
 - `npm run typecheck`
 - `npm test`
 
-And a manual smoke check for app load, location input, route upload, best-window rendering, forecast cells, and route map rendering.
+Manual smoke checks are also expected for:
+
+- app load with no console errors
+- location input
+- route upload
+- best-window panel rendering
+- forecast cell rendering
+- route map rendering

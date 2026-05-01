@@ -2,13 +2,6 @@
 
 ---
 
-## v11.0.5
-
-- Switched location suggestion flags from Unicode glyphs to `country-flag-icons` SVG assets for more consistent cross-platform rendering.
-- Switched weather-condition icons to `@bybas/weather-icons`.
-- Replaced selected UI emoji surfaces with bundled Fluent UI SVG assets for more stable rendering across browsers and operating systems.
-- Updated Credits & attributions to list the new icon libraries.
-
 ## `weather-clothing-advisor.html`
 
 - Four activities: Running / Triathlon, Cycling, Open Water Swimming, Casual.
@@ -748,3 +741,10 @@
 
 - Fixed: AQI badges and chips now keep stronger contrast in dark theme so category text stays readable.
 - Fixed: NOAA NDBC station-list and realtime buoy requests now go through Forecast Fit backend proxy endpoints instead of failing browser-side on CORS.
+
+## v11.0.5
+
+- Switched location suggestion flags from Unicode glyphs to `country-flag-icons` SVG assets for more consistent cross-platform rendering.
+- Switched weather-condition icons to `@bybas/weather-icons`.
+- Replaced selected UI emoji surfaces with bundled Fluent UI SVG assets for more stable rendering across browsers and operating systems.
+- Updated Credits & attributions, README, and `.env.example` to reflect the current icon and backend configuration.
