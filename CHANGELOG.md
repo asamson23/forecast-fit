@@ -756,3 +756,7 @@
 ## v11.0.7
 
 - Added native system-emoji fallback for bundled SVG icon surfaces so UI symbols still render if a Fluent or weather asset fails to load.
+
+## v11.0.8
+
+- Extended forecast fetching and the forecast picker range from 7 days to 14 days so later start-time planning works for the full two-week window.

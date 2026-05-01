@@ -2353,7 +2353,7 @@ async function fetchRouteCheckpointForecast(cp) {
   const cacheKey = `${cp.lat.toFixed(4)},${cp.lon.toFixed(4)}`;
   const cache = routeState.weatherCache[cacheKey] || (routeState.weatherCache[cacheKey] = {});
   if (!cache.hourly) {
-    const url = `${WEATHER_API}?latitude=${cp.lat}&longitude=${cp.lon}&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,is_day,uv_index&forecast_days=7&wind_speed_unit=kmh&timezone=auto`;
+    const url = `${WEATHER_API}?latitude=${cp.lat}&longitude=${cp.lon}&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,is_day,uv_index&forecast_days=14&wind_speed_unit=kmh&timezone=auto`;
     const res = await fetchWithTimeout(url, {}, 12000, 'Route checkpoint weather');
     if (!res.ok) throw new Error(`Route checkpoint weather HTTP ${res.status}`);
     const json = await res.json();
