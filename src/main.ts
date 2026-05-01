@@ -1562,8 +1562,6 @@ function refreshSelectionNotes() {
 }
 
 function getSelectedEvent() {
-  const racePreset = raceDayMode ? getRaceDayEventPreset() : null;
-  if (racePreset) return racePreset;
   const presets = getEventPresets();
   if (!presets.length) return null;
   let preset = presets.find(p => p.key === selectedEventKey);
@@ -1598,7 +1596,7 @@ function renderEventButtons() {
   }
   const selected = getSelectedEvent();
   container.innerHTML = presets.map(p => `
-    <button class="event-btn ${!raceDayMode && !customDistanceActive && selected?.key === p.key ? 'active' : ''} ${distanceLocked ? 'locked' : ''}" type="button" ${distanceLocked ? 'disabled' : ''} data-action="selectEventPreset" data-event-key="${escapeHtml(p.key)}">
+    <button class="event-btn ${!customDistanceActive && selected?.key === p.key ? 'active' : ''} ${distanceLocked ? 'locked' : ''}" type="button" ${distanceLocked ? 'disabled' : ''} data-action="selectEventPreset" data-event-key="${escapeHtml(p.key)}">
       <div class="label">${escapeHtml(p.label)}</div>
       <div class="sublabel">${escapeHtml(p.sublabel)}</div>
     </button>`).join('');
@@ -3773,13 +3771,6 @@ function selectActivity(btn) {
 }
 
 function selectEventPreset(key) {
-  if (raceDayMode) {
-    raceDayMode = false;
-    plannedEffort = 'steady';
-    updateRaceDayModeUi();
-    updateManualWeatherToggleUi();
-    updateLocationCardCollapseUi();
-  }
   if (customDistanceInput && !customDistanceInput.disabled) customDistanceInput.value = '';
   selectedEventKey = key;
   const preset = getSelectedEvent();

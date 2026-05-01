@@ -729,6 +729,6 @@
 - Restored a visible water-temperature signal in forecast-only results.
 - Removed the empty Clothing & gear panel from forecast-only output.
 
-## v11.0.1
+## v11.0.2
 
-- Fixed: clicking a distance/event preset while race day mode is on now exits race day mode and applies the selected preset, instead of silently doing nothing.
+- Fixed: distance/event presets are now selectable while race day mode is active.
