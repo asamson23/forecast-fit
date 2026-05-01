@@ -4,8 +4,30 @@
 
 ## `weather-clothing-advisor.html`
 
-- Used a browser-side AI dependency for clothing advice.
-- Added weather-code handling and water-temperature lookup.
+- Four activities: Running / Triathlon, Cycling, Open Water Swimming, Casual.
+- Location input with manual text entry.
+- Live weather via Open-Meteo (free, no API key).
+- Geocoding via Open-Meteo geocoding API.
+- Clothing recommendations generated via Claude AI (Anthropic API) based on conditions, activity, and duration.
+- Auto/system dark mode via `prefers-color-scheme`.
+- Skeleton loading states during fetch.
+- Activity switching re-triggered clothing advice without re-fetching weather.
+- Clothing items ordered head-to-toe, split into primary (essential) and secondary (optional) with colour-coded left border.
+- Warning box for safety-relevant conditions (thunderstorms, extreme heat/cold, etc.).
+
+## `weather-clothing-advisor.html` — autocomplete update
+
+- Added debounced autocomplete on the location input (260 ms delay, min 2 characters).
+- Up to 6 city suggestions from Open-Meteo geocoding API.
+- Country flag emoji derived from ISO country code.
+- Two-line suggestion layout: city name + region · country.
+- Keyboard navigation: ↑ / ↓ to move, Enter to select, Escape to dismiss.
+- Click outside closed the dropdown.
+- Suggestion portal appended to `<body>` and positioned via `getBoundingClientRect()` — no card clipping.
+- Selecting a suggestion skipped the second geocoding round-trip (coordinates already known).
+- Fixed: model name corrected from `claude-sonnet-4-20250514` to `claude-sonnet-4-6`.
+- Fixed: `overflow: visible` on `.card` so dropdown was not clipped underneath activity buttons.
+- Fixed: `fetchWeatherFromResult` refactored into shared `fetchWeatherCore()` to eliminate double button-reset race condition between suggestion click and the manual Check button.
 
 ## `weather-clothing-advisor-fixed.html`
 
@@ -174,11 +196,10 @@
 
 ## v6 Claude branch
 
-- Broader location search through Open-Meteo and Nominatim.
-- Richer route checkpoint cards with place labels.
-- Marine fallback using MET Norway on top of Open-Meteo Marine.
-- Stronger camping and road-trip logic.
-- Split result panels; itinerary panel scaffolding.
+- Based on ChatGPT-iterated v5.3 (Leaflet map, SVG forecast chart, 8 activities, GPX/GeoJSON route upload with checkpoint weather).
+- Added Claude's take panel above the clothing wizard; auto-fires on every render with full context (start conditions, up to 8 hourly forecast points, all route checkpoints with ETAs, duration, distance, pace, and current wizard picks); Refresh button for manual re-run; skeleton loading state; ~700 tokens in / ~350 tokens out per call.
+- Added Road trip itinerary panel; reverse-geocoded all route checkpoints via Nominatim; sent checkpoint weather and ETAs to Claude; produced a timeline with suggested break stops between checkpoints two or more hours apart (fuel, meal, weather window, fatigue rationale); vertical timeline with colour-coded dots (orange = suggested, green = finish).
+- Both AI panels degrade gracefully on API failure or missing route.
 
 ## v7
 

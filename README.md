@@ -12,20 +12,26 @@ Forecast Fit is a weather-aware activity planner for choosing when to go, what t
 ## What The App Does
 
 - Looks up locations with weather-aware planning focused on outdoor activities
-- Supports current-location use and manual place search
+- Supports current-location use, manual place search, and Strava route/activity import
 - Imports GPX and GeoJSON routes and renders them on a Leaflet map
 - Samples route checkpoint conditions instead of only showing a single point forecast
-- Recommends clothing and comfort adjustments based on activity, effort, temperature, wind, and exposure
-- Shows best-window analysis for choosing the strongest start time within a search range
-- Includes UV, air quality, marine, and water-temperature context when relevant
-- Shows Environment and Climate Change Canada alerts for Canadian locations when available
+- Recommends clothing and gear based on activity, effort level, temperature preference, wind, and exposure
+- Planned effort (Low/standing → Race) and a temperature preference slider nudge clothing picks without altering real forecast values
+- Groups activities into: Outdoor & travel, Trail & mountain, Cycling, Swimming & water, Paddling & board sports, Indoor training, and Road trip
+- Indoor activities (gym, indoor running, velodrome, indoor pool, indoor multisport) work without a location
+- Custom multisport leg builder for Triathlon and Indoor multisport influences checklist wording, water relevance, and swim safety
+- Shows best-window analysis with up to six ranked options (gold/silver/bronze top three) and a score explainer
+- Includes UV index with hazard panels, air quality, marine data, and water-temperature context when relevant
+- Shows Environment and Climate Change Canada alerts for Canadian locations via MSC GeoMet, with a forecast-derived fallback
+- Includes a forecast-only mode that collapses the planner for weather-only use
+- Quick start guide with contextual steps and temporary section highlighting
 - Supports Strava import for saved routes and recent GPS activities through the backend/API layer
 
 ## Architecture
 
 ### Frontend
 
-The main app lives in `src/` and is still intentionally implemented with vanilla DOM rendering rather than a frontend framework. `index.html` preserves the app shell and visible version string, while feature logic is being broken into smaller TypeScript modules under `src/features`, `src/components`, and `src/utils`.
+The main app lives in `src/` and is intentionally implemented with vanilla DOM rendering rather than a frontend framework. `index.html` preserves the app shell and visible version string. Feature logic is organized into TypeScript modules under `src/features`, `src/components`, `src/utils`, `src/app`, `src/data`, and `src/types`.
 
 ### Strava Integration
 
