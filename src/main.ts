@@ -878,6 +878,7 @@ function setupPlannerSubsectionToggles() {
 function toggleRaceDayMode() {
   raceDayMode = !raceDayMode;
   if (raceDayMode) plannedEffort = 'race';
+  else plannedEffort = 'steady';
   syncDurationFromEvent(getSelectedEvent());
   updateRaceDayModeUi();
   renderPlannerState();
