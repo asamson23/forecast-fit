@@ -198,6 +198,18 @@ if (consumeStravaOAuthCallback()) {
  * - v10.5 fixes mobile Location & route action-button wrapping, mirrors loaded
  *   route distance into the disabled custom-distance input, and moves/collapses
  *   Event / distance into the right planner column while a route is active.
+ * - v10.6 adds a forecast-only shortcut, collapses the planner for weather-only
+ *   use, hides route/Strava import options while that shortcut is active, and
+ *   renames the older checkpoint model to Standard.
+ * - v10.9 hides water-temperature override controls while forecast-only mode is
+ *   active, while still leaving the at-a-glance water signal visible.
+ * - v10.8 makes forecast-only mode a real toggle, gives the location chooser a
+ *   single-column forecast-only layout, removes leftover OR dividers in that
+ *   mode, and surfaces water temperature in weather-only results as a useful
+ *   at-a-glance signal.
+ * - v10.7 adds basic social sharing metadata in the app shell so shared links
+ *   include a title, description, and image hint on platforms that read Open
+ *   Graph and Twitter card tags.
  * - v10.2 adds a selected Best Window score explainer below the result
  *   cards so the chosen time shows the main scoring tradeoffs.
  * - v10.1.7 makes Strava-loaded running activities use the same minutes
@@ -305,8 +317,14 @@ const routeSummary = document.getElementById('route-summary');
 const locationCardToggleBtn = document.getElementById('location-card-toggle-btn');
 const locationCardBody = document.getElementById('location-card-body');
 const locationCardSummary = document.getElementById('location-card-summary');
+const locationRouteChoiceGrid = document.querySelector('.location-route-choice-grid');
 const plannerCardToggleBtn = document.getElementById('planner-card-toggle-btn');
 const plannerCardBody = document.getElementById('planner-card-body');
+const forecastOnlyBtn = document.getElementById('forecast-only-btn');
+const routeFilePanel = document.getElementById('route-file-panel');
+const routeChoiceDivider = document.getElementById('route-choice-divider');
+const stravaPanel = document.getElementById('strava-panel');
+const stravaChoiceDivider = document.getElementById('strava-choice-divider');
 const quickStartOverlay = document.getElementById('quick-start-overlay');
 const quickStartSteps = document.getElementById('quick-start-steps');
 const quickStartCloseBtn = document.getElementById('quick-start-close-btn');
@@ -371,6 +389,7 @@ let bestWindowStartPicker = null;
 let bestWindowEndPicker = null;
 let locationCardCollapsed = false;
 let plannerCardCollapsed = false;
+let forecastOnlyMode = false;
 const plannerSubsectionCollapsed: Record<string, boolean> = {
   duration: false,
   eventDistance: false,
@@ -713,18 +732,24 @@ function updateRaceDayModeUi() {
 }
 
 function updateManualWeatherToggleUi() {
-  if (manualWeatherPanel) manualWeatherPanel.hidden = !manualWeatherPanelOpen;
+  const hideManualOverrideUi = !!forecastOnlyMode;
+  if (manualWeatherPanel) manualWeatherPanel.hidden = hideManualOverrideUi || !manualWeatherPanelOpen;
   if (manualWeatherToggleBtn) {
+    manualWeatherToggleBtn.hidden = hideManualOverrideUi;
     manualWeatherToggleBtn.classList.toggle('active', !!manualWeatherPanelOpen);
     manualWeatherToggleBtn.setAttribute('aria-pressed', manualWeatherPanelOpen ? 'true' : 'false');
     manualWeatherToggleBtn.textContent = manualWeatherPanelOpen ? 'Hide manual override' : 'Show manual override';
   }
 }
 
+function getCheckpointModelLabel(mode = checkpointModel) {
+  return mode === 'smart' ? 'smart' : 'standard';
+}
+
 function getCheckpointModelStatusText() {
   return checkpointModel === 'smart'
-    ? 'Smart = time-based, terrain/daylight/weather-aware checkpoints with route-aware wind notes. Old = evenly spaced by route progress.'
-    : 'Old = evenly spaced route checkpoints by progress. Smart adds time, terrain, daylight, weather events, and route-aware wind notes.';
+    ? 'Smart = time-based, terrain/daylight/weather-aware checkpoints with route-aware wind notes. Standard = evenly spaced by route progress.'
+    : 'Standard = evenly spaced route checkpoints by progress. Smart adds time, terrain, daylight, weather events, and route-aware wind notes.';
 }
 
 function updateCheckpointModelUi() {
@@ -737,6 +762,19 @@ function updateCheckpointModelUi() {
     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
   if (checkpointModelStatus) checkpointModelStatus.textContent = getCheckpointModelStatusText();
+}
+
+function updateForecastOnlyModeUi() {
+  if (forecastOnlyBtn) {
+    forecastOnlyBtn.classList.toggle('active', !!forecastOnlyMode);
+    forecastOnlyBtn.setAttribute('aria-pressed', forecastOnlyMode ? 'true' : 'false');
+    forecastOnlyBtn.textContent = forecastOnlyMode ? 'Exit forecast only' : 'Forecast only';
+  }
+  if (locationRouteChoiceGrid) locationRouteChoiceGrid.classList.toggle('forecast-only-active', !!forecastOnlyMode);
+  if (routeFilePanel) routeFilePanel.hidden = !!forecastOnlyMode;
+  if (routeChoiceDivider) routeChoiceDivider.hidden = !!forecastOnlyMode;
+  if (stravaPanel) stravaPanel.hidden = !!forecastOnlyMode;
+  if (stravaChoiceDivider) stravaChoiceDivider.hidden = !!forecastOnlyMode;
 }
 
 var eventDistanceLastRouteLoaded = false;
@@ -1718,6 +1756,7 @@ function renderPlannerState() {
   renderCustomMultisportControls();
   updateActivityGroupVisibility();
   updatePlannerSubsectionCollapseUi();
+  updateForecastOnlyModeUi();
 }
 
 function formatKm(value) {
@@ -2299,7 +2338,7 @@ function renderRouteMap() {
   routeMap.fitBounds(poly.getBounds(), { padding: [24, 24] });
   setTimeout(() => routeMap.invalidateSize(), 0);
   const gainText = routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : '';
-  const modelText = checkpointModel === 'smart' ? ' · smart checkpoints' : ' · old checkpoints';
+  const modelText = checkpointModel === 'smart' ? ' · smart checkpoints' : ' · standard checkpoints';
   routeSummary.textContent = `${routeState.fileName} · ${routeState.points.length} points · ${formatKm(routeState.totalKm)}${gainText}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''}${modelText}`;
 }
 
@@ -2426,7 +2465,7 @@ async function refreshRouteWeatherIfPossible() {
   }));
   markSmartWeatherEventCheckpoints(routeState.samples);
   renderRouteMap();
-  routeSummary.textContent = `${routeState.fileName} · ${formatKm(routeState.totalKm)}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''} · ${routeState.samples.length} ${checkpointModel === 'smart' ? 'smart' : 'old'} checkpoints`;
+  routeSummary.textContent = `${routeState.fileName} · ${formatKm(routeState.totalKm)}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''} · ${routeState.samples.length} ${getCheckpointModelLabel()} checkpoints`;
   if (slot) slot.innerHTML = buildRouteWeatherHtml();
 }
 
@@ -2440,7 +2479,7 @@ async function handleRouteFileChange(event) {
     routeState = buildRouteState(points, file.name);
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
-    routeStatus.textContent = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${checkpointModel} checkpoint model.`;
+    routeStatus.textContent = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model.`;
     clearRouteBtn.style.display = 'inline-block';
     renderPlannerState();
     if (weatherData) configureLaterInput(weatherData);
@@ -2486,6 +2525,7 @@ function resetLocationSection() {
 window.resetLocationSection = resetLocationSection;
 
 function clearAllTool() {
+  forecastOnlyMode = false;
   raceDayMode = false;
   manualWeatherPanelOpen = false;
   startMode = 'now';
@@ -2517,6 +2557,7 @@ function clearAllTool() {
   updateManualWeatherToggleUi();
   updateManualWeatherStatus();
   updateCheckpointModelUi();
+  updateForecastOnlyModeUi();
   renderPlannerState();
 }
 window.clearAllTool = clearAllTool;
@@ -3516,6 +3557,7 @@ updateRaceDayModeUi();
 updateManualWeatherToggleUi();
 updateLocationCardCollapseUi();
 updatePlannerCardCollapseUi();
+updateForecastOnlyModeUi();
 updateManualWeatherStatus();
 updateTemperaturePreferenceUi();
 updatePlannedEffortUi();
@@ -3707,6 +3749,7 @@ function setupActivityGroupToggles() {
 }
 
 function resetActivitySection() {
+  forecastOnlyMode = false;
   selectedActivity = null;
   selectedEventKey = null;
   customMultisportSelections = { triathlon: [...defaultMultisportSelections.triathlon], indoor_multisport: [...defaultMultisportSelections.indoor_multisport] };
@@ -3729,7 +3772,42 @@ function resetActivitySection() {
 }
 window.resetActivitySection = resetActivitySection;
 
+function activateForecastOnlyMode() {
+  if (forecastOnlyMode) {
+    forecastOnlyMode = false;
+    plannerCardCollapsed = false;
+    updatePlannerCardCollapseUi();
+    renderPlannerState();
+    if (weatherData) {
+      configureLaterInput(weatherData);
+      renderAdvice(weatherData, selectedActivity);
+      if (startMode === 'best') scheduleBestWindowAnalysis(true);
+    }
+    return;
+  }
+
+  forecastOnlyMode = true;
+  selectedActivity = null;
+  selectedEventKey = null;
+  selectedDuration = 'h3';
+  raceDayMode = false;
+  plannerSubsectionCollapsed.water = false;
+  clearPlannerCustomFields();
+  document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
+  plannerCardCollapsed = true;
+  renderCustomControlOptions(true);
+  updateRaceDayModeUi();
+  updatePlannerCardCollapseUi();
+  renderPlannerState();
+  if (!weatherData) return;
+  configureLaterInput(weatherData);
+  renderAdvice(weatherData, selectedActivity);
+  if (startMode === 'best') scheduleBestWindowAnalysis(true);
+}
+window.activateForecastOnlyMode = activateForecastOnlyMode;
+
 function selectActivity(btn) {
+  forecastOnlyMode = false;
   document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   selectedActivity = btn.dataset.activity;
@@ -5093,7 +5171,7 @@ function configureBestWindowUi(data) {
 
   const guardrailBits = [
     `Searches from ${formatShortDateTime(formatDateTimeLocal(currentStart).slice(0, 16))} to ${formatShortDateTime(formatDateTimeLocal(currentEnd).slice(0, 16))}.`,
-    `Uses ${checkpointModel} route checkpoints when a route is loaded.`,
+    `Uses ${getCheckpointModelLabel()} route checkpoints when a route is loaded.`,
     `Auto step is ${autoStep} min for the current outing length.`
   ];
   bestWindowStatus.textContent = guardrailBits.join(' ');
@@ -6238,7 +6316,7 @@ function renderAdvice(data, activity) {
     if (sunBits.length) metaLines.push(sunBits.join(' · '));
   }
   const waterMetaLine = renderWaterTemperatureMetaLine(point, data);
-  const showWaterUi = shouldShowWaterTemperature(activity || selectedActivity, point);
+  const showWaterUi = forecastOnlyMode || shouldShowWaterTemperature(activity || selectedActivity, point);
   if (waterMetaLine) metaLines.push(waterMetaLine);
   if (isFiniteNumber(point.waveHeight)) metaLines.push(`〰️ Waves <strong>${escapeHtml(round1(point.waveHeight))} m</strong>`);
 
@@ -6643,10 +6721,12 @@ function getQuickStartSteps() {
       number: 2,
       target: 'activity-section',
       title: 'Activity',
-      body: activityName
-        ? `Currently set to ${activityName}. This controls presets, gear logic, water-temperature handling, and route/weather priorities.`
-        : 'Pick what you are doing. This is the biggest switch in the tool because it changes the recommendation logic.',
-      state: selectedActivity ? helperState('selected', 'done') : helperState('required', '')
+      body: forecastOnlyMode
+        ? 'Forecast-only mode is active. Leave activity empty to focus on weather, timing, and hazards without clothing guidance.'
+        : activityName
+          ? `Currently set to ${activityName}. This controls presets, gear logic, water-temperature handling, and route/weather priorities.`
+          : 'Pick what you are doing. This is the biggest switch in the tool because it changes the recommendation logic.',
+      state: forecastOnlyMode ? helperState('forecast only', 'optional') : selectedActivity ? helperState('selected', 'done') : helperState('required', '')
     },
     {
       number: 3,
@@ -6713,7 +6793,7 @@ function getQuickStartSteps() {
       body: routeLoaded
         ? 'Controls how route weather checkpoints are placed. Smart mode considers time, terrain, daylight, weather swings, and wind.'
         : 'Only matters when a route is loaded. Without a route, this section can be ignored.',
-      state: routeLoaded ? helperState(checkpointModel, 'done') : helperState('route only', 'locked')
+      state: routeLoaded ? helperState(getCheckpointModelLabel(), 'done') : helperState('route only', 'locked')
     },
     {
       number: 10,
@@ -7660,6 +7740,7 @@ function bindDomActions() {
 
     const action = trigger.dataset.action;
     if (action === 'openQuickStartGuide') openQuickStartGuide();
+    else if (action === 'activateForecastOnlyMode') activateForecastOnlyMode();
     else if (action === 'toggleLocationCardCollapse') toggleLocationCardCollapse();
     else if (action === 'togglePlannerCardCollapse') togglePlannerCardCollapse();
     else if (action === 'forceRefreshWeather') forceRefreshWeather();

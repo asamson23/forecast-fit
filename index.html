@@ -5,12 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#3b4d65">
 <meta name="application-name" content="Forecast Fit">
+<meta name="description" content="Forecast Fit is a weather-aware planner for activities, routes, clothing, UV, and warnings. Compare start times, inspect route checkpoints, and plan around real forecast conditions.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Forecast Fit">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-title" content="Forecast Fit">
 <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Forecast Fit">
+<meta property="og:title" content="Forecast Fit - Weather Gear Planner">
+<meta property="og:description" content="Weather-aware planning for activities, routes, clothing, UV, and warnings. Choose better windows, inspect route checkpoints, and plan around real forecast conditions.">
+<meta property="og:image" content="%BASE_URL%icons/forecast-fit-icon.svg">
+<meta property="og:image:alt" content="Forecast Fit app icon">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Forecast Fit - Weather Gear Planner">
+<meta name="twitter:description" content="Weather-aware planning for activities, routes, clothing, UV, and warnings. Choose better windows and inspect route checkpoints.">
+<meta name="twitter:image" content="%BASE_URL%icons/forecast-fit-icon.svg">
+<meta name="twitter:image:alt" content="Forecast Fit app icon">
 <title>Forecast Fit - Weather Gear Planner</title>
 <link rel="manifest" href="%BASE_URL%manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="%BASE_URL%icons/forecast-fit-icon.svg">
@@ -23,6 +35,7 @@
   <h1>Forecast <span>Fit</span></h1>
   <p>Weather-aware outfit and route planning, without the fluff</p>
   <div class="header-actions">
+    <button class="mode-toggle-btn" type="button" id="forecast-only-btn" data-action="activateForecastOnlyMode">Forecast only</button>
     <button class="mode-toggle-btn helper-launch-btn" type="button" id="quick-start-btn" data-action="openQuickStartGuide">Quick start</button>
   </div>
 </header>
@@ -50,8 +63,8 @@
         </div>
         <p class="field-note compact">Search for a city only. Pick a suggestion or press Enter.</p>
       </div>
-      <div class="location-choice-or" aria-hidden="true">OR</div>
-      <div class="location-choice-panel">
+      <div class="location-choice-or" id="route-choice-divider" aria-hidden="true">OR</div>
+      <div class="location-choice-panel" id="route-file-panel">
         <label class="sub-label">Route file</label>
         <div class="route-file-row">
           <input type="file" id="route-file-input" accept=".gpx,.geojson,application/gpx+xml,application/geo+json">
@@ -59,8 +72,8 @@
         </div>
         <p class="status-line compact" id="route-status">Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when the file contains time data.</p>
       </div>
-      <div class="location-choice-or" aria-hidden="true">OR</div>
-      <div class="location-choice-panel">
+      <div class="location-choice-or" id="strava-choice-divider" aria-hidden="true">OR</div>
+      <div class="location-choice-panel" id="strava-panel">
         <label class="sub-label">Strava</label>
         <div id="strava-connect-panel">
           <button class="btn btn-secondary" type="button" data-action="connectStrava">Connect Strava</button>
@@ -511,7 +524,7 @@
     </div>
     <div class="toggle-row" id="checkpoint-model-row">
       <button class="toggle-btn" type="button" data-checkpoint-model="old" data-action="selectCheckpointModel">
-        <div class="label">Old model</div>
+        <div class="label">Standard model</div>
         <div class="sublabel">Evenly spaced by route progress</div>
       </button>
       <button class="toggle-btn active" type="button" data-checkpoint-model="smart" data-action="selectCheckpointModel">
@@ -519,7 +532,7 @@
         <div class="sublabel">Time, terrain, daylight, weather, wind</div>
       </button>
     </div>
-    <p class="status-line compact" id="checkpoint-model-status">Smart = time-based, terrain/daylight/weather-aware checkpoints with route-aware wind notes. Old = evenly spaced by route progress.</p>
+    <p class="status-line compact" id="checkpoint-model-status">Smart = time-based, terrain/daylight/weather-aware checkpoints with route-aware wind notes. Standard = evenly spaced by route progress.</p>
   </div>
 
     <p class="field-note">Start time drives the forecast and daylight. Water temperature uses measured data first, then estimated fallback when possible, with manual override available when you have a better local reading. Loaded routes override preset distance, and route timing overrides duration when available.</p>
@@ -539,7 +552,7 @@
 <footer class="site-footer">
   <div class="attribution-card">
     <div class="block-title">Credits & attributions</div>
-    <p><strong>Forecast Fit</strong> <strong>v10.5</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
+    <p><strong>Forecast Fit</strong> <strong>v10.9</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
     <p>Implementation and iteration assistance: <strong>ChatGPT</strong> (including <strong>GPT-5.3-Codex</strong>) and <strong>Claude by Anthropic</strong>. This build does not use any live third-party AI integrations.</p>
     <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, and Google Fonts for DM Sans / DM Mono.</p>
     <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>

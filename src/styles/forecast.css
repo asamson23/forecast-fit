@@ -397,12 +397,23 @@
     gap: 12px;
     align-items: stretch;
   }
+  .location-route-choice-grid.forecast-only-active {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .location-route-choice-grid.forecast-only-active .location-choice-or,
+  .location-route-choice-grid.forecast-only-active #route-file-panel,
+  .location-route-choice-grid.forecast-only-active #strava-panel {
+    display: none;
+  }
   .location-choice-panel {
     min-width: 0;
     border: 1px solid color-mix(in srgb, var(--accent2) 12%, var(--border));
     border-radius: 14px;
     background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, white 4%), color-mix(in srgb, var(--surface2) 98%, transparent));
     padding: 12px;
+  }
+  .location-route-choice-grid.forecast-only-active .location-choice-panel:first-child {
+    max-width: none;
   }
   .location-choice-or {
     align-self: center;
