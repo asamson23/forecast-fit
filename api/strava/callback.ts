@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const REQUIRED_SCOPES = ['read_all', 'activity:read_all', 'profile:read_all'];
 
 function resolveRedirectUri(req: VercelRequest): string {
-  const configured = process.env.STRAVA_REDIRECT_URI;
+  const configured = process.env.STRAVA_REDIRECT_URI?.trim();
   if (configured) return configured;
   const protoHeader = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim();
   const hostHeader = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim() || req.headers.host;
@@ -14,9 +14,9 @@ function resolveRedirectUri(req: VercelRequest): string {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = String(req.query.code ?? '');
   const grantedScope = String(req.query.scope ?? '');
-  const clientId = process.env.STRAVA_CLIENT_ID;
-  const clientSecret = process.env.STRAVA_CLIENT_SECRET;
-  const frontendUrl = process.env.FRONTEND_URL;
+  const clientId = process.env.STRAVA_CLIENT_ID?.trim();
+  const clientSecret = process.env.STRAVA_CLIENT_SECRET?.trim();
+  const frontendUrl = process.env.FRONTEND_URL?.trim();
 
   if (!clientId || !clientSecret || !frontendUrl) {
     res.status(400).send('Missing OAuth callback parameters or server config');
@@ -35,16 +35,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  const tokenParams = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    code,
+    grant_type: 'authorization_code',
+  });
+
   const tokenResponse = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: resolveRedirectUri(req),
-    }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: tokenParams.toString(),
   });
 
   if (!tokenResponse.ok) {
