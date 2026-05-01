@@ -90,7 +90,8 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
       ` data-uv="${isFiniteNumber(p.uv) ? escapeHtml(formatUvValue(p.uv)) : ''}"` +
       ` data-uv-value="${isFiniteNumber(p.uv) ? escapeHtml(p.uv) : ''}"` +
       ` data-aqi="${aqiInfo ? escapeHtml(String(aqiInfo.value)) : ''}"` +
-      ` data-aqi-category="${aqiInfo ? escapeHtml(aqiInfo.category) : ''}"></rect>`;
+      ` data-aqi-category="${aqiInfo ? escapeHtml(aqiInfo.category) : ''}"` +
+      ` data-humidity="${isFiniteNumber(p.humidity) ? escapeHtml(Math.round(p.humidity as number)) : ''}"></rect>`;
   }).join('');
 
   const hasCheckpoints = (routeSamples || []).some((cp: any) => cp.eta);
@@ -175,6 +176,7 @@ export function bindForecastChartTooltips(root: Element = document.body): void {
       <div class="tt-time">${hit.dataset.time}</div>
       <div class="tt-row"><span>Temp</span><strong>${hit.dataset.temp}°C</strong></div>
       <div class="tt-row"><span>Feels like</span><strong>${hit.dataset.feels}°C</strong></div>
+      ${hit.dataset.humidity ? `<div class="tt-row"><span>Humidity</span><strong>${escapeHtml(hit.dataset.humidity)}%</strong></div>` : ''}
       <div class="tt-row"><span>Precip amount</span><strong>${hit.dataset.precip} mm</strong></div>
       <div class="tt-row"><span>Precip chance</span><strong>${precipChance}</strong></div>
       <div class="tt-row"><span>Wind</span><strong>${hit.dataset.wind} km/h ${dirHtml}</strong></div>
