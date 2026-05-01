@@ -63,6 +63,12 @@
     font-size: 1rem;
     margin-top: 8px;
   }
+   .route-weather-cell .cp-humidity {
+    font-size: 0.82rem;
+    color: var(--text-soft);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
   .route-weather-cell .cp-meta {
     font-size: 0.82rem;
     color: var(--text-soft);
@@ -530,6 +536,7 @@
   }
   .route-weather-cell .cp-main,
   .route-weather-cell .cp-temp,
+  .route-weather-cell .cp-humidity,
   .route-weather-cell .cp-meta {
     min-width: 0;
   }

@@ -565,7 +565,7 @@
 .summary, .event-summary, .status-line, .field-note,
 .route-weather-cell .cp, .route-weather-cell .cp-main,
 .route-weather-cell .cp-place, .route-weather-cell .cp-sub,
-.route-weather-cell .cp-temp, .route-weather-cell .cp-meta {
+.route-weather-cell .cp-temp, .route-weather-cell .cp-humidity, .route-weather-cell .cp-meta {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
