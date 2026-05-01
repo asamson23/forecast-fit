@@ -41,7 +41,7 @@ jobs:
         run: npm test --if-present
 
       - name: Build
-        run: npm run build -- --base=/forecast-fit/
+        run: npm run build -- --base=/
 
       - name: Add nojekyll marker
         run: touch dist/.nojekyll

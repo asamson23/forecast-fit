@@ -4,7 +4,7 @@
     {
       "source": "/api/strava/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://asamson23.github.io" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://forecast-fit.asamson.ca" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "Authorization,Content-Type" }
       ]

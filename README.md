@@ -138,6 +138,16 @@ Common values include:
 
 Never commit real secrets.
 
+Example split-domain production setup:
+
+```env
+VITE_BASE_PATH=/
+VITE_APP_BACKEND_URL=https://forecast-fit.asamson.ca
+VITE_STRAVA_BACKEND_URL=https://forecast-fit.asamson.ca
+STRAVA_REDIRECT_URI=https://forecast-fit.asamson.ca/api/strava/callback
+FRONTEND_URL=https://forecast-fit.asamson.ca
+```
+
 ## Deployment
 
 ### Static Frontend
@@ -152,11 +162,26 @@ npm run build -- --base=/forecast-fit/
 
 For a custom domain or root deployment, use `/`.
 
+If the frontend is published at `https://forecast-fit.asamson.ca`, the Pages build should use:
+
+```sh
+npm run build -- --base=/
+```
+
 `VITE_BASE_PATH` can also be used to control the base path.
 
 ### Backend Layer
 
 If Strava import or other secret-backed providers are enabled, deploy the backend/API layer separately over HTTPS and point the frontend at it with `VITE_APP_BACKEND_URL` or `VITE_STRAVA_BACKEND_URL`.
+
+If the same custom domain serves both the static app and the Vercel backend routes, keep these values on the same host:
+
+- `FRONTEND_URL=https://forecast-fit.asamson.ca`
+- `VITE_APP_BACKEND_URL=https://forecast-fit.asamson.ca`
+- `VITE_STRAVA_BACKEND_URL=https://forecast-fit.asamson.ca`
+- `STRAVA_REDIRECT_URI=https://forecast-fit.asamson.ca/api/strava/callback`
+
+The Strava app's Authorization Callback Domain must match the host used by `STRAVA_REDIRECT_URI`, in this case `forecast-fit.asamson.ca`.
 
 ## Constraints
 
