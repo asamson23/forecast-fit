@@ -769,12 +769,17 @@
 
 - Adapted the Quick start guide in Forecast-only mode so it only shows the controls and results that remain available there.
 
+## v11.0.11
+
+- Switched the documented production deployment to a split-domain setup with `forecast-fit.asamson.ca` for the frontend and `api.forecast-fit.asamson.ca` for backend OAuth/API traffic.
+- Updated the GitHub Pages build base for custom-domain deployment and aligned the Vercel CORS origin with the custom frontend host.
+
 ## v11.0.12
 
 - Corrected the production deployment guidance back to a single-host `forecast-fit.asamson.ca` setup for both frontend assets and Vercel `/api/*` routes.
 - Kept the custom-domain GitHub Pages build base and frontend CORS origin aligned with `forecast-fit.asamson.ca`.
 
-## v11.0.11
+## v11.0.13
 
-- Switched the documented production deployment to a split-domain setup with `forecast-fit.asamson.ca` for the frontend and `api.forecast-fit.asamson.ca` for backend OAuth/API traffic.
-- Updated the GitHub Pages build base for custom-domain deployment and aligned the Vercel CORS origin with the custom frontend host.
+- Added the missing `@vercel/node` and `@types/node` dependencies required for Vercel Strava function type resolution.
+- Expanded local TypeScript checking to include `api/` so missing server-side typings fail locally before deployment.

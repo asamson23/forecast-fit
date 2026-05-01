@@ -17,9 +17,13 @@
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "types": [
+      "node"
+    ],
     "noEmit": true
   },
   "include": [
+    "api",
     "src",
     "vite.config.ts"
   ]
