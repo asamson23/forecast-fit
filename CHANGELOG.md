@@ -1,25 +1,13 @@
-# Forecast Fit — Unified chronological changelog
-
-This file merges the uploaded changelogs into one chronological development timeline.
-
-## Version-order notes
-
-- Some version labels were reused across different conversations or branches. Where that happened, the entry is kept in its original branch context rather than pretending every similarly named file was the same release.
-- Early milestones used file names rather than semantic version numbers. Those are listed first as the pre-Forecast Fit / Weather Clothing Advisor era.
-- From `v7.6.1` onward, the timeline becomes mostly linear through `v9.8.14`.
-- From `v9` onward, the project convention omits unnecessary trailing zeroes: `v9`, `v9.1`, `v9.8.2`, etc.
+# Forecast Fit — Changelog
 
 ---
 
-# 1. Pre-Forecast Fit / Weather Clothing Advisor era
+## `weather-clothing-advisor.html`
 
-## `weather-clothing-advisor.html` — original uploaded base
+- Used a browser-side AI dependency for clothing advice.
+- Added weather-code handling and water-temperature lookup.
 
-- Initial Claude-built version.
-- Used a fragile browser-side AI dependency.
-- Became the foundation for the later weather/clothing planner.
-
-## `weather-clothing-advisor-fixed.html` — first standalone repair pass
+## `weather-clothing-advisor-fixed.html`
 
 - Removed the browser-side Anthropic dependency.
 - Switched clothing advice to local rule-based logic.
@@ -27,13 +15,12 @@ This file merges the uploaded changelogs into one chronological development time
 - Added the first water-temperature lookup.
 - Improved autocomplete layering and z-index behaviour.
 
-## `weather-clothing-advisor-duration.html` — duration-aware planning
+## `weather-clothing-advisor-duration.html`
 
 - Added planned-duration selector.
-- Expanded clothing suggestions.
-- Made recommendations depend more on outing length.
+- Expanded clothing suggestions based on outing length.
 
-## `weather-clothing-advisor-forecast-checklist.html` — forecast + checklist phase
+## `weather-clothing-advisor-forecast-checklist.html`
 
 - Added forecast tied to planned duration.
 - Added chart and horizontal forecast table.
@@ -41,82 +28,72 @@ This file merges the uploaded changelogs into one chronological development time
 - Added checklist / radio-style interaction.
 - Added race clothing and winter wear logic.
 
-## `weather-clothing-advisor-todo-green.html` — checklist restyle
+## `weather-clothing-advisor-todo-green.html`
 
 - Replaced default checkboxes with custom green ones.
 - Clicking items crossed them out.
-- Shifted the output toward a todo/prep-list feel.
 
-## `weather-clothing-advisor-wizard.html` — wizard-style rebuild
+## `weather-clothing-advisor-wizard.html`
 
 - Simplified the flow into wizard steps.
 - Added **Now / Later** start selection.
 - Restricted later date/time to the forecast range.
 - Added sunrise/sunset and day/night logic.
 - Displayed feels-like temperature.
-- Kept water temperature / wave logic for swimming.
+- Added water temperature / wave logic for swimming.
 
-## `weather-clothing-advisor-events.html` — event and activity expansion
+## `weather-clothing-advisor-events.html`
 
 - Added event / distance presets by activity.
 - Added more duration options.
 - Added multi-day support.
 - Split open-water swim vs pool swim.
-- Added camping.
-- Made triathlon its own activity.
+- Added camping and triathlon activities.
 - Expanded base-layer logic.
 - Added daily forecast mode for multi-day outings.
 
-## `weather-clothing-advisor-route-override.html` — route upload introduced
+## `weather-clothing-advisor-route-override.html`
 
 - Added **Use current location**.
 - Made route upload optional.
-- Route distance could override manual/preset distance.
-- Route duration could override manual duration when timing data existed.
-- Added / kept OSM route map.
-- Added sampled multi-checkpoint route weather.
+- Route distance and duration can override manual inputs.
+- Added OSM route map and sampled multi-checkpoint route weather.
 - Improved readability and contrast.
 
-## `weather-clothing-advisor-route-checkpoints-interactive.html` — route weather rendering + interaction fix
+## `weather-clothing-advisor-route-checkpoints-interactive.html`
 
-- Actually rendered route checkpoint weather in results.
-- Route upload could auto-fetch weather from the route start.
+- Rendered route checkpoint weather in results.
+- Route upload auto-fetches weather from the route start.
 - Removed redundant location check button.
-- Made clothing picks more interactive.
-- Clicked checklist items could be crossed out.
+- Made clothing picks more interactive; clicked items can be crossed out.
 
-## `weather-clothing-advisor-restyled.html` — readability / theme cleanup
+## `weather-clothing-advisor-restyled.html`
 
 - Cleaned checklist capitalization.
-- Improved dark-theme label readability.
-- Strengthened text hierarchy.
+- Improved dark-theme label readability and text hierarchy.
 - Improved card/button contrast and spacing.
 
-## `weather-clothing-advisor-sober-custom.html` — sober redesign + custom inputs
+## `weather-clothing-advisor-sober-custom.html`
 
-- Made UI more sober and less gaudy.
-- Added custom distance.
-- Added custom duration.
-- Added average pace/speed input.
-- Added simple derivation logic for distance/duration when possible.
+- Redesigned UI toward a cleaner, less gaudy style.
+- Added custom distance, duration, and average pace/speed inputs.
+- Added derivation logic for distance/duration when possible.
 - Disabled distance controls when a route was loaded.
-- Later known issue: missing helpers caused JS errors.
 
-## `weather-clothing-advisor-sober-custom-fixed.html` — first sober bug-fix pass
+## `weather-clothing-advisor-sober-custom-fixed.html`
 
 - Fixed `getEventPresets is not defined`.
 - Fixed `routeHasDurationOverride is not defined`.
 - Enlarged distance / duration / pace inputs.
 
-## `weather-clothing-advisor-sober-custom-fixed-v2.html` — selector and forecast refinement
+## `weather-clothing-advisor-sober-custom-fixed-v2.html`
 
-- Custom distance deselected preset distance.
-- Preset distance cleared custom distance.
+- Custom distance deselects preset distance; preset distance clears custom.
 - Added finer short-event forecast slices.
 - Reworked Later picker away from loose manual entry.
 - Average pace/speed units became activity-aware.
 
-## `weather-clothing-advisor-sober-custom-fixed-v3.html` — bug fix + duration presets
+## `weather-clothing-advisor-sober-custom-fixed-v3.html`
 
 - Fixed `parseAnyTime is not defined`.
 - Added duration presets: 90 min, 3 h, 6 h, 10 h, 18 h.
@@ -125,124 +102,85 @@ This file merges the uploaded changelogs into one chronological development time
 
 ---
 
-# 2. Forecast Fit naming phase and early numbered files
-
-## `forecast-fit-weather-gear-planner.html` — renamed to Forecast Fit
+## `forecast-fit-weather-gear-planner.html`
 
 - Renamed the tool to **Forecast Fit**.
-- Added chart-dot hover values.
-- 24-hour events received a real chart.
-- Added sunrise/sunset markers.
-- Added precipitation chance line.
-- Added more inline comments.
-- Added separate code notes.
+- Added chart-dot hover values and a real chart for 24-hour events.
+- Added sunrise/sunset markers and precipitation chance line.
 
-## `forecast-fit-code-notes.md` — supplementary code notes
+## `forecast-fit-weather-gear-planner-v2.html`
 
-- Captured manual tweak documentation.
-- Recorded structure and behaviour notes for later editing.
-
-## `forecast-fit-weather-gear-planner-v2.html` — tooltip + picker + road trip pass
-
-- Switched chart values to an HTML tooltip.
-- Made the hover zone more permissive.
+- Switched chart values to an HTML tooltip with a more permissive hover zone.
 - Added date/time to the big weather card.
 - Added **Road trip** activity.
 - Replaced the Later dropdown with a JS date/time picker.
 
-## `forecast-fit-weather-gear-planner-v3.html` — chart hover bug fix
+## `forecast-fit-weather-gear-planner-v3.html`
 
 - Fixed black hover rectangles covering the chart.
-- Added proper floating tooltip CSS.
-- Fixed tooltip show/hide behaviour.
-- Improved tooltip positioning and leave behaviour.
+- Added proper floating tooltip CSS and fixed show/hide/positioning behaviour.
 
-## `forecast-fit-weather-gear-planner-v4.html` — Later picker + clearer clothing wording
+## `forecast-fit-weather-gear-planner-v4.html`
 
 - Fixed **Later** picker behaviour.
 - Changed the chart from precipitation percentage to precipitation amount in mm.
-- Clarified clothing wording.
-- Added descriptions under clothing headers.
-- Added **Reset** per clothing section.
-- Added **Reset all**.
+- Clarified clothing wording and added descriptions under clothing headers.
+- Added **Reset** per clothing section and **Reset all**.
 - Moved **Use current location** onto the same line as the location input.
-- Made location placeholder more generic.
-- Improved current-location naming.
-- Kept **Road trip** activity.
 
-## `forecast-fit-weather-gear-planner-v5.html` — early route marker cleanup
+## `forecast-fit-weather-gear-planner-v5.html`
 
 - Changed route map marker labels from **CP** to **Checkpoint**.
 - Route markers became **Start**, **Checkpoint 1/2/...**, and **Finish**.
 
 ---
 
-# 3. v4/v5/v6 branch consolidation toward v7
+## v4 — baseline
 
-## v4 — uploaded baseline / branch point
-
-- Used as a clean base for later `v5+` work.
 - Included location search, GPX/GeoJSON route loading, route checkpoints, activity/event/duration presets, forecast charts, and clothing wizard.
 
-## v6 rebuilt branch — superseded branch before returning to v4
+## v6 rebuilt branch
 
-- Adapted nice-to-have extras more to outing length/distance.
-- Clarified "Race kit".
-- Added explicit "Race day" options.
-- Added activity reset.
+- Adapted recommendations more to outing length/distance.
+- Added explicit Race day options and activity reset.
 - Split weather and clothing sections.
 - Added `HH:mm` custom duration.
 - Used half-hour forecast slices for sub-10-hour outings.
-- Changed route checkpoint labels to `km XX`.
-- Changed map labels to `Weather checkpoint X`.
-- Superseded once the uploaded v4 file became the patched base.
+- Changed route checkpoint labels to `km XX` and map labels to `Weather checkpoint X`.
 
-## v5 — direct patch from uploaded v4 base
+## v5 — patch from v4 base
 
-- Adapted nice-to-have extras more based on distance.
-- Clarified "Race kit".
-- Added "Race day" event presets.
-- Added activity reset.
+- Adapted recommendations more based on distance.
+- Added Race day event presets and activity reset.
 - Split results into weather/forecast and clothing/gear sections.
 - Added `HH:mm` custom duration.
 - Switched sub-10-hour outings to 30-minute forecast slices.
 - Changed route checkpoint labels from `XX km` to `km XX`.
-- Changed map labels from `CP X` to `Weather checkpoint X`.
 
-## v5.2 — panel/layout and location-search refinement
+## v5.2
 
 - Improved panel text fitting and overflow handling.
-- Broadened location input again for non-city searches.
-- Supported areas, addresses, landmarks, and postal codes.
-- Changed forecast slice rules:
-  - 10-minute slices up to 4 hours.
-  - 30-minute slices from 6 hours to under 10 hours.
+- Broadened location input to support areas, addresses, landmarks, and postal codes.
+- Changed forecast slice rules: 10-minute slices up to 4 h, 30-minute slices from 6 h to under 10 h.
 - Adjusted date/time picker styling.
 - Scaled route checkpoints more aggressively with distance.
 - Added checkpoint location names under route weather entries.
 
-## v5.3 — marine fallback + camping/road-trip expansion
+## v5.3
 
-- Added best-effort marine fallback:
-  - Open-Meteo Marine as primary.
-  - MET Norway Oceanforecast as fallback.
-  - Marine-source indicator chip.
+- Added marine fallback stack: Open-Meteo Marine as primary, MET Norway Oceanforecast as fallback, with a source indicator chip.
 - Expanded camping wizard with overnight low, sleeping bag, sleeping pad, shelter, guy-line, and condensation logic.
 - Expanded road-trip wizard with route checkpoint awareness, start/finish temperature swings, and better in-cabin vs staged-for-stops recommendations.
 
-## v6 Claude branch — uploaded branch point for v7+
+## v6 Claude branch
 
 - Broader location search through Open-Meteo and Nominatim.
-- Flatpickr styling work.
 - Richer route checkpoint cards with place labels.
-- Marine fallback logic using MET Norway on top of Open-Meteo Marine.
+- Marine fallback using MET Norway on top of Open-Meteo Marine.
 - Stronger camping and road-trip logic.
-- Split result panels.
-- AI/Anthropic UI remnants.
-- Itinerary panel scaffolding.
-- Browser-side Claude/Anthropic calls were not viable in a static HTML page and were later removed.
+- Split result panels; itinerary panel scaffolding.
 
-## v7 — first major patch from Claude v6 branch
+## v7
 
 - Removed non-working browser-side Anthropic / Claude logic.
 - Rebuilt itinerary panel as fully client-side from route checkpoints and OSM/Nominatim.
@@ -250,693 +188,522 @@ This file merges the uploaded changelogs into one chronological development time
 - Made Flatpickr closer to the device theme.
 - Added example item hints to clothing suggestions.
 
-## v7.1 — forecast/input/preset refinement
+## v7.1
 
-- Forecast legend lines matched chart styles better.
-- Added horizontal 0°C reference line.
+- Improved forecast legend line styles and added a horizontal 0°C reference line.
 - Changed location field wording back to city-only.
 - Improved average pace/speed placeholder and units.
 - Added metres/yards for custom distance where applicable.
-- Added T100 for triathlon.
-- Removed Race day from open-water swim; added 5 km and 10 km swims.
+- Added T100 for triathlon; removed Race day from open-water swim; added 5 km and 10 km swims.
 - Added custom weather override for air temp, feels-like, and water temp.
 
-## v7.2 — custom override toggle and whole-window clothing logic
+## v7.2
 
 - Hid custom weather override behind a toggle.
-- Kept emoji weather icons but added hover/accessibility text.
+- Added hover/accessibility text to emoji weather icons.
 - Restored miles in custom distance.
 - Replaced per-event race-day presets with global **Race day mode**.
-- Changed precipitation/clothing logic to examine the whole planned activity window instead of only start conditions.
+- Changed precipitation/clothing logic to examine the whole planned activity window.
 - Added more concrete clothing examples.
 
-## v7.3 — Race mode expansion
+## v7.3
 
 - Added rainbow/party styling to Race day mode.
 - Made Race day mode affect actual clothing logic.
 - Added race-specific checklist items: bib, timing chip/watch setup, warm layers, dry clothes, transition/race organization.
 - Added weather-based glasses suggestions.
 
-## v7.4 — UI/data/attribution batch
+## v7.4
 
-- Made the first location/route card collapsible after city or route load.
-- Kept custom-weather legend/helper content inside the toggle area.
+- Made the location/route card collapsible after city or route load.
 - Aimed chart hover at wind gusts and wind-direction cues.
 - Aimed route checkpoint map popups at quick weather details.
-- Added credits/attributions for libraries, data sources, user name, ChatGPT/Claude context.
-- Expanded route parser support toward TCX, KML, CSV, and KMZ.
-- Follow-up fixes were required for hover/popup/route rendering.
+- Added credits/attributions for libraries, data sources, and context.
+- Expanded route parser support to TCX, KML, CSV, and KMZ.
 
-## v7.5 — correction pass on v7.4
+## v7.5
 
-- Chart hover actually rendered wind gusts and wind direction.
-- Route checkpoint popups refreshed with weather data instead of staying stale.
+- Fixed chart hover to render wind gusts and wind direction.
+- Fixed route checkpoint popups not refreshing with weather data.
 - Removed a theme color-scheme override that interfered with colours.
 - Moved attribution section out of card styling.
-- Kept parser expansion for TCX, KML, CSV, and KMZ.
 
-## v7.5.1 — checkpoint enrichment regression fix
+## v7.5.1
 
 - Fixed checkpoint weather being wiped when the map redraw recreated sampled checkpoints.
-- Preserved enriched checkpoint weather/place/ETA data.
-- Map rendering reused existing enriched checkpoints.
+- Preserved enriched checkpoint weather/place/ETA data across redraws.
 
-## v7.5.2 — small UX polish
+## v7.5.2
 
 - Added collapsed-summary placeholder: `No location / route loaded`.
-- Strengthened Race day button party styling with faster rainbow animation, glow, pulse, and `Race day mode on ✨` label.
+- Strengthened Race day button styling with faster rainbow animation, glow, and pulse.
 
-## v7.5.3 — Race button cleanup
+## v7.5.3
 
-- Removed pulse animation from Race day button.
-- Removed emoji from active Race day button label.
-- Kept rainbow animation and glow.
+- Removed pulse animation and emoji from the active Race day button label.
 
-## v7.5.4 — planner structure change
+## v7.5.4
 
-- Removed default activity.
-- Reorganized activity section into grouped subsections: Race & endurance, Swimming, Outdoor & travel.
-- Activity reset could fully clear the selection.
-- Location section gained Reset and Clear all.
-- Race day mode gained subtle rainbow treatment on the whole planner card.
-- Weather strip gained wind direction, gusts, humidity, precipitation, water temp, and waves.
-- Custom duration input got smarter examples.
-- If no activity was selected, weather/forecast still displayed but clothing asked for an activity.
+- Removed default activity; reorganized activity section into grouped subsections.
+- Added Reset and Clear all to the location section.
+- Added subtle rainbow treatment on the whole planner card in Race day mode.
+- Added wind direction, gusts, humidity, precipitation, water temp, and waves to the weather strip.
+- Weather/forecast now displays without an activity selected; clothing prompts for one.
 
-## v7.5.5 — no-default-duration experiment
+## v7.5.5
 
-- Removed default planned duration.
-- No duration button selected on load.
-- Clear all cleared duration too.
-- Planner asked the user to choose duration instead of silently assuming one.
-- Leaflet popups matched device theme better.
-- Base map switched to theme-aware light/dark raster map.
-- This introduced route/city-picker regressions because shared flow assumed duration existed.
+- Removed default planned duration; planner now prompts the user to choose.
+- Leaflet popups match device theme; base map switched to theme-aware light/dark raster.
 
-## v7.5.6 — first regression fix attempt
+## v7.5.6
 
-- Allowed route rendering without selected duration.
-- Delayed checkpoint weather until duration existed.
-- Footer began showing explicit version number.
-- Route/city-picker issue was not fully resolved.
+- Allowed route rendering without a selected duration.
+- Delayed checkpoint weather until duration exists.
+- Added explicit version number to the footer.
 
-## v7.5.7 — stabilization fix
+## v7.5.7
 
 - Restored default planned duration of 1 hour.
-- Clear all reset duration back to the default.
+- Clear all resets duration back to the default.
 - Stabilized the shared render/planning path for city selection and route loading.
 
-## v7.5.8 — popup/math/pace refinement
+## v7.5.8
 
 - Improved Leaflet popup styling and readability for location/ETA.
 - Changed checkpoint markers to themed markers: `S`, numbered middle checkpoints, `F`.
-- When distance and duration were both known, displayed derived average in the average status.
+- Displayed derived average in the status when both distance and duration are known.
 - Restored cycling **min/km** pace option.
 
-## v7.5.8.1 — compact checkpoint popup layout
+## v7.5.8.1
 
-- Put `Weather checkpoint X` and `km XX` on the same line.
-- Put weather condition and temperature/feels-like on the same line.
-- Put wind speed/direction and gusts on the same line.
-- Tightened popup rows into a denser info-card layout.
+- Tightened checkpoint popup layout: condition/temp/wind/gusts on single lines each.
 
-## v7.5.8.2 — weather-strip readability pass
+## v7.5.8.2
 
-- Added labels to right-side weather-strip stats: Humidity, Wind, Gusts, Precip, Water, Waves.
+- Added labels to weather-strip stats: Humidity, Wind, Gusts, Precip, Water, Waves.
 
-## v7.6.0 — Strava/Zwift-inspired visual redesign
+## v7.6.0
 
-- Shifted palette/aesthetics toward sport-platform styling.
-- Added stronger orange primary accent and cooler blue secondary accent.
-- Cleaned up training-platform feel in light theme.
+- Shifted palette toward sport-platform styling (orange primary, blue secondary).
 - Dark theme moved toward navy/charcoal.
 - Restyled cards, forecast blocks, wizard panels, buttons, and active states.
-- Kept Race mode party treatment.
 
-## v7.6.1 — gradient-line cleanup
+## v7.6.1
 
-- Removed repeated gradient-top-line pseudo-element treatment from cards, result panels, forecast boxes, weather strips, and wizard steps.
+- Removed repeated gradient-top-line pseudo-element from cards, result panels, forecast boxes, weather strips, and wizard steps.
 - Fixed the line poking past rounded corners.
 
 ---
 
-# 4. Linear v7.6.1 → v8.1.4 development
+## v7.6.2
 
-## v7.6.2 — clothing & gear card cleanup
-
-- Flattened clothing sections so they read more like sections than cards-inside-cards.
-- Turned choices and checklist items into grouped rows.
-- Replaced main-pick mini-card stack with compact pill-style items.
+- Flattened clothing sections into grouped rows with compact pill-style items.
 - Softened borders, spacing, and emphasis.
 
-## v7.6.3 — manual weather override cleanup
+## v7.6.3
 
 - Removed manual air-temperature and feels-like overrides.
-- Kept manual water-temperature override.
-- Added clickable `seatemperature.info` link in the override/status area.
-- Updated JS so manual override only affects water temperature.
+- Added clickable `seatemperature.info` link in the water-temperature override area.
 
-## v7.6.4 — sea-temperature link styling
+## v7.6.4
 
-- Styled sea-temperature links.
-- Added both `seatemperature.info` and `seatemperature.org`.
-- Updated dynamic status text so both links appear styled.
+- Styled sea-temperature links; added both `seatemperature.info` and `seatemperature.org`.
 
-## v7.6.5 — footer version sync
+## v7.6.5
 
-- Updated the footer version number to `v7.6.5`.
+- Updated the footer version number.
 
-## v7.6.6 — route file format restriction
+## v7.6.6
 
-- Removed support for route formats beyond GPX and GeoJSON.
-- Removed TCX, KML, KMZ, CSV, and other non-GPX/GeoJSON formats.
+- Removed support for route formats beyond GPX and GeoJSON (TCX, KML, KMZ, CSV).
 - Restricted file picker to `.gpx` and `.geojson`.
 - Added clearer unsupported-format errors.
 
-## v7.6.7 — sunrise/sunset in weather strip
+## v7.6.7
 
-- Added sunrise and sunset times to the weather-strip meta section.
-- Showed them regardless of event length.
-- Tied them to the selected start day.
+- Added sunrise and sunset times to the weather-strip meta section, tied to the selected start day.
 
-## v7.6.8 — `nearestDurationKey` helper fix
+## v7.6.8
 
 - Fixed `nearestDurationKey is not defined`.
-- Restored/added `nearestDurationKey()`.
-- Kept sunrise/sunset weather-strip addition.
 
-## v7.6.9 — `formatMinutesShort` helper fix
+## v7.6.9
 
 - Fixed `formatMinutesShort is not defined`.
-- Restored/added `formatMinutesShort()`.
 
-## v8.0.0 — smart checkpoint model and route-weather overhaul
+## v8.0.0
 
-- Introduced **Old model** and **Smart model** checkpoint modes.
-- Added Old/Smart checkpoint toggle.
-- Smart model added time-based checkpoints, max-distance gap logic, climb-aware ETA weighting, sunrise/sunset anchors, interpolated hourly weather, route-relative wind labels, event-style checkpoint promotion, and short weather-window summaries.
+- Added **Old model** and **Smart model** checkpoint modes with a toggle.
+- Smart model: time-based checkpoints, max-distance gap logic, climb-aware ETA weighting, sunrise/sunset anchors, interpolated hourly weather, route-relative wind labels, event-style checkpoint promotion, and weather-window summaries.
 - Added checkpoint markers on the forecast chart.
 - Added elevation parsing from GPX and GeoJSON.
 
-## v8.0.1 — missing route renderer fix
+## v8.0.1
 
-- Fixed `buildRouteWeatherHtml is not defined`.
-- Restored/added `buildRouteWeatherHtml()`.
-- Made it work with both old and smart checkpoint models.
-- Included smart-model extras in checkpoint cards.
+- Fixed `buildRouteWeatherHtml is not defined`; works with both checkpoint models.
 
-## v8.0.2 — Flatpickr dark mode + Monday week start
+## v8.0.2
 
-- Fixed Flatpickr manual time input hover/focus styling in dark mode.
-- Added explicit hover/focus styling for time inputs and AM/PM.
+- Fixed Flatpickr hover/focus styling in dark mode for manual time inputs.
 - Set date picker weeks to start on Monday.
 
-## v8.0.3 — item tag styling
+## v8.0.3
 
-- Changed `.item-tag` to use the existing blue accent palette instead of neutral styling.
+- Changed `.item-tag` to use the blue accent palette.
 
-## v8.0.4 — credits/footer cleanup + field note
+## v8.0.4
 
-- Cleaned up credits and attributions.
-- Added CARTO to map attribution.
-- Clarified Nominatim/Open-Meteo geocoding and Open-Meteo forecast/marine usage.
+- Cleaned up credits and attributions; added CARTO to map attribution.
 - Moved version number onto the app-name line.
 - Rewrote activity-card bottom field note.
 
-## v8.0.5 — activity group rename + outdoor/travel reorder
+## v8.0.5
 
-- Reduced large bottom body padding.
 - Renamed `Race & endurance` to `Performance & multisport`.
 - Reordered Outdoor & travel to Road trip, Camping, Casual.
+- Reduced large bottom body padding.
 
-## v8.0.6 — outdoor/travel relabel
+## v8.0.6
 
-- Reordered Outdoor & travel to Casual, RT, Camping.
-- Changed Road trip label to **RT**.
+- Changed Road trip label to **RT** and reordered Outdoor & travel to Casual, RT, Camping.
 
-## v8.0.7 — reset/clear button cleanup
+## v8.0.7
 
 - Reduced visual clutter from Reset/Clear/Clear all buttons.
-- Made Collapse quieter, Reset subtler, and Clear all / Remove route more prominent.
-- Renamed actions for clarity: Reset section, Remove route, Reset guide, Reset step.
+- Renamed actions: Reset section, Remove route, Reset guide, Reset step.
 - Reordered top location-card actions.
 
-## v8.0.8 — planner logic improvements + Road trip label revert
+## v8.0.8
 
 - Changed **RT** back to **Road trip**.
-- Made Activity Reset section reset activity, event preset, planned duration, race day mode, custom distance, custom duration, and custom average.
+- Activity Reset now clears activity, event preset, duration, race day mode, and custom distance/duration/average.
 - Made custom distance/duration/average a 3-way calculator.
-- Clicking planned duration now clears custom planner fields first.
+- Clicking a planned duration preset clears custom planner fields first.
 
-## v8.0.9 — planned duration ordering + reset placement
+## v8.0.9
 
-- Moved Reset section to the top right of the whole planner card.
-- Kept Race day mode in activity controls.
-- Reordered 90 min after 60 min / 1 h.
-- Changed 1-hour tag to `60 min / 1 h`.
+- Moved Reset section to the top right of the planner card.
+- Reordered 90 min after 60 min / 1 h; changed 1-hour tag to `60 min / 1 h`.
 
-## v8.0.10 — Reset guide placement cleanup
+## v8.0.10
 
-- Fixed Reset section placement at top right.
-- Moved Reset guide inline with clothing summary before guide sections.
-- Kept Reset step inside each guide section.
+- Moved Reset guide inline with the clothing summary.
 
-## v8.0.11 — dual duration labels up to 3 hours
+## v8.0.11
 
 - Added dual minute/hour labels up to 3 hours: 60 min / 1 h, 90 min / 1.5 h, 120 min / 2 h, 180 min / 3 h.
-- Kept longer presets hours-only.
 
-## v8.0.12 — duration label shortening + alignment attempt
+## v8.0.12
 
-- Shortened labels to `m` format.
-- Added duration-specific styling for alignment.
-- Made duration numbers align more consistently.
+- Shortened duration labels to `m` format with improved alignment styling.
 
-## v8.0.13 — duration label revert + bullet separator
+## v8.0.13
 
-- Reverted `m` back to `min`.
-- Replaced `/` with bullet separators in dual labels.
+- Reverted `m` back to `min`; replaced `/` with bullet separators in dual labels.
 
-## v8.0.14 — two-line duration labels
+## v8.0.14
 
-- Changed dual-format duration labels to two lines, with hour equivalent on its own line.
-- Updated duration label styling for line breaks.
+- Changed dual-format duration labels to two lines, with the hour equivalent on its own line.
 
-## v8.0.15 — button label size reduction
+## v8.0.15
 
-- Reduced shared button label size to `0.8rem`.
-- Helped keep **Triathlon** on one line.
+- Reduced shared button label size to `0.8rem` to keep **Triathlon** on one line.
 
-## v8.1.0 — Best weather window finder
+## v8.1.0
 
-- Added third start-time mode: **Best window**.
-- Added Weather window finder panel with date, earliest/latest start, priority, step size, and advanced limits.
-- Made Best overall adapt to selected activity.
-- Built top-3 best window results.
-- Made results clickable to load that time and refresh forecast, route weather, and clothing logic.
-- Added best-window timeline strip with highlighted windows, markers, and active recommendation marker.
-- Used resolved outing duration from presets, custom duration, derived fields, or route timing.
-- Made route-aware scoring respect old/smart checkpoint model.
+- Added **Best window** as a third start-time mode.
+- Added Weather window finder panel: date, earliest/latest start, priority, step size, and advanced limits.
+- Built top-3 best window results, clickable to load that time and refresh forecast and clothing logic.
+- Added best-window timeline strip with highlighted windows and active recommendation marker.
+- Best overall adapts to the selected activity; route-aware scoring uses the selected checkpoint model.
 
-## v8.1.1 — Best-window Flatpickr search range + 24-hour time
+## v8.1.1
 
-- Replaced Best-window search date and early/late time fields with two Flatpickr datetime boxes.
-- Aligned them with Later picker rules: 24-hour time, Monday week start, minute increments, forecast-range constraints.
+- Replaced best-window date/time fields with Flatpickr pickers (24-hour, Monday week start, forecast-range constrained).
 - Switched general weather time formatting to 24-hour time.
 
-## v8.1.2 — richer best-window timeline + 5-minute granularity
+## v8.1.2
 
-- Put search start/end on the same desktop row.
-- Added day-of-week to result times.
-- Improved strip with a graduated timeline, automatic tick spacing, 15-minute to 24-hour scale, and better multi-day labels.
+- Put search start/end on the same desktop row; added day-of-week to result times.
+- Improved timeline strip with graduated ticks, automatic spacing, 15-minute to 24-hour scale, and multi-day labels.
 - Changed Flatpickr selectors to 5-minute increments.
 
-## v8.1.3 — best-window rank colours + mobile weather strip
+## v8.1.3
 
 - Added distinct colours for #1, #2, and #3 best windows.
 - Fixed mobile timeline overflow.
-- Kept mobile weather icon inline with time/weather/feels block.
 
-## v8.1.4 — mobile forecast section improvements
+## v8.1.4
 
-- Made Forecast over the planned duration more mobile-friendly.
-- Wrapped chart/table area in a horizontal scroll container on narrow screens.
+- Made Forecast over the planned duration mobile-friendly with a horizontal scroll container.
 - Reduced mobile forecast header, chart, forecast cells, and daily cells.
-- Tightened lateral padding on mobile cards and forecast boxes.
+- Tightened lateral padding on mobile cards.
 
 ---
 
-# 5. Linear v8.1.4 → v9.8.2 development
+## v8.2.0
 
-## v8.2.0 — CSS overhaul and mobile cleanup
+- Overhauled responsive/mobile CSS; fixed overflow risk for charts, daily cards, best-window strips, action rows, and route checkpoint cards.
+- Removed unused/dead CSS, duplicate forecast/daily styles, and duplicate `raceRainbowShift` keyframes.
+- Fixed chart checkpoint dot colour.
 
-- Added a cleaner responsive/mobile CSS layer.
-- Fixed mobile overflow risk for charts, daily cards, best-window strips, action rows, and route checkpoint cards.
-- Improved spacing, padding, and wrapping.
-- Removed unused/dead CSS and duplicate forecast/daily styles.
-- Removed duplicate `raceRainbowShift` keyframes.
-- Fixed chart checkpoint dots from `var(--card)` to `var(--surface)`.
+## v8.2.1
 
-## v8.2.1 — Flatpickr month/day visibility fixes
-
-- Fixed next/previous month day colours.
-- Made disabled dates visible gray.
-- Added explicit month/year header height and alignment.
+- Fixed Flatpickr next/previous month day colours and disabled-date visibility.
 - Fixed month label overlap/hiding.
 
-## v8.2.2 — Flatpickr time picker spacing
+## v8.2.2
 
-- Added height and bottom padding to the time picker.
-- Improved hour/minute input height and line-height.
-- Improved AM/PM alignment and separator alignment.
+- Improved Flatpickr time picker height, padding, hour/minute input sizing, and AM/PM alignment.
 
-## v8.2.3 — activity grid, labels, refresh weather, mobile safe area
+## v8.2.3
 
-- Changed activity setup grid to balanced 1fr / 1fr layout.
-- Changed `.label` text size to `1em`.
+- Changed activity setup grid to balanced `1fr / 1fr` layout.
 - Added Refresh weather button in Location & route header.
-- Refresh used resolved coordinates, route start, or typed city search.
 - Added mobile safe-area top padding.
 
-## v8.2.4 — water sports expansion and Location OR Route layout
+## v8.2.4
 
-- Changed triathlon icon to a single swimming emoji.
-- Renamed water area to **Swimming & water**.
-- Added Other water sports: paddleboarding, surfing, kayak, snorkeling, other water.
-- Added matching presets and gear logic.
+- Renamed water area to **Swimming & water**; added paddleboarding, surfing, kayak, snorkeling, and other water sports with matching presets and gear logic.
 - Reworked Location & route into a Location / OR / Route upload layout.
 
-## v9 — global-ish water-temperature fallback model
+## v9
 
-- Added pseudo water-temperature fallback model using recent Open-Meteo `past_days=7` weather.
-- Used overnight lows, daytime highs, latitude bands, hemisphere-aware season handling, water body type, and wind exposure.
-- Produced conservative estimated ranges.
-- Implemented source hierarchy: measured/fetched data, pseudo-estimate, unknown, manual override.
-- Added confidence bars and states: high, medium, low, unknown, manual.
-- Added water body type, wind exposure, and pool type controls.
+- Added water-temperature fallback model using recent Open-Meteo weather, latitude bands, hemisphere-aware seasons, water body type, and wind exposure.
+- Implemented source hierarchy: measured/fetched data → pseudo-estimate → unknown → manual override.
+- Added confidence bars (high, medium, low, unknown, manual) and water body type, wind exposure, and pool type controls.
 - Added outdoor/unheated pool handling.
-- Improved location-search candidates and prioritized North America, Western Europe, then other regions.
+- Improved location-search candidate prioritization.
 
-## v9.1 — water controls consolidation and new activity groups
+## v9.1
 
-- Tablet layout moved Use current location under input while keeping Location / OR / Route structure.
+- Moved Use current location under input on tablet while keeping Location / OR / Route structure.
 - Merged Custom weather override into Water temperature & override.
-- Added explainers for water body type, wind exposure, and pool type.
-- Added Indoor training: gym, indoor running, indoor cycling.
-- Added Trail & mountain: hiking, trail running, MTB/gravel, ski/snowboard.
-- Added presets and recommendation logic for new activity types.
-- Made main pick more itemized and checklist-like.
-- Clarified cold-water wording with explicit neoprene hood/gloves/booties.
+- Added Indoor training group: gym, indoor running, indoor cycling.
+- Added Trail & mountain group: hiking, trail running, MTB/gravel, ski/snowboard.
+- Made main pick more itemized; clarified cold-water wording with explicit neoprene hood/gloves/booties.
 
-## v9.2 — cold-water de-duplication and current-location icon
+## v9.2
 
-- Reduced duplicate cold-water swim options.
-- Added distinct "shorten or postpone if under-equipped" option.
-- Reduced Step 2/checklist repetition.
+- Reduced duplicate cold-water swim options; added distinct "shorten or postpone if under-equipped" option.
 - Replaced duplicates with safety, exit, and buddy-plan checks.
-- Replaced current-location text label with location-arrow icon button.
+- Replaced current-location text label with a location-arrow icon button.
 
-## v9.2.1 — OWS safety buoy / tow float
+## v9.2.1
 
 - Added safety buoy/tow float as default open-water swim essential.
-- Changed low-light duplicate into extra visibility / shore spotter plan.
 - Added triathlon training note: tow float for training, race rules may disallow it.
 
-## v9.2.2 — current-location icon layout and icon swap
+## v9.2.2
 
 - Put current-location icon button inline with location input across layouts.
-- Replaced send-looking arrow with target/crosshair icon.
+- Replaced send-arrow icon with target/crosshair icon.
 
-## v9.2.3 — Walk activity
+## v9.2.3
 
-- Added **Walk** under Outdoor & travel.
-- Added walk presets: short, normal, long, big walk.
-- Added walking-specific clothing/gear logic, distance, and average-speed support.
+- Added **Walk** under Outdoor & travel with presets (short, normal, long, big walk), clothing/gear logic, distance, and average-speed support.
 
-## v9.2.4 — hunting/fishing, pool split, velodrome, paddleboarding rename
+## v9.2.4
 
-- Added Fishing and Hunting section with presets/gear logic.
+- Added Fishing and Hunting section with presets and gear logic.
 - Made indoor cycling explicitly include velodrome cycling.
-- Split pool swimming into indoor pool and outdoor pool.
-- Outdoor pool defaults more toward unheated/outdoor water-temperature fallback.
+- Split pool swimming into indoor pool and outdoor pool; outdoor pool defaults toward unheated water-temperature fallback.
 - Renamed Stand-up paddle to Paddleboarding.
 
-## v9.3 — Temperature preference slider
+## v9.3
 
 - Added Temperature preference slider: much warmer, warmer, normal, cooler, much cooler.
 - Warmer/cooler preferences nudge clothing recommendations without changing real weather readings.
-- Added preference chip when not Normal.
-- Applied to running, cycling, MTB/gravel, walking, hiking, casual, camping, water-adjacent, and other outdoor activities.
-- Reset/Clear all returns preference to Normal.
+- Added preference chip when not Normal; applied across running, cycling, hiking, walking, casual, camping, and water-adjacent activities.
 
-## v9.3.1 — car-style temperature slider redesign
+## v9.3.1
 
 - Expanded slider to 9 stops: 4 warmer, normal, 4 cooler.
-- Changed track to red → neutral → blue gradient.
-- Removed native-looking progress fill.
-- Updated labels, result chips, and internal offset logic.
+- Changed track to red → neutral → blue gradient; removed native progress fill.
 
-## v9.3.2 — water model grid alignment
+## v9.3.2
 
 - Set `.water-model-grid` to `align-items: start`.
 
-## v9.4 — dynamic road-trip itinerary cap and comments
+## v9.4
 
-- Replaced fixed `maxStops = 10` with dynamic stop limits up to 24.
-- Long routes can show more itinerary stops/checkpoints.
+- Replaced fixed `maxStops = 10` with dynamic road-trip itinerary cap (up to 24).
 - Sampling preserves Start and Finish and spreads stops across the route.
-- Added itinerary note showing displayed stop count.
-- Renamed internal variables and added code comments around itinerary, checkpoints, water fallback, temperature preference, custom derivation, render orchestration, and event wiring.
+- Added itinerary note showing the displayed stop count.
 
-## v9.4.1 — indoor and water activity regrouping
+## v9.4.1
 
 - Grouped Indoor pool swim with other indoor sports.
 - Reorganized water into Outdoor swimming and Paddling & board sports.
-- Added internal v9.4.1 note in code comments.
 
-## v9.4.2 — indoor no-location mode
+## v9.4.2
 
-- Allowed gym, indoor running, indoor cycling/velodrome, and indoor pool swim to work without location.
-- Shows Indoor guide instead of weather card/forecast chart.
-- If a location is added later, app switches back to weather-aware mode.
-- Adjusted wording to avoid fake weather claims.
+- Allowed gym, indoor running, indoor cycling/velodrome, and indoor pool swim to work without a location.
+- Shows an Indoor guide instead of weather card/forecast chart; switches back to weather-aware mode if a location is later added.
 
-## v9.5 — Quick start helper overlay
+## v9.5
 
 - Added Quick start button and helper overlay.
-- Guide follows page order: Location & route, Activity, Event/distance, Planned duration, Temperature preference, Start time, Water temperature & override, Weather checkpoint model, Results.
-- Steps can jump to sections with temporary highlighting.
+- Guide follows page order; steps jump to sections with temporary highlighting.
 - Wording adapts to indoor activity, location/route state, water relevance, and results state.
 
-## v9.5.1 — Race day mode exit animation fix
+## v9.5.1
 
 - Fixed accidental animation replay when leaving Race day mode.
-- Planner card no longer replays initial fade/slide when Race mode turns off.
-- Race-party animation remains while active.
 
-## v9.6 — Indoor multisport
+## v9.6
 
-- Added Indoor multisport under Indoor training.
-- Works without location.
-- Added presets: Indoor brick, Indoor tri-style, Gym + cardio, Indoor event.
-- Added guidance for sport-specific swaps, tri-style indoor kit, swim/bike/run bundle, transition bag, sport shoes, and mini transition checklist.
-- Deferred full manual multisport builder.
+- Added Indoor multisport under Indoor training (works without location).
+- Presets: Indoor brick, Indoor tri-style, Gym + cardio, Indoor event.
+- Added guidance for sport-specific swaps, tri-style indoor kit, swim/bike/run bundle, transition bag, and mini transition checklist.
 
-## v9.7 — Planned effort
+## v9.7
 
 - Added Planned effort: Low/standing, Easy, Steady, Hard, Race.
-- Low/easy nudges recommendations warmer; hard/race nudges lighter.
-- Does not change real forecast values.
+- Low/easy nudges recommendations warmer; hard/race nudges lighter; does not change real forecast values.
 - Added result chips when effort is not Steady.
 - Added indoor effort logic for cooling or warm-up/between-effort layers.
 - Added Planned effort to Quick start.
 
-## v9.8 — custom multisport, collapsible activities, route-only checkpoint model, tooltip portal
+## v9.8
 
-- Added custom multisport builder for Triathlon and Indoor multisport.
-- Custom triathlon legs influence checklist wording, water relevance, swim safety, and no-swim recommendations.
-- Custom indoor blocks influence checklist, packing/transition, fan, pool, run, and gym logic.
+- Added custom multisport leg builder for Triathlon and Indoor multisport; legs influence checklist wording, water relevance, swim safety, and no-swim recommendations.
 - Hid Weather checkpoint model unless a route is loaded.
-- Made activity subsections collapsible.
-- Once selected, only the selected group stays open by default.
-- Location & route auto-collapses after loading location/route.
-- Location & route header forced into one-line layout with overflow handling.
-- Attempted to move chart tooltip to body-level positioning to avoid clipping.
+- Made activity subsections collapsible; selected group stays open by default.
+- Location & route auto-collapses after loading.
+- Moved chart tooltip to body-level portal to avoid clipping.
 
-## v9.8.1 — activity toggle fix attempt, comfort grouping, precipitation chance
+## v9.8.1
 
-- Fixed activity subsection headers so they can open/close.
-- Added interaction handling for collapsible sections.
-- Kept `card-top-actions` aligned to `flex-end`.
-- Added Activity & parameters label at top of planner card.
+- Fixed activity subsection headers to open/close correctly.
+- Added Activity & parameters label at the top of the planner card.
 - Grouped Planned effort and Temperature preference into Comfort adjustments.
-- Attempted to restore chart hover tooltip through body-level portal.
-- Added precipitation chance % beside amount in hourly forecast cards, chart tooltip, and chart legend/header wording.
+- Added precipitation chance % beside amount in hourly forecast cards, chart tooltip, and legend.
 
-## v9.8.2 — activity toggle and chart-tooltip regression fix, later broken baseline
+## v9.8.2
 
 - Activity subsection toggles now use delegated click/keyboard handling.
-- Forecast chart tooltip is bound directly to SVG hit zones again while using a body-level portal.
+- Forecast chart tooltip bound directly to SVG hit zones while using a body-level portal.
 - Added `CSS.escape` fallback for older embedded browsers/webviews.
-- Later uploaded copy of v9.8.2 exposed a startup crash: `Cannot access 'activityGroupsLastAutoSyncedActivity' before initialization`, which blocked core UI wiring including the location input.
 
----
+## v9.8.3
 
-# 6. Linear v9.8.2 → v9.8.14 development
+- Fixed startup crash: moved accordion state declarations earlier so `renderPlannerState()` runs safely.
 
-## v9.8.3 — startup crash fix
+## v9.8.4
 
-- Fixed initialization crash around `activityGroupsLastAutoSyncedActivity` and `activityGroupToggleDelegationBound`.
-- Moved problematic accordion state declarations earlier so `renderPlannerState()` could run safely.
-- Added comment explaining initialization-order fix.
-- Restored app startup and location input wiring.
+- Changed `.comfort-adjustments-grid` from two columns to one column; Planned effort and Temperature preference now stack vertically on all viewports.
 
-## v9.8.4 — Comfort adjustments stacked vertically
-
-- Changed `.comfort-adjustments-grid` from two columns to one column globally.
-- Planned effort and Temperature preference now appear vertically on all viewport sizes.
-
-## v9.8.5 — Activity reset button moved into heading row
+## v9.8.5
 
 - Moved `Reset section` into the Activity & parameters heading row.
-- On desktop it aligns with the section title.
-- On narrow screens it can wrap below the title.
 
-## v9.8.6 — precipitation chance added to weather strip
+## v9.8.6
 
-- Weather strip precipitation display now includes amount and chance.
-- Example: `Precip 0.0 mm · 35%`.
+- Weather strip precipitation now shows amount and chance, e.g. `Precip 0.0 mm · 35%`.
 
-## v9.8.7 — water fallback cleanup and best-window medals
+## v9.8.7
 
 - Hid water fallback/source chip and warning note for non-water activities.
-- Kept water fallback behaviour for water-relevant activities.
-- Best window can show up to six options.
-- Top three options use medal labels and gold/silver/bronze styling.
+- Best window can show up to six options; top three use medal labels and gold/silver/bronze styling.
 - Timeline bands now represent full activity duration.
 
-## v9.8.8 — best-window condensation, selected layering, range overflow warnings
+## v9.8.8
 
-- Condensed nearby starts into distinct windows.
-- Avoided redundant runner-up options when starts are essentially the same opportunity.
-- Made timeline bands/markers clickable.
-- Selected option visually comes forward.
-- Warns when the full activity extends past search end.
-- Bands extending past search end use dashed border treatment.
+- Condensed nearby best-window starts into distinct windows.
+- Made timeline bands/markers clickable; selected option comes forward visually.
+- Warns when the full activity extends past search end; bands use dashed border treatment.
 
-## v9.8.9 — at least two options and adaptive timeline ticks
+## v9.8.9
 
 - Best window keeps at least two options when enough candidates exist.
-- Added adaptive timeline tick spacing.
-- Added lighter minor ticks and labeled major ticks.
-- Added midnight/date ticks for cross-day timelines.
+- Added adaptive timeline tick spacing with lighter minor ticks and midnight/date ticks for cross-day timelines.
 
-## v9.8.10 — minimum three options and clustered start-time ranges
+## v9.8.10
 
 - Best window targets three to six options when enough candidates exist.
-- Added compact clustered good-start ranges.
-- Start ranges are limited to the densest 30-minute pocket.
-- Timeline hover titles mention good-start range.
+- Added compact clustered good-start ranges limited to the densest 30-minute pocket.
 
-## v9.8.11 — UV index and forecast-derived warning panels
+## v9.8.11
 
-- Added UV index from Open-Meteo hourly/daily data.
-- Displayed UV in weather strip, forecast cells, chart tooltip, route checkpoint cards, and checkpoint summary.
-- Smart route checkpoints can mark peak UV.
-- High UV affects Best-window scoring for outdoor activities.
+- Added UV index from Open-Meteo hourly/daily data; displayed in weather strip, forecast cells, chart tooltip, route checkpoint cards, and checkpoint summary.
+- Smart route checkpoints can mark peak UV; high UV affects Best-window scoring for outdoor activities.
 - Added UV-aware sun protection clothing/gear logic.
 - Added forecast-derived hazard panels for thunderstorms, wind/gusts, heavy precipitation, snow/mix, and high UV.
 
-## v9.8.12 — Canada.ca UV scale and ECCC alerts for Canadian locations
+## v9.8.12
 
-- Aligned UV categories with Canada/ECCC scale:
-  - 0–2 Low
-  - 3–5 Moderate
-  - 6–7 High
-  - 8–10 Very high
-  - 11+ Extreme
-- Added UV colour ramp: green, yellow, orange, red, purple.
-- Canadian locations/checkpoints try official ECCC alerts through MSC GeoMet `weather-alerts`.
-- Non-Canadian locations continue using forecast-derived warnings.
-- Canadian ECCC lookup failure falls back to forecast-derived warnings with fallback note.
+- Aligned UV categories with Canada/ECCC scale (0–2 Low, 3–5 Moderate, 6–7 High, 8–10 Very high, 11+ Extreme) with colour ramp: green, yellow, orange, red, purple.
+- Canadian locations try official ECCC alerts through MSC GeoMet `weather-alerts`; falls back to forecast-derived warnings on failure.
 
-## v9.8.13 — forecast-cell UV display simplified
+## v9.8.13
 
-- Kept forecast-cell data: temperature, feels-like, wind, precipitation amount/chance, UV.
 - Simplified UV display in forecast cells to rating/category only.
 - Removed redundant sun icon before UV badge.
 
-## v9.8.14 — forecast-cell compact value display and hover labels
+## v9.8.14
 
-- Removed UV rating/category text from visible forecast-cell UV bubble.
 - Forecast-cell UV now shows numeric value only, e.g. `UV 4.2`.
-- Chart tooltip also shows numeric UV.
-- Forecast-cell secondary data made more compact.
-- Visible values prioritize data; labels moved into hover/title text.
+- Made forecast-cell secondary data more compact; labels moved into hover/title text.
 - Feels-like temperature now appears on its own line.
 
 ---
 
-# 7. Linear v9.8.15 → v11 development
+## v9.8.15
 
-## v9.8.15 — Strava planner autofill
+- Strava import autofills sport, average pace/speed, and planned duration when the activity data supports it.
 
-- Strava import now autofills sport, average pace/speed, and planned duration when the activity data supports it.
+## v10.1.6
 
-## v10.1.6 — running duration default to minutes
+- Running activity custom duration now defaults to minutes instead of hours.
 
-- Custom duration input for running activities now defaults to minutes instead of hours.
-
-## v10.1.7 — Strava running duration default
+## v10.1.7
 
 - Strava-loaded running activities use the same minutes duration default as manual running selection.
 
-## v10.2 — Best Window score explainer
+## v10.2
 
-- Added a score explainer below Best Window result cards.
-- The chosen time shows the main scoring tradeoffs.
+- Added a score explainer below Best Window result cards showing the main scoring tradeoffs.
 
-## v10.3 — route checkpoint callout copy and spacing
+## v10.3
 
-- Sharpened the route checkpoint callout copy.
-- Added more breathing room below the route weather slot inside the forecast result.
+- Sharpened route checkpoint callout copy.
+- Added breathing room below the route weather slot inside the forecast result.
 
-## v10.4 — collapsible planner subsections
+## v10.4
 
 - Added collapsible subsections for duration, effort, temperature preference, and water controls.
 - Moved Start time to the bottom of Activity & parameters.
 - Planned effort promotes to Race when Race day mode is enabled.
 
-## v10.5 — mobile Location & route fixes
+## v10.5
 
 - Fixed mobile Location & route action-button wrapping.
 - Mirrors loaded route distance into the disabled custom-distance input.
 - Moves and collapses Event / distance into the right planner column while a route is active.
 
-## v10.6 — forecast-only shortcut
+## v10.6
 
 - Added a forecast-only shortcut that collapses the planner for weather-only use.
 - Hides route/Strava import options while that shortcut is active.
-- Renames the older checkpoint model to Standard.
+- Renamed the older checkpoint model to Standard.
 
-## v10.7 — social sharing metadata
+## v10.7
 
-- Added Open Graph and Twitter Card meta tags to the app shell.
-- Shared links now include a title, description, and image hint on platforms that read those tags.
+- Added Open Graph and Twitter Card meta tags so shared links include a title, description, and image hint.
 
-## v10.8 — forecast-only mode toggle
+## v10.8
 
-- Makes forecast-only mode a real toggle.
-- Gives the location chooser a single-column forecast-only layout.
-- Removes leftover OR dividers in that mode.
-- Surfaces water temperature in weather-only results as an at-a-glance signal.
+- Made forecast-only mode a real toggle with a single-column location layout.
+- Removed leftover OR dividers in forecast-only mode.
+- Surfaced water temperature in weather-only results.
 
-## v10.9 — water controls hidden in forecast-only mode
+## v10.9
 
-- Hides water-temperature override controls while forecast-only mode is active.
-- The at-a-glance water signal in results remains visible.
+- Hid water-temperature override controls in forecast-only mode; at-a-glance water signal in results remains visible.
 
-## v11 — forecast-only cleanup
+## v11
 
-- Hides the full water-settings section in forecast-only mode.
-- Hides Best window in forecast-only mode.
-- Restores a visible water-temperature signal in forecast-only results.
-- Removes the empty Clothing & gear panel from forecast-only output.
-
----
-
-# High-level merged progression
-
-## Core evolution
-
-1. **Weather Clothing Advisor prototype** — local rules replaced fragile browser AI; duration, forecast, checklist, wizard, route, and water-temperature logic appeared.
-2. **Forecast Fit naming phase** — charts, route labels, date/time handling, and road-trip support matured.
-3. **v5/v6/v7 branches** — Claude branch cleanup, client-side itinerary, marine fallback, Race day mode, richer popups, route weather, and sport-platform aesthetics.
-4. **v8 route-weather intelligence** — Smart checkpoint model, elevation parsing, route-relative wind, and best weather window finder.
-5. **v9 activity/weather intelligence** — water-temperature fallback model, indoor/no-location mode, wider activity taxonomy, temperature preference, planned effort, multisport logic.
-6. **v9.8 refinement series** — collapsible activities, chart tooltip repairs, precipitation chance, best-window ranking/condensation, UV, Canadian alerts, and compact forecast-cell display.
-7. **v9.8.15–v11** — Strava autofill, Best Window score explainer, collapsible planner subsections, forecast-only mode, social sharing metadata, and forecast-only output cleanup.
-
-## Latest unified endpoint
-
-Latest version: **v11**.
+- Hid the full water-settings section and Best window in forecast-only mode.
+- Restored a visible water-temperature signal in forecast-only results.
+- Removed the empty Clothing & gear panel from forecast-only output.
