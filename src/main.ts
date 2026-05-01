@@ -7711,26 +7711,62 @@ function closeStravaPicker() {
   document.body.classList.remove('helper-open');
 }
 
+async function findStravaRouteById(routeId) {
+  const targetId = String(routeId);
+  const cachedRoute = stravaPickerRoutes.find((item) => String(item?.id) === targetId);
+  if (cachedRoute) return cachedRoute;
+
+  let nextPage = stravaPickerRoutesPage > 0 ? (stravaPickerRoutesPage + 1) : 1;
+  let hasMore = stravaPickerRoutesPage > 0 ? stravaPickerRoutesHasMore : true;
+
+  while (hasMore) {
+    const routes = await fetchStravaRoutes(STRAVA_BACKEND_URL, nextPage);
+    const nextRoutes = Array.isArray(routes) ? routes : [];
+    stravaPickerRoutes = [...stravaPickerRoutes, ...nextRoutes];
+    stravaPickerRoutesPage = nextPage;
+    stravaPickerRoutesLoaded = true;
+    stravaPickerRoutesHasMore = nextRoutes.length >= STRAVA_ROUTE_PAGE_SIZE;
+    const matchedRoute = nextRoutes.find((item) => String(item?.id) === targetId);
+    if (matchedRoute) return matchedRoute;
+    hasMore = stravaPickerRoutesHasMore;
+    nextPage += 1;
+  }
+
+  return null;
+}
+
 async function importStravaRouteById(routeId) {
-  const route = stravaPickerRoutes.find((item) => String(item?.id) === String(routeId)) || await fetchStravaRoute(STRAVA_BACKEND_URL, routeId);
-  if (!route) throw new Error('Selected Strava route was not found.');
-  stravaPickerRoutes = addUniqueStravaItem(stravaPickerRoutes, route);
+  let route = stravaPickerRoutes.find((item) => String(item?.id) === String(routeId)) || null;
+  if (!route) {
+    try {
+      route = await fetchStravaRoute(STRAVA_BACKEND_URL, routeId);
+    } catch {
+      route = await findStravaRouteById(routeId);
+    }
+  }
+  const fallbackRoute = route || {
+    id: String(routeId),
+    name: 'Strava route',
+    permalink_url: `https://www.strava.com/routes/${encodeURIComponent(String(routeId))}`,
+  };
+  if (route) stravaPickerRoutes = addUniqueStravaItem(stravaPickerRoutes, route);
   let importedRoute;
   try {
-    const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
-    importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+    const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, fallbackRoute.id);
+    importedRoute = stravaRouteGpxToImportedRoute(fallbackRoute, gpxText);
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     const isMissingExport = /resource not found|strava request failed \(404\)/i.test(message);
     if (!isMissingExport) throw error;
+    if (!route) throw new Error('Unable to import that Strava route from its URL. Try loading it from the Routes tab first.');
     importedRoute = stravaRouteSummaryToImportedRoute(route);
   }
   await applyImportedStravaRoute(importedRoute, 'Strava route', {
-    activityKey: mapStravaRouteToPlannerActivity(route),
-    averageKmh: Number(route?.distance) > 0 && Number(route?.estimated_moving_time) > 0
-      ? (Number(route.distance) / 1000) / (Number(route.estimated_moving_time) / 3600)
+    activityKey: mapStravaRouteToPlannerActivity(fallbackRoute),
+    averageKmh: Number(fallbackRoute?.distance) > 0 && Number(fallbackRoute?.estimated_moving_time) > 0
+      ? (Number(fallbackRoute.distance) / 1000) / (Number(fallbackRoute.estimated_moving_time) / 3600)
       : null,
-    durationMinutes: Number(route?.estimated_moving_time) > 0 ? Number(route.estimated_moving_time) / 60 : null,
+    durationMinutes: Number(fallbackRoute?.estimated_moving_time) > 0 ? Number(fallbackRoute.estimated_moving_time) / 60 : null,
     shouldSetDuration: !importedRoute?.hasRealTimestamps,
   });
 }

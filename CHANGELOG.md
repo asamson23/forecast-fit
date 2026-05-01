@@ -789,3 +789,8 @@
 - Added Strava picker pagination so routes and activities can load beyond the first page inside the import overlay.
 - Added a Strava URL import field at the top of the picker so direct route and activity links can be pasted and imported immediately.
 - Added backend Strava detail proxy endpoints for direct route/activity lookup by ID and paginated the route list proxy.
+
+## v11.1.1
+
+- Fixed Strava route URL import so it no longer depends entirely on the direct route-detail endpoint.
+- Route URLs now fall back to paginated route lookup and GPX export import before failing, which avoids the `Resource Not Found` path seen on some saved routes.
