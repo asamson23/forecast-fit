@@ -6695,6 +6695,47 @@ function getQuickStartSteps() {
   const durationState = getDurationState(getSelectedEvent());
   const distanceState = getDistanceState(getSelectedEvent());
 
+  if (forecastOnlyMode) {
+    return [
+      {
+        number: 1,
+        target: 'location-card',
+        title: 'Location',
+        body: locationReady
+          ? 'Weather is loaded for the current place. Change the city or use current location whenever you want a different forecast.'
+          : 'Search a city or use current location to load the forecast. Route upload and Strava import are hidden in Forecast-only mode.',
+        state: locationReady ? helperState('active', 'done') : helperState('start here', '')
+      },
+      {
+        number: 2,
+        target: 'duration-section',
+        title: 'Planned duration',
+        body: durationState?.source === 'custom'
+          ? `Using a custom duration: ${durationState.label}.`
+          : 'Pick or enter how long the outing or forecast window should be. Duration controls how much forecast time and hazard context the results summarize.',
+        state: durationState?.source === 'custom' ? helperState('custom', 'done') : helperState('preset', 'optional')
+      },
+      {
+        number: 3,
+        target: 'start-time-section',
+        title: 'Start time',
+        body: locationReady
+          ? 'Choose Now or Later to time the forecast. Best window search is hidden in Forecast-only mode.'
+          : 'Fetch a location first to unlock start-time planning.',
+        state: locationReady ? helperState(startMode, 'done') : helperState('locked', 'locked')
+      },
+      {
+        number: 4,
+        target: 'result-card',
+        title: 'Results',
+        body: resultCard?.style.display === 'block'
+          ? 'Use this panel for the forecast summary, warnings, water signal when available, and forecast cells for the selected window.'
+          : 'Results appear after you load a location. Forecast-only mode skips clothing guidance and focuses on weather, timing, and hazards.',
+        state: resultCard?.style.display === 'block' ? helperState('ready', 'done') : helperState('waiting', '')
+      }
+    ];
+  }
+
   return [
     {
       number: 1,

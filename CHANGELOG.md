@@ -764,3 +764,7 @@
 ## v11.0.9
 
 - Fixed forecast-only Start time layout so the remaining Now and Later buttons switch from a 3-column row to a full-width 2-column row.
+
+## v11.0.10
+
+- Adapted the Quick start guide in Forecast-only mode so it only shows the controls and results that remain available there.
