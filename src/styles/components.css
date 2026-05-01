@@ -36,6 +36,26 @@
     margin-bottom: 14px;
   }
   .weather-icon { font-size: 3.1rem; line-height: 1; }
+  .emoji-asset-icon,
+  .inline-symbol-icon,
+  .best-window-strip-icon,
+  .best-window-rank-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: -0.12em;
+  }
+  .emoji-asset-img {
+    display: block;
+    width: 1em;
+    height: 1em;
+    object-fit: contain;
+  }
+  .country-flag-icon {
+    --CountryFlagIcon-height: 0.9em;
+    vertical-align: -0.08em;
+  }
   .weather-main .temp {
     font-family: 'DM Mono', monospace;
     font-size: 2.2rem;
@@ -735,7 +755,7 @@
     font-size: 0.86rem;
     margin-top: 14px;
   }
-  .warning-box .wi { font-size: 1.15rem; }
+  .warning-box .wi { font-size: 1.15rem; flex: 0 0 auto; }
   .forecast-warning-list {
     display: grid;
     gap: 8px;
@@ -1016,7 +1036,13 @@
   .suggestion-item:last-child { border-bottom: none; }
   .suggestion-item:hover,
   .suggestion-item.focused { background: var(--surface2); }
-  .suggestion-item .s-flag { font-size: 1.1rem; line-height: 1; min-width: 22px; }
+  .suggestion-item .s-flag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.1rem;
+    line-height: 1;
+    min-width: 22px;
+  }
   .suggestion-item .s-main { font-size: 0.9rem; font-weight: 500; }
   .suggestion-item .s-sub  { font-size: 0.75rem; color: var(--text-soft); font-family: 'DM Mono', monospace; }
 

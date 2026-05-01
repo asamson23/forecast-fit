@@ -2,6 +2,13 @@
 
 ---
 
+## v11.0.5
+
+- Switched location suggestion flags from Unicode glyphs to `country-flag-icons` SVG assets for more consistent cross-platform rendering.
+- Switched weather-condition icons to `@bybas/weather-icons`.
+- Replaced selected UI emoji surfaces with bundled Fluent UI SVG assets for more stable rendering across browsers and operating systems.
+- Updated Credits & attributions to list the new icon libraries.
+
 ## `weather-clothing-advisor.html`
 
 - Four activities: Running / Triathlon, Cycling, Open Water Swimming, Casual.

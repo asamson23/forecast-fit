@@ -1,7 +1,7 @@
 import { getTimelineTickConfig, TimelineTickConfig } from '../features/best-window/timelineTicks';
 import { waterExposureActivities } from '../features/gear/waterRules';
 import { clamp, firstFinite, isFiniteNumber, round1 } from '../utils/math';
-import { escapeHtml } from '../utils/format';
+import { escapeHtml, renderSymbolIconHtml } from '../utils/format';
 import {
   ceilDateToStep,
   formatDateOnlyLocal,
@@ -99,9 +99,8 @@ export function getBestWindowPresetLabel(priority: string): string {
 }
 
 export function getBestWindowRankLabel(index: number, priority: string): string {
-  const emoji = getBestWindowRankEmoji(index);
   const suffix = index === 0 ? getBestWindowPresetLabel(priority) : (index < 3 ? 'Podium pick' : 'Runner-up');
-  return `${emoji ? `${emoji} ` : ''}#${index + 1} ${suffix}`;
+  return `#${index + 1} ${suffix}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -607,8 +606,10 @@ export function getBestWindowTimelineHtml(analysis: unknown, selectedStart: stri
     const activeClass = active ? 'active' : '';
     const rank = getBestWindowRankClass(index);
     const edgeClass = left <= 4 ? 'edge-start' : (left >= 96 ? 'edge-end' : '');
-    const label = index < 3 ? getBestWindowRankEmoji(index) : `#${index + 1}`;
-    return `<div class="best-window-strip-marker ${rank} ${activeClass}" style="left:${left.toFixed(2)}%;" data-action="applyBestWindowResult" data-start-time="${escapeHtml(rep.startTime)}"><span class="best-window-strip-label ${edgeClass}">${escapeHtml(label)}</span></div>`;
+    const labelHtml = index < 3
+      ? renderSymbolIconHtml(getBestWindowRankEmoji(index), 'best-window-strip-icon', `Rank ${index + 1}`, true)
+      : escapeHtml(`#${index + 1}`);
+    return `<div class="best-window-strip-marker ${rank} ${activeClass}" style="left:${left.toFixed(2)}%;" data-action="applyBestWindowResult" data-start-time="${escapeHtml(rep.startTime)}"><span class="best-window-strip-label ${edgeClass}">${labelHtml}</span></div>`;
   }).join('');
 
   const tickItems: { date: Date; type: string }[] = [];
@@ -704,7 +705,7 @@ export function renderBestWindowResults(
         const overrunWarning = formatBestWindowOverrunWarning(overrun);
         return `
           <button type="button" class="best-window-card ${getBestWindowRankClass(index)} ${active ? 'active' : ''}" data-action="applyBestWindowResult" data-start-time="${escapeHtml(rep.startTime)}">
-            <div class="best-window-rank">${escapeHtml(getBestWindowRankLabel(index, an.options.priority))}</div>
+            <div class="best-window-rank">${index < 3 ? `${renderSymbolIconHtml(getBestWindowRankEmoji(index), 'best-window-rank-icon', `Rank ${index + 1}`, true)} ` : ''}${escapeHtml(getBestWindowRankLabel(index, an.options.priority))}</div>
             <div class="best-window-time">${escapeHtml(formatWeekdayTime(rep.startTime))}</div>
             <div class="best-window-window">Activity ${escapeHtml(formatWeekdayTime(rep.startTime))}–${escapeHtml(formatShortTime(activityRange.endTime))} · ${startRangeInfo ? 'best start' : 'start window'} ${escapeHtml(startRangeInfo ? formatWeekdayTime(rep.startTime) : windowLabel)} · score ${escapeHtml(rep.score)}</div>
             ${startRangeHtml}

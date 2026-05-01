@@ -1,6 +1,7 @@
 // @ts-nocheck
 import 'leaflet/dist/leaflet.css';
 import 'flatpickr/dist/flatpickr.min.css';
+import 'country-flag-icons/3x2/flags.css';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/components.css';
@@ -93,6 +94,13 @@ import { normalizeRoutePoints as normalizeRoutePointsFromModule } from './featur
 import { buildRouteStateModel } from './features/route/routeMetrics';
 import { getSegmentTimeFactor as getSegmentTimeFactorFromModule } from './features/route/routeTiming';
 import { haversineKm } from './utils/distance';
+import {
+  countryFlag as countryFlagFromModule,
+  renderLeadingEmojiLabel as renderLeadingEmojiLabelFromModule,
+  renderSymbolIconHtml as renderSymbolIconHtmlFromModule,
+  replaceActivityEmojiIcons as replaceActivityEmojiIconsFromModule,
+  weatherIconHtml as weatherIconHtmlFromModule,
+} from './utils/format';
 import { fetchAirQuality, matchAqiToHourlyTime } from './features/weather/airQualityClient';
 import { getAqiInfo } from './data/aqiScale';
 import {
@@ -129,6 +137,7 @@ Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
 inject();
 injectSpeedInsights();
+replaceActivityEmojiIconsFromModule();
 if (consumeStravaOAuthCallback()) {
   setTimeout(() => renderStravaConnectionStateEnhanced(), 0);
 }
@@ -2580,13 +2589,13 @@ function hideError() {
 
 function showResultLoading() {
   resultCard.style.display = 'block';
-  resultInner.innerHTML = `
+  resultInner.innerHTML = upgradeEmojiMarkup(`
     <div class="skeleton" style="width:42%;height:12px"></div>
     <div class="skeleton" style="width:72%;height:44px;margin-top:12px"></div>
     <div class="skeleton" style="width:100%;height:180px;margin-top:18px"></div>
     <div class="skeleton" style="width:100%;height:120px;margin-top:18px"></div>
     <div class="skeleton" style="width:100%;height:120px;margin-top:12px"></div>
-  `;
+  `);
 }
 
 function setLoading(isLoading) {
@@ -2652,6 +2661,40 @@ function weatherIconHtml(code, className = 'icon') {
   const [emoji, desc] = wCodeToEmoji(code);
   return `<span class="${escapeHtml(className)}" role="img" aria-label="${escapeHtml(desc)}" title="${escapeHtml(desc)}">${emoji}</span>`;
 }
+
+countryFlag = countryFlagFromModule;
+weatherIconHtml = (code, className = 'icon') => weatherIconHtmlFromModule(code, className);
+const renderSymbolIconHtml = (symbol, className = 'inline-symbol-icon', label, decorative = true) =>
+  renderSymbolIconHtmlFromModule(symbol, className, label, decorative);
+const renderLeadingEmojiLabel = (value, className = 'inline-symbol-icon') =>
+  renderLeadingEmojiLabelFromModule(value, className);
+const upgradeEmojiMarkup = (html) => {
+  const replacements = [
+    ['🏷 ', `${renderSymbolIconHtml('🏷', 'inline-symbol-icon', 'Activity', true)} `],
+    ['ðŸ· ', `${renderSymbolIconHtml('🏷', 'inline-symbol-icon', 'Activity', true)} `],
+    ['🏠 ', `${renderSymbolIconHtml('🏠', 'inline-symbol-icon', 'Indoor', true)} `],
+    ['ðŸ  ', `${renderSymbolIconHtml('🏠', 'inline-symbol-icon', 'Indoor', true)} `],
+    ['🌊 ', `${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} `],
+    ['ðŸŒŠ ', `${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} `],
+    ['⚠️', renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)],
+    ['âš ï¸', renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)],
+    ['💧 ', `${renderSymbolIconHtml('💦', 'inline-symbol-icon', 'Humidity', true)} `],
+    ['ðŸ’§ ', `${renderSymbolIconHtml('💦', 'inline-symbol-icon', 'Humidity', true)} `],
+    ['💨 ', `${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} `],
+    ['ðŸ’¨ ', `${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} `],
+    ['🌧 ', `${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} `],
+    ['ðŸŒ§ ', `${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} `],
+    ['☀ ', `${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} `],
+    ['â˜€ ', `${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} `],
+    ['📍 ', `${renderSymbolIconHtml('🌍', 'inline-symbol-icon', 'Location', true)} `],
+    ['ðŸ“ ', `${renderSymbolIconHtml('🌍', 'inline-symbol-icon', 'Location', true)} `],
+  ];
+  let upgraded = String(html ?? '');
+  for (const [needle, replacement] of replacements) {
+    upgraded = upgraded.split(needle).join(replacement);
+  }
+  return upgraded;
+};
 
 function degreesToCompass(deg) {
   if (!isFiniteNumber(deg)) return 'Variable';
@@ -2766,7 +2809,7 @@ function buildRouteWeatherHtml() {
             <div class="cp-sub">ETA ${cp.eta ? escapeHtml(formatShortDateTime(cp.eta)) : '—'}${reasonLine ? `<br>${escapeHtml(reasonLine)}` : ''}</div>
             ${w ? `
               <div class="cp-temp">${Math.round(w.temp)}° · feels ${Math.round(w.feels)}°</div>
-              <div class="cp-meta">💨 ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>↯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : '—'} km/h${isFiniteNumber(w.uv) ? `<br>☀ ${renderUvBadge(w.uv, true)}` : ''}<br>🌧 ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
+              <div class="cp-meta">${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>↯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : '—'} km/h${isFiniteNumber(w.uv) ? `<br>${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(w.uv, true)}` : ''}<br>${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
             ` : `<div class="cp-temp">Loading…</div>`}
           </div>`;
       }).join('')}
@@ -3032,7 +3075,7 @@ function renderGenericWarningList(warnings, note, ariaLabel = 'Weather warnings'
     <div class="forecast-warning-list" role="note" aria-label="${escapeHtml(ariaLabel)}">
       ${warnings.slice(0, 5).map(w => `
         <div class="forecast-warning-item ${escapeHtml(w.level === 'severe' ? 'severe' : (w.level || ''))}">
-          <span class="forecast-warning-icon" aria-hidden="true">${escapeHtml(w.icon)}</span>
+          ${renderSymbolIconHtml(w.icon, 'forecast-warning-icon', w.title, true)}
           <span class="forecast-warning-copy"><strong>${escapeHtml(w.title)}</strong><span>${escapeHtml(w.detail)}</span></span>
         </div>`).join('')}
       ${note ? `<div class="forecast-warning-note">${escapeHtml(note)}</div>` : ''}
@@ -6197,7 +6240,7 @@ function renderIndoorAdviceWithoutLocation() {
         <div class="block-title">Indoor guide</div>
         <div class="route-callout">No location required for this activity. Add a location later if you want commute weather, daylight, or outdoor arrival/departure layers.</div>
         <div class="mini-chips">
-          ${wizard.chips.map(chip => `<div class="mini-chip ${chip.tone || ''}">${escapeHtml(chip.label)}</div>`).join('')}
+          ${wizard.chips.map(chip => `<div class="mini-chip ${chip.tone || ''}">${renderLeadingEmojiLabel(chip.label)}</div>`).join('')}
           <div class="mini-chip">🏷 ${escapeHtml(wizard.activityLabel)}</div>
           <div class="mini-chip">🏠 indoor / controlled setting</div>
         </div>
@@ -6211,7 +6254,7 @@ function renderIndoorAdviceWithoutLocation() {
           </div>
         </div>
         <div class="wizard-grid">${renderSteps(wizard.steps)}</div>
-        ${wizard.warning ? `<div class="warning-box"><span class="wi">⚠️</span><span>${escapeHtml(wizard.warning)}</span></div>` : ''}
+        ${wizard.warning ? `<div class="warning-box">${renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)}<span>${escapeHtml(wizard.warning)}</span></div>` : ''}
       </section>
     </div>
   `;
@@ -6265,7 +6308,7 @@ function renderAdvice(data, activity) {
 
   const durationState = getDurationState(getSelectedEvent());
   if (!durationState) {
-    resultInner.innerHTML = `
+    resultInner.innerHTML = upgradeEmojiMarkup(`
       <div class="result-sections">
         <section class="result-panel">
           <div class="location-name">📍 <span>${escapeHtml(data.locationName)}</span></div>
@@ -6279,7 +6322,7 @@ function renderAdvice(data, activity) {
             <div class="weather-meta">${metaLines.join('<br>')}</div>
           </div>
           ${showWaterUi ? `<div class="mini-chips">
-            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">🌊 ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
+            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
           </div>` : ''}
           ${showWaterUi ? renderWaterTempDisclaimer(point) : ''}
           <div class="block-title">Weather & forecast</div>
@@ -6291,7 +6334,7 @@ function renderAdvice(data, activity) {
           <p class="summary">Choose a planned duration to time the outing, then choose an activity to turn the weather into clothing and gear suggestions.</p>
         </section>`}
       </div>
-    `;
+    `);
     updateManualWeatherStatus();
     bindForecastChartTooltips();
     return;
@@ -6300,7 +6343,7 @@ function renderAdvice(data, activity) {
   if (!activity) {
     const selectionForWarnings = getForecastSelection(data, startTime);
     const weatherWarningsHtml = renderWeatherHazardWarnings(data, selectionForWarnings, point, activity);
-    resultInner.innerHTML = `
+    resultInner.innerHTML = upgradeEmojiMarkup(`
       <div class="result-sections">
         <section class="result-panel">
           <div class="location-name">📍 <span>${escapeHtml(data.locationName)}</span></div>
@@ -6314,7 +6357,7 @@ function renderAdvice(data, activity) {
             <div class="weather-meta">${metaLines.join('<br>')}</div>
           </div>
           ${showWaterUi ? `<div class="mini-chips">
-            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">🌊 ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
+            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
           </div>` : ''}
           ${showWaterUi ? renderWaterTempDisclaimer(point) : ''}
           ${weatherWarningsHtml}
@@ -6327,7 +6370,7 @@ function renderAdvice(data, activity) {
           <p class="summary">Choose an activity to turn the weather into clothing and gear suggestions.</p>
         </section>`}
       </div>
-    `;
+    `);
     updateManualWeatherStatus();
     bindForecastChartTooltips();
     return;
@@ -6336,7 +6379,7 @@ function renderAdvice(data, activity) {
   const wizard = augmentWizardWithAqiContext(augmentWizardWithUvContext(buildWizard(data, activity), data, activity), data, activity);
   const selectionForWarnings = getForecastSelection(data, wizard.startTime);
   const weatherWarningsHtml = renderWeatherHazardWarnings(data, selectionForWarnings, point, activity);
-  resultInner.innerHTML = `
+  resultInner.innerHTML = upgradeEmojiMarkup(`
     <div class="result-sections">
       <section class="result-panel">
         <div class="location-name">📍 <span>${escapeHtml(data.locationName)}</span></div>
@@ -6351,9 +6394,9 @@ function renderAdvice(data, activity) {
         </div>
 
         <div class="mini-chips">
-          ${wizard.chips.map(chip => `<div class="mini-chip ${chip.tone || ''}">${escapeHtml(chip.label)}</div>`).join('')}
+          ${wizard.chips.map(chip => `<div class="mini-chip ${chip.tone || ''}">${renderLeadingEmojiLabel(chip.label)}</div>`).join('')}
           <div class="mini-chip">🏷 ${escapeHtml(wizard.activityLabel)}</div>
-          ${showWaterUi ? `<div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'unknown' ? 'warn' : ''}">🌊 ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>` : ''}
+          ${showWaterUi ? `<div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'unknown' ? 'warn' : ''}">${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>` : ''}
         </div>
         ${showWaterUi ? renderWaterTempDisclaimer(point) : ''}
         ${weatherWarningsHtml}
@@ -6373,10 +6416,10 @@ function renderAdvice(data, activity) {
           </div>
         </div>
         <div class="wizard-grid">${renderSteps(wizard.steps)}</div>
-        ${wizard.warning ? `<div class="warning-box"><span class="wi">⚠️</span><span>${escapeHtml(wizard.warning)}</span></div>` : ''}
+        ${wizard.warning ? `<div class="warning-box">${renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)}<span>${escapeHtml(wizard.warning)}</span></div>` : ''}
       </section>
     </div>
-  `;
+  `);
   syncInteractiveAdvice();
   bindForecastChartTooltips();
   updateManualWeatherStatus();

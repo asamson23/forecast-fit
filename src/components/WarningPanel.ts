@@ -1,7 +1,7 @@
 import { getAqiInfo } from '../data/aqiScale';
 import { getUvCategory } from '../data/uvScale';
 import { dedupeAlerts, isProbablyCanadaPoint, shouldUseEcccAlertsForWeatherData } from '../features/weather/warnings';
-import { escapeHtml } from '../utils/format';
+import { escapeHtml, renderSymbolIconHtml } from '../utils/format';
 import { firstFinite, isFiniteNumber, round1 } from '../utils/math';
 
 // ---------------------------------------------------------------------------
@@ -243,7 +243,7 @@ export function renderGenericWarningList(warnings: WeatherWarning[], note: strin
     <div class="forecast-warning-list" role="note" aria-label="${escapeHtml(ariaLabel)}">
       ${warnings.slice(0, 5).map(w => `
         <div class="forecast-warning-item ${escapeHtml(w.level === 'severe' ? 'severe' : (w.level || ''))}">
-          <span class="forecast-warning-icon" aria-hidden="true">${escapeHtml(w.icon)}</span>
+          ${renderSymbolIconHtml(w.icon, 'forecast-warning-icon', w.title, true)}
           <span class="forecast-warning-copy"><strong>${escapeHtml(w.title)}</strong><span>${escapeHtml(w.detail)}</span></span>
         </div>`).join('')}
       ${note ? `<div class="forecast-warning-note">${escapeHtml(note)}</div>` : ''}
