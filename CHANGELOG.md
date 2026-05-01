@@ -2,6 +2,7 @@
 
 ---
 
+
 ## `weather-clothing-advisor.html`
 
 - Four activities: Running / Triathlon, Cycling, Open Water Swimming, Casual.
@@ -794,3 +795,7 @@
 
 - Fixed Strava route URL import so it no longer depends entirely on the direct route-detail endpoint.
 - Route URLs now fall back to paginated route lookup and GPX export import before failing, which avoids the `Resource Not Found` path seen on some saved routes.
+
+## v11.1.2
+
+- Route checkpoint cards now show relative humidity directly under the temperature and feels-like line for each checkpoint.

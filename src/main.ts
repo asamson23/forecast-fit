@@ -2818,6 +2818,7 @@ function buildRouteWeatherHtml() {
             <div class="cp-sub">ETA ${cp.eta ? escapeHtml(formatShortDateTime(cp.eta)) : '—'}${reasonLine ? `<br>${escapeHtml(reasonLine)}` : ''}</div>
             ${w ? `
               <div class="cp-temp">${Math.round(w.temp)}° · feels ${Math.round(w.feels)}°</div>
+              <div class="cp-humidity">${renderSymbolIconHtml('💧', 'inline-symbol-icon', 'Humidity', true)} ${isFiniteNumber(w.humidity) ? `${Math.round(w.humidity)}% RH` : '—'}</div>
               <div class="cp-meta">${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>↯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : '—'} km/h${isFiniteNumber(w.uv) ? `<br>${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(w.uv, true)}` : ''}<br>${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
             ` : `<div class="cp-temp">Loading…</div>`}
           </div>`;
