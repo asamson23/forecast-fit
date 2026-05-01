@@ -25,11 +25,11 @@ Forecast Fit is a weather-aware activity planner for choosing when to go, what t
 
 ### Frontend
 
-The main app lives in [`src/`](/C:/Users/asamson/OneDrive/Documents/Git%20repos/forecast-fit/src) and is still intentionally implemented with vanilla DOM rendering rather than a frontend framework. `index.html` preserves the app shell and visible version string, while feature logic is being broken into smaller TypeScript modules under `src/features`, `src/components`, and `src/utils`.
+The main app lives in `src/` and is still intentionally implemented with vanilla DOM rendering rather than a frontend framework. `index.html` preserves the app shell and visible version string, while feature logic is being broken into smaller TypeScript modules under `src/features`, `src/components`, and `src/utils`.
 
 ### Strava Integration
 
-Strava is not called directly from `src/`. The frontend talks to Forecast Fit backend endpoints, and the backend handles OAuth redirects, token exchange, token refresh, and Strava API proxying under [`api/strava/`](/C:/Users/asamson/OneDrive/Documents/Git%20repos/forecast-fit/api/strava).
+Strava is not called directly from `src/`. The frontend talks to Forecast Fit backend endpoints, and the backend handles OAuth redirects, token exchange, token refresh, and Strava API proxying under `api/strava/`.
 
 This preserves the static frontend deployment model while keeping client secrets out of frontend code.
 
@@ -64,7 +64,7 @@ At the moment, `npm test` is a TypeScript validation pass rather than a separate
 
 ## Environment Variables
 
-Frontend and Strava backend configuration use environment variables. See [`.env.example`](/C:/Users/asamson/OneDrive/Documents/Git%20repos/forecast-fit/.env.example).
+Frontend and Strava backend configuration use environment variables. See `.env.example`.
 
 Relevant values include:
 
