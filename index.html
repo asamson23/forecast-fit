@@ -253,9 +253,13 @@
       </div>
     </div>
 
-    <div id="duration-section">
-      <label>Planned duration</label>
-      <div class="duration-grid" id="duration-grid"></div>
+    <div id="duration-section" class="planner-subsection" data-planner-subsection="duration" data-planner-subsection-title="Planned duration">
+      <div class="activity-group-title planner-subsection-toggle" data-planner-subsection-toggle>
+        <span>Planned duration</span>
+      </div>
+      <div data-planner-subsection-body>
+        <div class="duration-grid" id="duration-grid"></div>
+      </div>
       <div class="custom-grid">
         <div>
           <label class="sub-label">Custom duration</label>
@@ -286,43 +290,46 @@
       <label>Comfort adjustments</label>
     </div>
     <div class="comfort-adjustments-grid">
-      <section id="planned-effort-section">
-    <div class="section-label-row">
-      <label>Planned effort</label>
-      <span class="comfort-current-label" id="planned-effort-label">Steady</span>
-    </div>
-    <div class="comfort-panel">
-      <p class="status-line compact" id="planned-effort-status">Adjusts clothing for how hard the session should feel. Low effort nudges warmer; hard/race efforts nudge lighter because you generate more heat.</p>
-      <div class="toggle-row planned-effort-row" id="planned-effort-row">
-        <button class="toggle-btn" type="button" data-planned-effort="low" data-action="selectPlannedEffort">
-          <div class="label">Low / standing</div>
-          <div class="sublabel">Fishing, hunting, easy strolls, long waits</div>
-        </button>
-        <button class="toggle-btn" type="button" data-planned-effort="easy" data-action="selectPlannedEffort">
-          <div class="label">Easy</div>
-          <div class="sublabel">Social pace / recovery / relaxed</div>
-        </button>
-        <button class="toggle-btn active" type="button" data-planned-effort="steady" data-action="selectPlannedEffort">
-          <div class="label">Steady</div>
-          <div class="sublabel">Default endurance / normal outing</div>
-        </button>
-        <button class="toggle-btn" type="button" data-planned-effort="hard" data-action="selectPlannedEffort">
-          <div class="label">Hard</div>
-          <div class="sublabel">Workout / intervals / tempo</div>
-        </button>
-        <button class="toggle-btn" type="button" data-planned-effort="race" data-action="selectPlannedEffort">
-          <div class="label">Race</div>
-          <div class="sublabel">Max effort / minimal faff</div>
-        </button>
-      </div>
-    </div>
+      <section id="planned-effort-section" class="planner-subsection is-collapsed" data-planner-subsection="effort" data-planner-subsection-title="Planned effort">
+        <div class="activity-group-title planner-subsection-toggle" data-planner-subsection-toggle>
+          <span>Planned effort</span>
+          <span class="comfort-current-label" id="planned-effort-label">Steady</span>
+        </div>
+        <div data-planner-subsection-body hidden>
+          <div class="comfort-panel">
+            <p class="status-line compact" id="planned-effort-status">Adjusts clothing for how hard the session should feel. Low effort nudges warmer; hard/race efforts nudge lighter because you generate more heat.</p>
+            <div class="toggle-row planned-effort-row" id="planned-effort-row">
+              <button class="toggle-btn" type="button" data-planned-effort="low" data-action="selectPlannedEffort">
+                <div class="label">Low / standing</div>
+                <div class="sublabel">Fishing, hunting, easy strolls, long waits</div>
+              </button>
+              <button class="toggle-btn" type="button" data-planned-effort="easy" data-action="selectPlannedEffort">
+                <div class="label">Easy</div>
+                <div class="sublabel">Social pace / recovery / relaxed</div>
+              </button>
+              <button class="toggle-btn active" type="button" data-planned-effort="steady" data-action="selectPlannedEffort">
+                <div class="label">Steady</div>
+                <div class="sublabel">Default endurance / normal outing</div>
+              </button>
+              <button class="toggle-btn" type="button" data-planned-effort="hard" data-action="selectPlannedEffort">
+                <div class="label">Hard</div>
+                <div class="sublabel">Workout / intervals / tempo</div>
+              </button>
+              <button class="toggle-btn" type="button" data-planned-effort="race" data-action="selectPlannedEffort">
+                <div class="label">Race</div>
+                <div class="sublabel">Max effort / minimal faff</div>
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section id="temperature-preference-section">
-    <div class="section-label-row">
-      <label>Temperature preference</label>
-      <span class="comfort-current-label" id="temperature-preference-label">Normal</span>
-    </div>
+      <section id="temperature-preference-section" class="planner-subsection is-collapsed" data-planner-subsection="temperature" data-planner-subsection-title="Temperature preference">
+        <div class="activity-group-title planner-subsection-toggle" data-planner-subsection-toggle>
+          <span>Temperature preference</span>
+          <span class="comfort-current-label" id="temperature-preference-label">Normal</span>
+        </div>
+        <div data-planner-subsection-body hidden>
     <div class="comfort-panel">
       <p class="status-line compact" id="temperature-preference-status">Tune the recommendations if you usually run hot or cold. Warmer/red nudges toward more coverage; cooler/blue nudges toward lighter kit.</p>
       <div class="comfort-slider-row">
@@ -332,6 +339,7 @@
         <div class="comfort-ticks" aria-hidden="true"><span>max</span><span>+++</span><span>++</span><span>+</span><span>normal</span><span>−</span><span>−−</span><span>−−−</span><span>max</span></div>
       </div>
     </div>
+        </div>
       </section>
     </div>
   </div>
@@ -433,12 +441,15 @@
     </div>
   </div>
 
-  <div id="water-temp-section" style="margin-top:18px">
-    <div class="section-label-row">
-      <label>Water temperature & override</label>
-      <button class="mode-toggle-btn" type="button" id="manual-weather-toggle-btn" aria-pressed="false" data-action="toggleManualWeatherOverride">Show manual override</button>
+  <div id="water-temp-section" class="planner-subsection is-collapsed" data-planner-subsection="water" data-planner-subsection-title="Water temperature and override" style="margin-top:18px">
+    <div class="activity-group-title planner-subsection-toggle" data-planner-subsection-toggle>
+      <span>Water temperature & override</span>
     </div>
-    <div class="water-controls-panel">
+    <div data-planner-subsection-body hidden>
+      <div class="planner-subsection-inline-actions">
+        <button class="mode-toggle-btn" type="button" id="manual-weather-toggle-btn" aria-pressed="false" data-action="toggleManualWeatherOverride">Show manual override</button>
+      </div>
+      <div class="water-controls-panel">
       <div class="water-model-grid">
         <div>
           <label class="sub-label">Water body type</label>
@@ -477,12 +488,13 @@
       </div>
       <p class="status-line compact" id="water-model-status">If no measured marine water temperature is available, the app can estimate a conservative fallback from recent air temperatures, broad latitude band, season, wind exposure, and water-body type.</p>
     </div>
-    <div class="water-controls-panel custom-weather-panel" id="manual-weather-panel" hidden>
+      <div class="water-controls-panel custom-weather-panel" id="manual-weather-panel" hidden>
       <label class="sub-label">Manual water temperature override</label>
       <div class="inline-fields" style="grid-template-columns: minmax(0, 1fr);">
         <input type="number" id="manual-water-temp-input" step="0.1" placeholder="Water temp °C">
       </div>
       <p class="status-line compact" id="manual-weather-status">Visible only when the toggle is open. Manual water temperature overrides fetched or estimated water data. Quick lookup:<span class="status-links"><a class="status-link" href="https://www.seatemperature.info/" target="_blank" rel="noopener noreferrer">seatemperature.info</a><a class="status-link" href="https://www.seatemperature.org/" target="_blank" rel="noopener noreferrer">seatemperature.org</a></span></p>
+      </div>
     </div>
   </div>
 
@@ -520,7 +532,7 @@
 <footer class="site-footer">
   <div class="attribution-card">
     <div class="block-title">Credits & attributions</div>
-    <p><strong>Forecast Fit</strong> <strong>v10.3</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
+    <p><strong>Forecast Fit</strong> <strong>v10.4</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
     <p>Implementation and iteration assistance: <strong>ChatGPT</strong> (including <strong>GPT-5.3-Codex</strong>) and <strong>Claude by Anthropic</strong>. This build does not use any live third-party AI integrations.</p>
     <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, and Google Fonts for DM Sans / DM Mono.</p>
     <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>

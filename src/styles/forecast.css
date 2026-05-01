@@ -272,6 +272,7 @@
     box-shadow: 0 10px 20px color-mix(in srgb, var(--accent) 18%, transparent);
   }
   .activity-group-title,
+  .planner-subsection-toggle,
   .block-title,
   label,
   .pick-title {

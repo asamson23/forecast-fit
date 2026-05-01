@@ -191,6 +191,10 @@ if (consumeStravaOAuthCallback()) {
  *   for Canadian locations when available.
  * - v10.3 sharpens the route checkpoint callout copy and adds a bit more
  *   breathing room below the route weather slot inside the forecast result.
+ * - v10.4 adds collapsible planner subsections for duration, effort,
+ *   temperature preference, and water controls, moves Start time to the bottom
+ *   of Activity & parameters, and promotes Planned effort to Race when Race
+ *   day mode is enabled.
  * - v10.2 adds a selected Best Window score explainer below the result
  *   cards so the chosen time shows the main scoring tradeoffs.
  * - v10.1.7 makes Strava-loaded running activities use the same minutes
@@ -360,6 +364,12 @@ let bestWindowStartPicker = null;
 let bestWindowEndPicker = null;
 let locationCardCollapsed = false;
 let plannerCardCollapsed = false;
+const plannerSubsectionCollapsed: Record<string, boolean> = {
+  duration: false,
+  effort: true,
+  temperature: true,
+  water: true
+};
 let bestWindowAnalysis = null;
 let bestWindowAnalysisKey = '';
 let bestWindowSelectedStart = null;
@@ -813,9 +823,61 @@ function togglePlannerCardCollapse() {
 }
 window.togglePlannerCardCollapse = togglePlannerCardCollapse;
 
+var plannerSubsectionToggleDelegationBound = false;
+
+function updatePlannerSubsectionCollapseUi() {
+  document.querySelectorAll('[data-planner-subsection]').forEach(section => {
+    const key = section.dataset.plannerSubsection;
+    const collapsed = !!plannerSubsectionCollapsed[key];
+    const body = section.querySelector('[data-planner-subsection-body]');
+    const toggle = section.querySelector('[data-planner-subsection-toggle]');
+    section.classList.toggle('is-collapsed', collapsed);
+    if (body) body.hidden = collapsed;
+    if (toggle) {
+      const label = section.dataset.plannerSubsectionTitle || toggle.textContent.trim();
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toggle.setAttribute('aria-label', `${collapsed ? 'Expand' : 'Collapse'} ${label}`);
+    }
+  });
+}
+
+function togglePlannerSubsection(section: Element | null) {
+  const key = section?.dataset?.plannerSubsection;
+  if (!key || !(key in plannerSubsectionCollapsed)) return;
+  plannerSubsectionCollapsed[key] = !plannerSubsectionCollapsed[key];
+  updatePlannerSubsectionCollapseUi();
+}
+
+function setupPlannerSubsectionToggles() {
+  document.querySelectorAll('[data-planner-subsection-toggle]').forEach(toggle => {
+    toggle.setAttribute('role', 'button');
+    toggle.setAttribute('tabindex', '0');
+  });
+  updatePlannerSubsectionCollapseUi();
+
+  if (plannerSubsectionToggleDelegationBound) return;
+  plannerSubsectionToggleDelegationBound = true;
+
+  document.addEventListener('click', event => {
+    const toggle = event.target.closest?.('[data-planner-subsection-toggle]');
+    if (!toggle) return;
+    event.preventDefault();
+    togglePlannerSubsection(toggle.closest('[data-planner-subsection]'));
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const toggle = event.target.closest?.('[data-planner-subsection-toggle]');
+    if (!toggle) return;
+    event.preventDefault();
+    togglePlannerSubsection(toggle.closest('[data-planner-subsection]'));
+  });
+}
+
 
 function toggleRaceDayMode() {
   raceDayMode = !raceDayMode;
+  if (raceDayMode) plannedEffort = 'race';
   syncDurationFromEvent(getSelectedEvent());
   updateRaceDayModeUi();
   renderPlannerState();
@@ -1600,6 +1662,7 @@ function renderPlannerState() {
   updatePlannedEffortUi();
   renderCustomMultisportControls();
   updateActivityGroupVisibility();
+  updatePlannerSubsectionCollapseUi();
 }
 
 function formatKm(value) {
@@ -6568,6 +6631,15 @@ function getQuickStartSteps() {
     },
     {
       number: 7,
+      target: 'water-temp-section',
+      title: 'Water temperature & override',
+      body: waterRelevant
+        ? 'Used for open water, outdoor/unheated pools, triathlon, and water sports. The app prefers measured data, then an estimated fallback, then unknown, with manual override available.'
+        : 'Only matters for swimming, water sports, triathlon, or unheated outdoor pools. You can usually ignore it for dry-land activities.',
+      state: waterRelevant ? helperState('relevant', 'done') : helperState('skip', 'locked')
+    },
+    {
+      number: 8,
       target: 'start-time-section',
       title: 'Start time',
       body: locationReady
@@ -6576,15 +6648,6 @@ function getQuickStartSteps() {
           ? 'Mostly optional for indoor-only guidance. Add a location first if you want commute weather or best-window planning.'
           : 'Fetch a location first to unlock later start times and best-window search.',
       state: locationReady ? helperState(startMode === 'best' ? 'best window' : startMode, 'done') : indoorOnly ? helperState('optional', 'optional') : helperState('locked', 'locked')
-    },
-    {
-      number: 8,
-      target: 'water-temp-section',
-      title: 'Water temperature & override',
-      body: waterRelevant
-        ? 'Used for open water, outdoor/unheated pools, triathlon, and water sports. The app prefers measured data, then an estimated fallback, then unknown, with manual override available.'
-        : 'Only matters for swimming, water sports, triathlon, or unheated outdoor pools. You can usually ignore it for dry-land activities.',
-      state: waterRelevant ? helperState('relevant', 'done') : helperState('skip', 'locked')
     },
     {
       number: 9,
@@ -6670,6 +6733,10 @@ document.addEventListener('keydown', event => {
 // elements with direct listeners rather than a framework state store.
 setCurrentLocationButtonState(false);
 setupActivityGroupToggles();
+setupPlannerSubsectionToggles();
+const startTimeSection = document.getElementById('start-time-section');
+const waterTempSection = document.getElementById('water-temp-section');
+if (startTimeSection && waterTempSection) waterTempSection.after(startTimeSection);
 renderPlannerState();
 
 // The planner card uses a fade-in on page load, while Race day mode uses a

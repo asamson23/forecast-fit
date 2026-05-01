@@ -416,7 +416,8 @@
   }
   #location-card > .section-label-row .section-actions-row > * { flex: 0 0 auto; }
   #location-card-summary { flex: 1 1 auto !important; min-width: 140px; }
-  .activity-group-title {
+  .activity-group-title,
+  .planner-subsection-toggle {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -429,7 +430,8 @@
     cursor: pointer;
     user-select: none;
   }
-  .activity-group-title::after {
+  .activity-group-title::after,
+  .planner-subsection-toggle::after {
     content: '▾';
     font-size: 0.78rem;
     color: var(--text-soft);
@@ -437,7 +439,9 @@
     transition: transform 0.18s ease;
   }
   .activity-section-group.is-collapsed .activity-group-title::after { transform: rotate(-90deg); }
+  .planner-subsection.is-collapsed .planner-subsection-toggle::after { transform: rotate(-90deg); }
   .activity-section-group.is-collapsed .activity-grid { display: none; }
+  .planner-subsection.is-collapsed [data-planner-subsection-body] { display: none !important; }
   .activity-section-group.has-selected-activity .activity-group-title {
     border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
     background: color-mix(in srgb, var(--accent) 8%, var(--surface2));
