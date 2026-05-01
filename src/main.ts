@@ -3773,6 +3773,13 @@ function selectActivity(btn) {
 }
 
 function selectEventPreset(key) {
+  if (raceDayMode) {
+    raceDayMode = false;
+    plannedEffort = 'steady';
+    updateRaceDayModeUi();
+    updateManualWeatherToggleUi();
+    updateLocationCardCollapseUi();
+  }
   if (customDistanceInput && !customDistanceInput.disabled) customDistanceInput.value = '';
   selectedEventKey = key;
   const preset = getSelectedEvent();
