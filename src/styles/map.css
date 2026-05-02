@@ -324,6 +324,13 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    align-content: flex-start;
+    max-height: 118px;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+  .changelog-toc[hidden] {
+    display: none !important;
   }
   .changelog-toc-link {
     display: inline-flex;
@@ -336,6 +343,7 @@
     text-decoration: none;
     font-family: 'DM Mono', monospace;
     font-size: 0.74rem;
+    white-space: nowrap;
   }
   .changelog-toc-link:hover,
   .changelog-toc-link:focus-visible {
@@ -346,6 +354,7 @@
   .changelog-content {
     display: grid;
     gap: 14px;
+    margin-top: 18px;
   }
   .changelog-entry {
     border: 1px solid color-mix(in srgb, var(--accent2) 12%, var(--border));

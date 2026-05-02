@@ -823,3 +823,11 @@
 - Added a version-only changelog table of contents inside the popup for faster navigation across releases.
 - Changed changelog entries to collapsible sections, with the newest version open by default and older versions collapsed.
 - Added global Expand all and Collapse all controls for the changelog popup.
+
+## v11.2.4
+
+- Constrained the changelog table of contents to a short scrollable area instead of letting it take over the popup.
+- Limited the changelog table of contents to actual version headings so older file-era section titles no longer clutter it.
+- Added a toolbar toggle to hide or show the changelog table of contents on demand.
+- Increased the spacing between the changelog toolbar and the entry list for a cleaner separation.
+- Fixed the changelog table-of-contents toggle so hiding it now actually removes the flex layout from view.

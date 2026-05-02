@@ -266,6 +266,7 @@ const quickStartOverlay = document.getElementById('quick-start-overlay');
 const quickStartSteps = document.getElementById('quick-start-steps');
 const quickStartCloseBtn = document.getElementById('quick-start-close-btn');
 const changelogOverlay = document.getElementById('changelog-overlay');
+const changelogTocToggleBtn = document.getElementById('changelog-toc-toggle-btn');
 const changelogToc = document.getElementById('changelog-toc');
 const changelogContent = document.getElementById('changelog-content');
 const changelogCloseBtn = document.getElementById('changelog-close-btn');
@@ -325,6 +326,7 @@ let stravaPickerActivitiesPage = 0;
 let stravaPickerRoutesHasMore = true;
 let stravaPickerActivitiesHasMore = true;
 let changelogRendered = false;
+let changelogTocCollapsed = false;
 let stravaPickerRouteError = '';
 let stravaPickerActivityError = '';
 let routeMap = null;
@@ -2818,6 +2820,7 @@ function parseChangelogSections(markdown) {
 
 function buildChangelogTocHtml(sections) {
   return sections
+    .filter(section => /^v\d/i.test(section.heading))
     .map(section => `<a class="changelog-toc-link" href="#${escapeHtml(section.id)}">${renderInlineMarkdown(section.heading)}</a>`)
     .join('');
 }
@@ -2838,6 +2841,16 @@ function buildChangelogHtml(markdown) {
         <div class="changelog-entry-body">${section.html}</div>
       </details>`).join(''),
   };
+}
+
+function renderChangelogTocVisibility() {
+  if (changelogToc) changelogToc.hidden = changelogTocCollapsed;
+  if (changelogTocToggleBtn) changelogTocToggleBtn.textContent = changelogTocCollapsed ? 'Show ToC' : 'Hide ToC';
+}
+
+function toggleChangelogToc() {
+  changelogTocCollapsed = !changelogTocCollapsed;
+  renderChangelogTocVisibility();
 }
 
 function setAllChangelogSectionsExpanded(expanded) {
@@ -7335,11 +7348,13 @@ function renderChangelog() {
   changelogToc.innerHTML = tocHtml;
   changelogContent.innerHTML = bodyHtml;
   changelogRendered = true;
+  renderChangelogTocVisibility();
 }
 
 function openChangelog() {
   if (!changelogOverlay) return;
   renderChangelog();
+  renderChangelogTocVisibility();
   changelogOverlay.hidden = false;
   document.body.classList.add('helper-open');
   changelogCloseBtn?.focus({ preventScroll: true });
@@ -8391,6 +8406,9 @@ function bindDomActions() {
         break;
       case 'closeChangelog':
         closeChangelog();
+        break;
+      case 'toggleChangelogToc':
+        toggleChangelogToc();
         break;
       case 'expandAllChangelog':
         setAllChangelogSectionsExpanded(true);
