@@ -11,6 +11,8 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
     points: Record<string, unknown>[];
     startTime: unknown;
     endTime: unknown;
+    highlightStartTime?: unknown;
+    highlightEndTime?: unknown;
   } | null;
   const d = data as { daily?: Record<string, unknown>[] } | null;
   const points = sel?.points || [];
@@ -38,6 +40,21 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
   const startMs = parseAnyTime(sel?.startTime);
   const endMs = parseAnyTime(sel?.endTime);
   const markerLines: string[] = [];
+  const highlightStartMs = parseAnyTime(sel?.highlightStartTime);
+  const highlightEndMs = parseAnyTime(sel?.highlightEndTime);
+  const hasEventHighlight = Number.isFinite(highlightStartMs) && Number.isFinite(highlightEndMs) && highlightEndMs > highlightStartMs;
+  const eventHighlight = hasEventHighlight
+    ? (() => {
+        const startRatio = startMs === endMs ? 0 : Math.max(0, Math.min(1, (highlightStartMs - startMs) / Math.max(1, endMs - startMs)));
+        const endRatio = startMs === endMs ? 1 : Math.max(0, Math.min(1, (highlightEndMs - startMs) / Math.max(1, endMs - startMs)));
+        const x = pad.left + startRatio * innerW;
+        const widthPx = Math.max(4, (endRatio - startRatio) * innerW);
+        return `
+          <rect x="${x.toFixed(1)}" y="${pad.top}" width="${widthPx.toFixed(1)}" height="${innerH}" class="chart-event-highlight"></rect>
+          <text x="${(x + (widthPx / 2)).toFixed(1)}" y="${height - pad.bottom - 8}" text-anchor="middle" class="chart-event-label">event</text>
+        `;
+      })()
+    : '';
 
   for (const day of d?.daily || []) {
     for (const marker of [
@@ -103,6 +120,7 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
           ${tempGrid.map(v => `<line x1="${pad.left}" y1="${yForTemp(v).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(v).toFixed(1)}"></line>`).join('')}
           ${minTemp <= 0 && maxTemp >= 0 ? `<line x1="${pad.left}" y1="${yForTemp(0).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(0).toFixed(1)}" class="chart-zero-line"></line>` : ''}
         </g>
+        <g>${eventHighlight}</g>
         <g>${markerLines.join('')}</g>
         <g>${checkpointMarkers}</g>
         <g class="chart-axis">
@@ -130,6 +148,7 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
       <span class="precip"><i></i> Precip mm + chance %</span>
       <span class="sunrise"><i></i> Sunrise</span>
       <span class="sunset"><i></i> Sunset</span>
+      ${hasEventHighlight ? `<span class="event"><i></i> Main event</span>` : ''}
       ${hasCheckpoints ? `<span class="checkpoints"><i></i> Route checkpoints</span>` : ''}
     </div>`;
 }

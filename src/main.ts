@@ -198,6 +198,10 @@ const resultInner = document.getElementById('result-inner');
 const suggestionsPortal = document.getElementById('suggestions-portal');
 const laterBox = document.getElementById('later-box');
 const laterInput = document.getElementById('later-input');
+const raceDayTimingPanel = document.getElementById('race-day-timing-panel');
+const raceDayStartInput = document.getElementById('race-day-start-input');
+const raceDayEndInput = document.getElementById('race-day-end-input');
+const raceDayTimingStatus = document.getElementById('race-day-timing-status');
 const laterStatus = document.getElementById('later-status');
 const bestWindowBox = document.getElementById('best-window-box');
 const bestWindowStartInput = document.getElementById('best-window-start-input');
@@ -322,6 +326,8 @@ let routeLayer = null;
 let routeMarkersLayer = null;
 let routeTileLayer = null;
 let laterPicker = null;
+let raceDayStartPicker = null;
+let raceDayEndPicker = null;
 let bestWindowStartPicker = null;
 let bestWindowEndPicker = null;
 let locationCardCollapsed = false;
@@ -675,6 +681,7 @@ function updateRaceDayModeUi() {
   }
   const plannerCard = document.getElementById('planner-card');
   if (plannerCard) plannerCard.classList.toggle('race-party', !!raceDayMode);
+  if (raceDayTimingPanel) raceDayTimingPanel.hidden = !shouldShowRaceDayTimingPanel();
 }
 
 function updateManualWeatherToggleUi() {
@@ -924,6 +931,7 @@ function setupPlannerSubsectionToggles() {
 
 function toggleRaceDayMode() {
   raceDayMode = !raceDayMode;
+  if (!raceDayMode) clearRaceDayTimingFields();
   if (raceDayMode) plannedEffort = 'race';
   else plannedEffort = 'steady';
   syncDurationFromEvent(getSelectedEvent());
@@ -980,6 +988,12 @@ function formatDurationDisplay(minutes) {
 
 function formatMinutesShort(minutes) {
   return formatDurationDisplay(minutes);
+}
+
+function addMinutesToDate(date, minutes) {
+  const d = new Date(date.getTime());
+  d.setMinutes(d.getMinutes() + minutes);
+  return d;
 }
 
 function convertDistanceToKm(value, unit) {
@@ -1180,6 +1194,111 @@ function getDurationProfile() {
   if (!state) return null;
   if (state.source === 'preset') return durationProfiles[selectedDuration] || null;
   return buildDurationProfile(state.minutes, state.label);
+}
+
+function shouldShowRaceDayTimingPanel() {
+  return !!(raceDayMode && startMode === 'later' && !forecastOnlyMode);
+}
+
+function getRaceDayDurationState(eventPreset = getSelectedEvent()) {
+  const durationState = getDurationState(eventPreset);
+  return durationState && isFiniteNumber(durationState.minutes) && durationState.minutes > 0 ? durationState : null;
+}
+
+function getAbsoluteForecastRange(data) {
+  const minDate = roundUpToHour(parseLocalString(data.currentTime));
+  const lastHourlyPoint = data.hourly[data.hourly.length - 1];
+  if (lastHourlyPoint) {
+    const maxDate = parseLocalString(lastHourlyPoint.time);
+    return { minDate, maxDate: maxDate < minDate ? minDate : maxDate };
+  }
+  const lastDaily = data.daily[data.daily.length - 1];
+  if (lastDaily) {
+    const maxDate = parseLocalString(`${lastDaily.date}T23:00`);
+    return { minDate, maxDate: maxDate < minDate ? minDate : maxDate };
+  }
+  return { minDate, maxDate: minDate };
+}
+
+function clampDateToRange(date, minDate, maxDate) {
+  if (!date) return new Date(minDate.getTime());
+  const ms = date.getTime();
+  if (ms < minDate.getTime()) return new Date(minDate.getTime());
+  if (ms > maxDate.getTime()) return new Date(maxDate.getTime());
+  return date;
+}
+
+function getRaceDayBufferMinutes(durationMinutes = 0) {
+  if (durationMinutes >= 360) return 120;
+  if (durationMinutes >= 180) return 90;
+  if (durationMinutes >= 90) return 60;
+  return 45;
+}
+
+function getRaceDayPlanningWindow(data, eventStartTime = null) {
+  if (!data) return null;
+  const durationState = getRaceDayDurationState();
+  if (!durationState) return null;
+  const eventStart = parseLocalString(eventStartTime || getSelectedStartTime(data));
+  if (!eventStart) return null;
+  const eventEnd = addMinutesToDate(eventStart, durationState.minutes);
+  const absoluteRange = getAbsoluteForecastRange(data);
+  const bufferMinutes = getRaceDayBufferMinutes(durationState.minutes);
+  const defaultDayStart = clampDateToRange(addMinutesToDate(eventStart, -bufferMinutes), absoluteRange.minDate, eventStart);
+  const defaultDayEnd = clampDateToRange(addMinutesToDate(eventEnd, bufferMinutes), eventEnd, absoluteRange.maxDate);
+  const dayStart = clampDateToRange(parseLocalString(raceDayStartInput?.value || '') || defaultDayStart, absoluteRange.minDate, eventStart);
+  const dayEnd = clampDateToRange(parseLocalString(raceDayEndInput?.value || '') || defaultDayEnd, eventEnd, absoluteRange.maxDate);
+  return {
+    durationState,
+    eventStart,
+    eventEnd,
+    dayStart,
+    dayEnd,
+    absoluteRange,
+    bufferMinutes,
+    warmupMinutes: Math.max(0, Math.round((eventStart.getTime() - dayStart.getTime()) / 60000)),
+    cooldownMinutes: Math.max(0, Math.round((dayEnd.getTime() - eventEnd.getTime()) / 60000)),
+  };
+}
+
+function describeRaceDaySupportConditions(point, phase) {
+  if (!point) return phase === 'warmup' ? 'Keep an easy layer for the build-up before the start.' : 'Have a dry layer ready for the finish.';
+  const feels = firstFinite(point.feels, point.temp);
+  const wet = firstFinite(point.precipProb, 0) >= 35 || firstFinite(point.precip, 0) > 0.1;
+  const windy = firstFinite(point.wind, 0) >= 20;
+  const bits = [];
+  if (isFiniteNumber(feels)) {
+    if (feels <= 4) bits.push('it will still feel cold');
+    else if (feels >= 18) bits.push('it should stay fairly warm');
+  }
+  if (wet) bits.push('there is some rain risk');
+  if (windy) bits.push('wind could bite while standing around');
+  if (!bits.length) return phase === 'warmup' ? 'Keep an easy layer for the build-up before the start.' : 'Have a dry layer ready for the finish.';
+  return `${bits.join(', ')}.`;
+}
+
+function getRaceDaySupportItems(data, raceDayWindow) {
+  if (!raceDayMode || !raceDayWindow || !shouldShowRaceDayTimingPanel()) return [];
+  const dayStartStr = formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16);
+  const dayEndStr = formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16);
+  const warmupPoint = getHourlyPointForStart(data, dayStartStr);
+  const cooldownPoint = getHourlyPointForStart(data, dayEndStr);
+  const items = [];
+  if (raceDayWindow.warmupMinutes > 0) {
+    items.push(item(
+      `Warm-up layer for ${formatShortTime(dayStartStr)}–${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}`,
+      describeRaceDaySupportConditions(warmupPoint, 'warmup'),
+      ['warmup']
+    ));
+  }
+  if (raceDayWindow.cooldownMinutes > 0) {
+    items.push(item(
+      `Cooldown / finish layer for ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))}–${formatShortTime(dayEndStr)}`,
+      describeRaceDaySupportConditions(cooldownPoint, 'cooldown'),
+      ['cooldown']
+    ));
+  }
+  return items;
 }
 
 function getRouteDistanceLabel() {
@@ -1711,6 +1830,8 @@ function renderPlannerState() {
   updateCheckpointModelUi();
   updateTemperaturePreferenceUi();
   updatePlannedEffortUi();
+  if (weatherData) syncRaceDayTimingInputs(weatherData);
+  else if (raceDayTimingPanel) raceDayTimingPanel.hidden = !shouldShowRaceDayTimingPanel();
   renderCustomMultisportControls();
   updateActivityGroupVisibility();
   updatePlannerSubsectionCollapseUi();
@@ -3172,6 +3293,42 @@ function getEyewearSuggestionItem(activity, point, planned, light, wetLike, isRa
     return item('Photochromic sports glasses', 'Useful middle-ground choice when the light could swing a bit.', ['eyewear']);
   }
 
+  if (raceDayWindow && shouldShowRaceDayTimingPanel()) {
+    chips.push({ label: `ðŸ—“ day ${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}–${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))}`, tone: '' });
+    chips.push({ label: `ðŸ”¥ warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)}`, tone: '' });
+    chips.push({ label: `ðŸ§Š cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}`, tone: '' });
+  }
+
+  if (activity === 'running') {
+    if (!light?.isDay) return null;
+    if (wetWindow) return item('Clear or very light-tint running glasses', 'More useful than dark lenses if the race or run is wet, gloomy, or low-contrast.', ['eyewear']);
+    if (bright) return item('Dark running sunglasses', 'Good for bright sun and harder efforts where squinting gets annoying fast.', ['eyewear']);
+    if (isRaceDay) return item('Photochromic or light-tint running sunglasses', 'Safer all-round race choice if the sky looks mixed rather than fully sunny.', ['eyewear']);
+    return null;
+  }
+
+  if (activity === 'road_trip' || activity === 'walk' || activity === 'casual') {
+    if (bright) return item('Sunglasses', 'Useful for glare and fatigue in bright conditions.', ['eyewear']);
+    return null;
+  }
+
+  return null;
+}
+
+function getEyewearSuggestionItemLegacyBroken(activity, point, planned, light, wetLike, isRaceDay) {
+  const windy = firstFinite(planned?.maxWind, point?.wind, 0) >= 25;
+  const gloomy = !light?.isDay || light?.tone === 'warn' || firstFinite(point?.code, 3) >= 3;
+  const wetWindow = !!wetLike || !!planned?.anyWet || firstFinite(planned?.maxPrecipProb, 0) >= 35;
+  const bright = !!light?.isDay && !gloomy && !wetWindow && [0, 1].includes(firstFinite(point?.code, 0));
+
+  if (activity === 'cycling' || activity === 'triathlon') {
+    if (!light?.isDay) return item('Clear-lens cycling glasses', 'Best for dark starts, bugs, and keeping wind out without killing contrast.', ['eyewear']);
+    if (wetWindow) return item('Clear or photochromic wraparound glasses', 'Skip dark lenses when it is wet or gloomy so road spray, potholes, and painted lines stay visible.', ['eyewear']);
+    if (bright) return item('Dark wraparound sunglasses', 'Good call for bright sun, higher speed, and stronger glare.', ['eyewear']);
+    if (windy || isRaceDay) return item('Photochromic or mid-tint wraparound sunglasses', 'Good all-round option when light changes and you still want proper wind protection.', ['eyewear']);
+    return item('Photochromic sports glasses', 'Useful middle-ground choice when the light could swing a bit.', ['eyewear']);
+  }
+
   if (activity === 'running') {
     if (!light?.isDay) return null;
     if (wetWindow) return item('Clear or very light-tint running glasses', 'More useful than dark lenses if the race or run is wet, gloomy, or low-contrast.', ['eyewear']);
@@ -3423,6 +3580,32 @@ function createBestWindowPicker(input, placeholder, onChange) {
   return picker;
 }
 
+function ensureRaceDayTimingPickers() {
+  if (!raceDayStartPicker && raceDayStartInput) {
+    raceDayStartPicker = createBestWindowPicker(
+      raceDayStartInput,
+      'Pick the day start date and time',
+      () => {
+        if (weatherData) syncRaceDayTimingInputs(weatherData, 'day-start');
+        if (weatherData) renderAdvice(weatherData, selectedActivity);
+        if (weatherData) refreshRouteWeatherIfPossible();
+      }
+    );
+  }
+  if (!raceDayEndPicker && raceDayEndInput) {
+    raceDayEndPicker = createBestWindowPicker(
+      raceDayEndInput,
+      'Pick the day end date and time',
+      () => {
+        if (weatherData) syncRaceDayTimingInputs(weatherData, 'day-end');
+        if (weatherData) renderAdvice(weatherData, selectedActivity);
+        if (weatherData) refreshRouteWeatherIfPossible();
+      }
+    );
+  }
+  return { start: raceDayStartPicker, end: raceDayEndPicker };
+}
+
 function ensureBestWindowPickers() {
   if (!bestWindowStartPicker && bestWindowStartInput) {
     bestWindowStartPicker = createBestWindowPicker(
@@ -3463,6 +3646,56 @@ function setFlatpickrDisabledState(picker, disabled) {
   if (!picker) return;
   if (picker.input) picker.input.disabled = disabled;
   if (picker.altInput) picker.altInput.disabled = disabled;
+}
+
+function syncRaceDayTimingInputs(data, changedField = null) {
+  if (!raceDayStartInput || !raceDayEndInput) return;
+  const visible = shouldShowRaceDayTimingPanel();
+  if (raceDayTimingPanel) raceDayTimingPanel.hidden = !visible;
+  ensureRaceDayTimingPickers();
+  setFlatpickrDisabledState(raceDayStartPicker, !visible);
+  setFlatpickrDisabledState(raceDayEndPicker, !visible);
+  raceDayStartInput.disabled = !visible;
+  raceDayEndInput.disabled = !visible;
+  if (!visible || !data) return;
+
+  const eventStart = parseLocalString(laterInput?.value || '') || getValidLaterRange(data).minDate;
+  const durationState = getRaceDayDurationState();
+  const eventEnd = durationState ? addMinutesToDate(eventStart, durationState.minutes) : eventStart;
+  const absoluteRange = getAbsoluteForecastRange(data);
+  const bufferMinutes = getRaceDayBufferMinutes(durationState?.minutes || 0);
+  const defaultDayStart = clampDateToRange(addMinutesToDate(eventStart, -bufferMinutes), absoluteRange.minDate, eventStart);
+  const defaultDayEnd = clampDateToRange(addMinutesToDate(eventEnd, bufferMinutes), eventEnd, absoluteRange.maxDate);
+
+  let dayStart = parseLocalString(raceDayStartInput.value || '') || defaultDayStart;
+  let dayEnd = parseLocalString(raceDayEndInput.value || '') || defaultDayEnd;
+
+  dayStart = clampDateToRange(dayStart, absoluteRange.minDate, eventStart);
+  dayEnd = clampDateToRange(dayEnd, eventEnd, absoluteRange.maxDate);
+
+  if (changedField === 'day-start' && dayStart > eventStart) dayStart = new Date(eventStart.getTime());
+  if (changedField === 'day-end' && dayEnd < eventEnd) dayEnd = new Date(eventEnd.getTime());
+
+  if (raceDayStartPicker) {
+    raceDayStartPicker.set('minDate', absoluteRange.minDate);
+    raceDayStartPicker.set('maxDate', eventStart);
+    raceDayStartPicker.setDate(dayStart, false, 'Y-m-d\\TH:i');
+  } else {
+    raceDayStartInput.value = formatDateTimeLocal(dayStart).slice(0, 16);
+  }
+
+  if (raceDayEndPicker) {
+    raceDayEndPicker.set('minDate', eventEnd);
+    raceDayEndPicker.set('maxDate', absoluteRange.maxDate);
+    raceDayEndPicker.setDate(dayEnd, false, 'Y-m-d\\TH:i');
+  } else {
+    raceDayEndInput.value = formatDateTimeLocal(dayEnd).slice(0, 16);
+  }
+
+  const raceDayWindow = getRaceDayPlanningWindow(data, formatDateTimeLocal(eventStart).slice(0, 16));
+  if (raceDayTimingStatus && raceDayWindow) {
+    raceDayTimingStatus.textContent = `Day ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))} to ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · event ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}–${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))} · warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)} · cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}.`;
+  }
 }
 
 
@@ -3596,6 +3829,7 @@ document.addEventListener('click', e => {
 });
 
 laterInput.addEventListener('change', () => {
+  if (weatherData) syncRaceDayTimingInputs(weatherData, 'event-start');
   if (weatherData) renderAdvice(weatherData, selectedActivity);
   if (weatherData) refreshRouteWeatherIfPossible();
 });
@@ -3653,6 +3887,11 @@ function clearPlannerCustomFields() {
   if (customDistanceInput) customDistanceInput.value = '';
   if (customDurationInput) customDurationInput.value = '';
   if (averageInput) averageInput.value = '';
+}
+
+function clearRaceDayTimingFields() {
+  if (raceDayStartInput) raceDayStartInput.value = '';
+  if (raceDayEndInput) raceDayEndInput.value = '';
 }
 
 // Activity-group accordion.
@@ -3753,6 +3992,7 @@ function resetActivitySection() {
   plannedEffort = 'steady';
   plannerCardCollapsed = false;
   clearPlannerCustomFields();
+  clearRaceDayTimingFields();
   document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
   renderCustomControlOptions(true);
   updateRaceDayModeUi();
@@ -3787,6 +4027,7 @@ function activateForecastOnlyMode() {
   if (startMode === 'best') startMode = 'now';
   raceDayMode = false;
   clearPlannerCustomFields();
+  clearRaceDayTimingFields();
   document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
   plannerCardCollapsed = true;
   renderCustomControlOptions(true);
@@ -3859,6 +4100,7 @@ function selectStartMode(btn) {
   startMode = btn.dataset.startMode;
   laterBox.classList.toggle('visible', startMode === 'later');
   bestWindowBox.classList.toggle('visible', !forecastOnlyMode && startMode === 'best');
+  if (weatherData) syncRaceDayTimingInputs(weatherData);
   if (!weatherData) refreshIndoorAdviceIfNeeded();
   if (weatherData) configureLaterInput(weatherData);
   if (startMode === 'best' && weatherData) scheduleBestWindowAnalysis(true);
@@ -4312,6 +4554,7 @@ function configureLaterInput(data) {
   }
 
   laterStatus.textContent = `Choose a start time from ${formatShortDateTime(formatDateTimeLocal(minDate).slice(0,16))} to ${formatShortDateTime(formatDateTimeLocal(maxDate).slice(0,16))}.`;
+  syncRaceDayTimingInputs(data);
   configureBestWindowUi(data);
 }
 
@@ -4412,6 +4655,45 @@ function getForecastSelection(data, startTime) {
   let points = filtered.slice(0, desiredCount);
   if (!points.length) points = data.hourly.slice(0, desiredCount);
   return { mode: 'hourly', points, startTime, endTime, sliceMinutes: 60, interpolated: false };
+}
+
+function getForecastSelectionForRange(data, startTime, endTime, extra = {}) {
+  const startMs = parseAnyTime(startTime);
+  const endMs = parseAnyTime(endTime);
+  const totalMinutes = Math.max(0, Math.round((endMs - startMs) / 60000));
+  const fineStep = getFineForecastStepMinutes(totalMinutes);
+  if (fineStep) {
+    const finePoints = [];
+    for (let offset = 0; offset <= totalMinutes; offset += fineStep) {
+      finePoints.push(getInterpolatedHourlyPoint(data, addMinutesToLocalString(startTime, offset)));
+    }
+    if (finePoints[finePoints.length - 1]?.time !== endTime) finePoints.push(getInterpolatedHourlyPoint(data, endTime));
+    return { mode: 'hourly', points: finePoints, startTime, endTime, sliceMinutes: fineStep, interpolated: true, ...extra };
+  }
+  let points = data.hourly.filter(h => h.time >= startTime && h.time <= endTime);
+  if (!points.length) points = [getInterpolatedHourlyPoint(data, startTime), getInterpolatedHourlyPoint(data, endTime)];
+  else {
+    if (points[0]?.time !== startTime) points.unshift(getInterpolatedHourlyPoint(data, startTime));
+    if (points[points.length - 1]?.time !== endTime) points.push(getInterpolatedHourlyPoint(data, endTime));
+  }
+  return { mode: 'hourly', points, startTime, endTime, sliceMinutes: 60, interpolated: false, ...extra };
+}
+
+function getDisplayForecastSelection(data, startTime) {
+  const selection = getForecastSelection(data, startTime);
+  const raceDayWindow = getRaceDayPlanningWindow(data, startTime);
+  if (!raceDayWindow || selection.mode !== 'hourly' || !shouldShowRaceDayTimingPanel()) return selection;
+  return getForecastSelectionForRange(
+    data,
+    formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16),
+    formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16),
+    {
+      highlightStartTime: formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16),
+      highlightEndTime: formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16),
+      headerTitle: 'Race-day weather timeline',
+      headerMeta: `${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}–${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · main event highlighted`
+    }
+  );
 }
 
 
@@ -5324,7 +5606,7 @@ function buildForecastChart(data, selection) {
 }
 
 function renderForecastBlock(data, startTime) {
-  return renderForecastBlockFromModule(data, getForecastSelection(data, startTime), getDurationProfile(), selectedActivity, routeState?.samples || []);
+  return renderForecastBlockFromModule(data, getDisplayForecastSelection(data, startTime), getDurationProfile(), selectedActivity, routeState?.samples || []);
 }
 
 function makeChoiceStep(title, help, options) {
@@ -5369,6 +5651,8 @@ function buildWizard(data, activity) {
   const profile = getDurationProfile();
   const startTime = getSelectedStartTime(data);
   const selection = getForecastSelection(data, startTime);
+  const raceDayWindow = getRaceDayPlanningWindow(data, startTime);
+  const raceDaySupportItems = getRaceDaySupportItems(data, raceDayWindow);
   const basePoint = startMode === 'now' ? { ...data.current, time: data.current.time } : getHourlyPointForStart(data, startTime);
   const point = applyCustomWeatherOverrides(basePoint, data);
   const light = describeLight(data, startTime, selection);
@@ -5481,6 +5765,7 @@ function buildWizard(data, activity) {
         item('Pre-race warm layer (for example throwaway hoodie or light track pants)', 'Helps a lot if you stand around before the gun.', ['race day']),
         item('Post-race dry clothes', 'Very worthwhile once the effort is over.', ['race day'])
       );
+      if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
     if (profile.minutes >= 240 || (distanceKmValue != null && distanceKmValue >= 30)) extras.push(item('Dry backup layer', 'Helpful when the weather could turn or the stop afterward is chilly.', ['long']));
     return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup around ${distanceText}, starting at ${Math.round(feels)}°C feels-like with ${desc}${wet ? ' and some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main run kit', 'Choose the broad outfit first.', mainOptions), makeListStep('Step 2 · Add the important layers / accessories', 'These are the pieces that meaningfully change comfort.', core), makeListStep('Step 3 · Longer-distance / backup items', 'Worth more as the outing or event gets bigger.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are more of a postpone problem than a clothing problem.' : null };
@@ -5523,6 +5808,7 @@ function buildWizard(data, activity) {
         item('Pre-race warm-up layer', 'Useful for roll-out, staging, or waiting around on the line.', ['race day']),
         item('Post-race dry top', 'Simple comfort upgrade once the race is over.', ['race day'])
       );
+      if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
     return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with bike-effective feel around ${Math.round(effective)}°C and ${desc}${wet ? ' with wet-road risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main bike kit', 'Choose the core on-bike clothing system.', mainOptions), makeListStep('Step 2 · Add the bike-specific essentials', 'These make the biggest difference on a ride.', core), makeListStep('Step 3 · Adapt for distance / swingy weather', 'Longer rides reward better layer planning.', extras) ], warning: point.code >= 95 ? 'Thunderstorms plus exposed roads are not a “dress around it” situation.' : null };
   }
@@ -5577,6 +5863,7 @@ function buildWizard(data, activity) {
       mainOptions.splice(0, mainOptions.length, ...raceMainOptions);
       core.unshift(item('Race belt / number / timing chip check', 'Do the full pre-race check so you are not improvising in transition.', ['race day']));
       extras.unshift(item('Transition bag / post-race comfort plan', 'A real event day rewards a little extra organization.', ['race day']));
+      if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
     if (eventPreset?.key === 'tri_70' || eventPreset?.key === 'tri_full' || (distanceKmValue != null && distanceKmValue >= 80)) extras.push(item('Long-course fuel / carry plan', 'Clothing and storage choices start to overlap here.', ['long-course']));
     return { point, startTime, chips: hasSwimLeg ? [...chips, getWaterTemperatureChip(point, data), { label: `🏁 ${triLegSummary}` }] : [...chips, { label: `🏁 ${triLegSummary}` }], activityLabel: activityLabels[activity], summary: `${eventLabel} preset with ${distanceText}, planned as ${triLegSummary}, around ${Math.round(feels)}°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the race-suit system', 'This is the main triathlon clothing decision.', mainOptions), makeListStep('Step 2 · Add the race-specific essentials', 'The small tri items matter more than they look.', core), makeListStep('Step 3 · Before / after / long-course extras', 'Useful once the event gets bigger.', extras) ], warning: hasSwimLeg && wt == null ? 'Water temperature was not available here. Check local swim conditions before locking your swim setup.' : null };

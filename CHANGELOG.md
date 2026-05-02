@@ -799,3 +799,9 @@
 ## v11.1.2
 
 - Route checkpoint cards now show relative humidity directly under the temperature and feels-like line for each checkpoint.
+
+## v11.2
+
+- Race day later planning now adds separate day-start and day-end pickers alongside the existing event-start picker.
+- The race-day weather timeline can now highlight the main event span inside the selected day window.
+- Race-day clothing planning now adds warmup and cooldown guidance from the surrounding day-start and day-end conditions.

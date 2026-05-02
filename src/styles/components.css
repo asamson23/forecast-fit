@@ -370,6 +370,20 @@
   }
   .chart-sun-line { stroke: color-mix(in srgb, var(--warn) 78%, white 8%); }
   .chart-sunset-line { stroke: color-mix(in srgb, var(--text-soft) 80%, transparent); }
+  .chart-event-highlight {
+    fill: color-mix(in srgb, var(--accent) 14%, transparent);
+    stroke: color-mix(in srgb, var(--accent) 54%, transparent);
+    stroke-width: 1.2;
+    rx: 8;
+    ry: 8;
+  }
+  .chart-event-label {
+    font-size: 10px;
+    fill: color-mix(in srgb, var(--accent) 78%, var(--text));
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
   .chart-marker-label {
     font-size: 10px;
     fill: var(--text-soft);
@@ -403,6 +417,14 @@
   .chart-legend .sunrise i { border-top-style: dashed; }
   .chart-legend .sunset { color: var(--text-soft); }
   .chart-legend .sunset i { border-top-style: dashed; }
+  .chart-legend .event { color: var(--accent); }
+  .chart-legend .event i {
+    height: 10px;
+    border-top: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 54%, transparent);
+  }
   .chart-legend .checkpoints { color: var(--text); }
   .chart-legend .checkpoints i { border-top-style: dotted; }
   .chart-checkpoint-line {
@@ -568,6 +590,14 @@
 .route-weather-cell .cp-temp, .route-weather-cell .cp-humidity, .route-weather-cell .cp-meta {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.race-day-timing-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+  border-radius: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface2) 92%, white 8%), color-mix(in srgb, var(--surface) 98%, transparent));
 }
 
   .wizard-title-row {

@@ -382,6 +382,19 @@
     </div>
     <div class="time-box" id="later-box">
       <input type="text" id="later-input" placeholder="Pick a start date and time" disabled readonly>
+      <div class="race-day-timing-panel" id="race-day-timing-panel" hidden>
+        <div class="custom-grid">
+          <div>
+            <label class="sub-label">Day start</label>
+            <input type="text" id="race-day-start-input" placeholder="Pick the day start date and time" disabled readonly>
+          </div>
+          <div>
+            <label class="sub-label">Day end</label>
+            <input type="text" id="race-day-end-input" placeholder="Pick the day end date and time" disabled readonly>
+          </div>
+        </div>
+        <p class="status-line compact" id="race-day-timing-status">Race day timing uses your planned duration to show the full day and event window.</p>
+      </div>
       <p class="status-line" id="later-status">Fetch a location first to unlock the valid forecast range.</p>
     </div>
     <div class="time-box" id="best-window-box">
@@ -552,7 +565,7 @@
 <footer class="site-footer">
   <div class="attribution-card">
     <div class="block-title">Credits & attributions</div>
-    <p><strong>Forecast Fit</strong> <strong>v11.1.2</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
+    <p><strong>Forecast Fit</strong> <strong>v11.2</strong> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
     <p>Implementation and iteration assistance: <strong>ChatGPT</strong> (including <strong>GPT-5.3-Codex</strong>) and <strong>Claude by Anthropic</strong>. This build does not use any live third-party AI integrations.</p>
     <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, <a href="https://www.npmjs.com/package/country-flag-icons" target="_blank" rel="noopener noreferrer">country-flag-icons</a> for SVG flags, <a href="https://www.npmjs.com/package/@bybas/weather-icons" target="_blank" rel="noopener noreferrer">@bybas/weather-icons</a> for weather-condition icons, <a href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noopener noreferrer">Microsoft Fluent UI Emoji</a> / <a href="https://www.npmjs.com/package/fluentui-emoji" target="_blank" rel="noopener noreferrer">fluentui-emoji</a> modern SVG assets for selected emoji-style icon surfaces, and Google Fonts for DM Sans / DM Mono.</p>
     <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>

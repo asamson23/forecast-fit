@@ -17,6 +17,10 @@ export interface ForecastSelection {
   sliceMinutes?: number;
   startTime?: unknown;
   endTime?: unknown;
+  highlightStartTime?: unknown;
+  highlightEndTime?: unknown;
+  headerTitle?: string;
+  headerMeta?: string;
 }
 
 export function renderForecastBlock(
@@ -42,8 +46,8 @@ export function renderForecastBlock(
     return `
       <div class="forecast-box">
         <div class="forecast-header">
-          <strong>Forecast over the planned duration</strong>
-          <span>${escapeHtml(profile.label)} · daily overview</span>
+          <strong>${escapeHtml(selection.headerTitle || 'Forecast over the planned duration')}</strong>
+          <span>${escapeHtml(selection.headerMeta || `${profile.label} · daily overview`)}</span>
         </div>
         <div class="forecast-scroll">
           <div class="daily-forecast-grid">${cells}</div>
@@ -70,8 +74,8 @@ export function renderForecastBlock(
   return `
     <div class="forecast-box">
       <div class="forecast-header">
-        <strong>Forecast over the planned duration</strong>
-        <span>${escapeHtml(profile.label)} · ${sliceLabel}</span>
+        <strong>${escapeHtml(selection.headerTitle || 'Forecast over the planned duration')}</strong>
+        <span>${escapeHtml(selection.headerMeta || `${profile.label} · ${sliceLabel}`)}</span>
       </div>
       <div class="forecast-scroll">
         <div>
