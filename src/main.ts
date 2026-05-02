@@ -2613,11 +2613,14 @@ function getRouteSampleCount() {
 function buildRouteCheckpointMarker(cp) {
   const kind = cp.markerKind || (cp.label === 'Start' ? 'start' : (cp.label === 'Finish' ? 'finish' : 'mid'));
   const toneClass = cp.markerTone ? ` ${cp.markerTone}` : '';
+  const markerInner = kind === 'event'
+    ? renderSymbolIconHtml(cp.markerShort, 'checkpoint-marker-icon', cp.label || cp.markerShort, true)
+    : null;
   const shortLabel = cp.markerShort || (kind === 'start' ? 'S' : (kind === 'finish' ? 'F' : '•'));
   return L.marker([cp.lat, cp.lon], {
     icon: L.divIcon({
       className: 'route-checkpoint-marker-wrapper',
-      html: `<span class="checkpoint-marker ${kind}${toneClass}" title="${escapeHtml(cp.label)}">${escapeHtml(shortLabel)}</span>`,
+      html: `<span class="checkpoint-marker ${kind}${toneClass}" title="${escapeHtml(cp.label)}">${markerInner || escapeHtml(shortLabel)}</span>`,
       iconSize: [22, 22],
       iconAnchor: [11, 11],
       popupAnchor: [0, -10]

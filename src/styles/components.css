@@ -450,6 +450,17 @@
     color: white;
     border-color: color-mix(in srgb, var(--accent2) 55%, white 20%);
   }
+  .checkpoint-marker-icon {
+    width: 0.92rem;
+    height: 0.92rem;
+  }
+  .checkpoint-marker-icon .emoji-asset-img {
+    width: 0.92rem;
+    height: 0.92rem;
+  }
+  .checkpoint-marker-icon .emoji-native-fallback {
+    font-size: 0.8rem;
+  }
   .checkpoint-marker.cold {
     background: #2f80ed;
     border-color: color-mix(in srgb, #2f80ed 55%, white 20%);

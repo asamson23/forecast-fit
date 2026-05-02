@@ -19,6 +19,7 @@ import cloudUrl from 'fluentui-emoji/icons/modern/cloud.svg?url';
 import cloudWithLightningAndRainUrl from 'fluentui-emoji/icons/modern/cloud-with-lightning-and-rain.svg?url';
 import cloudWithRainUrl from 'fluentui-emoji/icons/modern/cloud-with-rain.svg?url';
 import cloudWithSnowUrl from 'fluentui-emoji/icons/modern/cloud-with-snow.svg?url';
+import coldFaceUrl from 'fluentui-emoji/icons/modern/cold-face.svg?url';
 import coatUrl from 'fluentui-emoji/icons/modern/coat.svg?url';
 import deerUrl from 'fluentui-emoji/icons/modern/deer.svg?url';
 import divingMaskUrl from 'fluentui-emoji/icons/modern/diving-mask.svg?url';
@@ -27,10 +28,13 @@ import faceWithMedicalMaskUrl from 'fluentui-emoji/icons/modern/face-with-medica
 import fishingPoleUrl from 'fluentui-emoji/icons/modern/fishing-pole.svg?url';
 import foggyUrl from 'fluentui-emoji/icons/modern/foggy.svg?url';
 import hikingBootUrl from 'fluentui-emoji/icons/modern/hiking-boot.svg?url';
+import holeUrl from 'fluentui-emoji/icons/modern/hole.svg?url';
+import hotFaceUrl from 'fluentui-emoji/icons/modern/hot-face.svg?url';
 import houseUrl from 'fluentui-emoji/icons/modern/house.svg?url';
 import informationUrl from 'fluentui-emoji/icons/modern/information.svg?url';
 import kiteUrl from 'fluentui-emoji/icons/modern/kite.svg?url';
 import labelUrl from 'fluentui-emoji/icons/modern/label.svg?url';
+import mountainUrl from 'fluentui-emoji/icons/modern/mountain.svg?url';
 import personBikingUrl from 'fluentui-emoji/icons/modern/person-biking-default.svg?url';
 import personLiftingWeightsUrl from 'fluentui-emoji/icons/modern/person-lifting-weights-default.svg?url';
 import personRunningUrl from 'fluentui-emoji/icons/modern/person-running-default.svg?url';
@@ -42,6 +46,8 @@ import stadiumUrl from 'fluentui-emoji/icons/modern/stadium.svg?url';
 import sunUrl from 'fluentui-emoji/icons/modern/sun.svg?url';
 import sunBehindRainCloudUrl from 'fluentui-emoji/icons/modern/sun-behind-rain-cloud.svg?url';
 import sunBehindSmallCloudUrl from 'fluentui-emoji/icons/modern/sun-behind-small-cloud.svg?url';
+import sunriseOverMountainsUrl from 'fluentui-emoji/icons/modern/sunrise-over-mountains.svg?url';
+import sunsetUrl from 'fluentui-emoji/icons/modern/sunset.svg?url';
 import sunWithFaceUrl from 'fluentui-emoji/icons/modern/sun-with-face.svg?url';
 import warningUrl from 'fluentui-emoji/icons/modern/warning.svg?url';
 import waterWaveUrl from 'fluentui-emoji/icons/modern/water-wave.svg?url';
@@ -66,6 +72,12 @@ const ICONS: Record<string, IconAsset> = {
   '⛈️': { label: 'Thunderstorm', url: cloudWithLightningAndRainUrl },
   '💨': { label: 'Wind', url: windFaceUrl },
   '😷': { label: 'Air quality', url: faceWithMedicalMaskUrl },
+  '🥶': { label: 'Cold', url: coldFaceUrl },
+  '🥵': { label: 'Hot', url: hotFaceUrl },
+  '⛰️': { label: 'High point', url: mountainUrl },
+  '🕳️': { label: 'Low point', url: holeUrl },
+  '🌅': { label: 'Sunrise', url: sunriseOverMountainsUrl },
+  '🌇': { label: 'Sunset', url: sunsetUrl },
   '❄️': { label: 'Snow', url: cloudWithSnowUrl },
   '⚠️': { label: 'Warning', url: warningUrl },
   'ℹ️': { label: 'Information', url: informationUrl },
