@@ -811,3 +811,9 @@
 - Fixed the race-day render path so the weather panel no longer disappears behind a `raceDayWindow` runtime error.
 - Relaxed the day-start and day-end pickers to the full forecast range, then added a visible validation message when the chosen day window no longer surrounds the event.
 - Kept race-day forecast rendering alive by falling back to the default race-day window while invalid custom day-start or day-end picks are being corrected.
+
+## v11.2.2
+
+- Made the footer version number open an in-app changelog popup using the existing helper overlay pattern.
+- Added build-time `CHANGELOG.md` loading plus lightweight markdown rendering for headings, lists, separators, and inline code in the popup.
+- Refactored the main delegated click-action router from a chained `if/else if` block to a `switch` for cleaner UI action additions.

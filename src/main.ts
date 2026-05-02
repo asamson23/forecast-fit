@@ -2,6 +2,7 @@
 import 'leaflet/dist/leaflet.css';
 import 'flatpickr/dist/flatpickr.min.css';
 import 'country-flag-icons/3x2/flags.css';
+import changelogMarkdown from '../CHANGELOG.md?raw';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/components.css';
@@ -264,6 +265,9 @@ const stravaChoiceDivider = document.getElementById('strava-choice-divider');
 const quickStartOverlay = document.getElementById('quick-start-overlay');
 const quickStartSteps = document.getElementById('quick-start-steps');
 const quickStartCloseBtn = document.getElementById('quick-start-close-btn');
+const changelogOverlay = document.getElementById('changelog-overlay');
+const changelogContent = document.getElementById('changelog-content');
+const changelogCloseBtn = document.getElementById('changelog-close-btn');
 const stravaPickerOverlay = document.getElementById('strava-picker-overlay');
 const stravaPickerUrlInput = document.getElementById('strava-picker-url-input') as HTMLInputElement | null;
 const stravaPickerTabs = document.getElementById('strava-picker-tabs');
@@ -319,6 +323,7 @@ let stravaPickerRoutesPage = 0;
 let stravaPickerActivitiesPage = 0;
 let stravaPickerRoutesHasMore = true;
 let stravaPickerActivitiesHasMore = true;
+let changelogRendered = false;
 let stravaPickerRouteError = '';
 let stravaPickerActivityError = '';
 let routeMap = null;
@@ -2709,6 +2714,90 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function renderInlineMarkdown(text) {
+  return String(text || '')
+    .split(/(`[^`]*`)/g)
+    .map((segment) => {
+      if (segment.startsWith('`') && segment.endsWith('`')) {
+        return `<code>${escapeHtml(segment.slice(1, -1))}</code>`;
+      }
+
+      return escapeHtml(segment)
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    })
+    .join('');
+}
+
+function renderMarkdownSection(markdown) {
+  const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
+  const blocks = [];
+  let paragraphLines = [];
+  let listItems = [];
+
+  const flushParagraph = () => {
+    if (!paragraphLines.length) return;
+    blocks.push(`<p>${paragraphLines.map(line => renderInlineMarkdown(line)).join(' ')}</p>`);
+    paragraphLines = [];
+  };
+  const flushList = () => {
+    if (!listItems.length) return;
+    blocks.push(`<ul>${listItems.map(item => `<li>${renderInlineMarkdown(item)}</li>`).join('')}</ul>`);
+    listItems = [];
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      flushParagraph();
+      flushList();
+      const level = Math.min(4, headingMatch[1].length + 1);
+      blocks.push(`<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`);
+      continue;
+    }
+
+    if (/^-{3,}$/.test(line)) {
+      flushParagraph();
+      flushList();
+      blocks.push('<hr>');
+      continue;
+    }
+
+    const listMatch = line.match(/^- (.+)$/);
+    if (listMatch) {
+      flushParagraph();
+      listItems.push(listMatch[1]);
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(line);
+  }
+
+  flushParagraph();
+  flushList();
+  return blocks.join('');
+}
+
+function buildChangelogHtml(markdown) {
+  const normalized = String(markdown || '').replace(/\r\n?/g, '\n');
+  const sectionStarts = [...normalized.matchAll(/^##\s+.+$/gm)].map(match => match.index ?? 0);
+  const sections = sectionStarts.length
+    ? sectionStarts.map((start, index) => normalized.slice(start, sectionStarts[index + 1] ?? normalized.length).trim()).filter(Boolean)
+    : [normalized];
+  return sections
+    .reverse()
+    .map(section => `<article class="changelog-entry">${renderMarkdownSection(section)}</article>`)
+    .join('');
 }
 
 function isFiniteNumber(value) {
@@ -7183,6 +7272,26 @@ function closeQuickStartGuide() {
 }
 window.closeQuickStartGuide = closeQuickStartGuide;
 
+function renderChangelog() {
+  if (!changelogContent || changelogRendered) return;
+  changelogContent.innerHTML = buildChangelogHtml(changelogMarkdown);
+  changelogRendered = true;
+}
+
+function openChangelog() {
+  if (!changelogOverlay) return;
+  renderChangelog();
+  changelogOverlay.hidden = false;
+  document.body.classList.add('helper-open');
+  changelogCloseBtn?.focus({ preventScroll: true });
+}
+
+function closeChangelog() {
+  if (!changelogOverlay) return;
+  changelogOverlay.hidden = true;
+  document.body.classList.remove('helper-open');
+}
+
 function jumpToQuickStartTarget(targetId) {
   const target = document.getElementById(targetId);
   closeQuickStartGuide();
@@ -7207,6 +7316,10 @@ document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   if (stravaPickerOverlay && !stravaPickerOverlay.hidden) {
     closeStravaPicker();
+    return;
+  }
+  if (changelogOverlay && !changelogOverlay.hidden) {
+    closeChangelog();
     return;
   }
   if (quickStartOverlay && !quickStartOverlay.hidden) closeQuickStartGuide();
@@ -8204,36 +8317,106 @@ function bindDomActions() {
     if (!trigger) return;
 
     const action = trigger.dataset.action;
-    if (action === 'openQuickStartGuide') openQuickStartGuide();
-    else if (action === 'activateForecastOnlyMode') activateForecastOnlyMode();
-    else if (action === 'toggleLocationCardCollapse') toggleLocationCardCollapse();
-    else if (action === 'togglePlannerCardCollapse') togglePlannerCardCollapse();
-    else if (action === 'forceRefreshWeather') forceRefreshWeather();
-    else if (action === 'resetLocationSection') resetLocationSection();
-    else if (action === 'clearAllTool') clearAllTool();
-    else if (action === 'useCurrentLocation') useCurrentLocation();
-    else if (action === 'clearRoute') clearRoute();
-    else if (action === 'connectStrava') handleConnectStravaEnhanced();
-    else if (action === 'disconnectStrava') handleDisconnectStravaEnhanced();
-    else if (action === 'openStravaPicker') handleOpenStravaPickerEnhanced();
-    else if (action === 'closeStravaPicker') closeStravaPicker();
-    else if (action === 'selectStravaTab') handleSelectStravaTab(trigger.dataset.stravaTab);
-    else if (action === 'loadMoreStravaItems') void handleLoadMoreStravaItems();
-    else if (action === 'importStravaUrl') void handleImportStravaUrl();
-    else if (action === 'importStravaRoute') handleImportStravaRoute(trigger.dataset.stravaRouteId);
-    else if (action === 'importStravaActivity') handleImportStravaActivity(trigger.dataset.stravaActivityId);
-    else if (action === 'resetActivitySection') resetActivitySection();
-    else if (action === 'toggleRaceDayMode') toggleRaceDayMode();
-    else if (action === 'selectActivity') selectActivity(trigger);
-    else if (action === 'selectPlannedEffort') selectPlannedEffort(trigger.dataset.plannedEffort);
-    else if (action === 'selectStartMode') selectStartMode(trigger);
-    else if (action === 'toggleManualWeatherOverride') toggleManualWeatherOverride();
-    else if (action === 'selectCheckpointModel') selectCheckpointModel(trigger.dataset.checkpointModel);
-    else if (action === 'toggleCustomMultisportLeg') toggleCustomMultisportLeg(trigger.dataset.legKey);
-    else if (action === 'selectDurationKey') selectDurationKey(trigger.dataset.durationKey);
-    else if (action === 'selectEventPreset') selectEventPreset(trigger.dataset.eventKey);
-    else if (action === 'pickSuggestion') pickSuggestion(Number(trigger.dataset.index));
-    else if (action === 'applyBestWindowResult') applyBestWindowResult(trigger.dataset.startTime);
+    switch (action) {
+      case 'openChangelog':
+        openChangelog();
+        break;
+      case 'closeChangelog':
+        closeChangelog();
+        break;
+      case 'openQuickStartGuide':
+        openQuickStartGuide();
+        break;
+      case 'activateForecastOnlyMode':
+        activateForecastOnlyMode();
+        break;
+      case 'toggleLocationCardCollapse':
+        toggleLocationCardCollapse();
+        break;
+      case 'togglePlannerCardCollapse':
+        togglePlannerCardCollapse();
+        break;
+      case 'forceRefreshWeather':
+        forceRefreshWeather();
+        break;
+      case 'resetLocationSection':
+        resetLocationSection();
+        break;
+      case 'clearAllTool':
+        clearAllTool();
+        break;
+      case 'useCurrentLocation':
+        useCurrentLocation();
+        break;
+      case 'clearRoute':
+        clearRoute();
+        break;
+      case 'connectStrava':
+        handleConnectStravaEnhanced();
+        break;
+      case 'disconnectStrava':
+        handleDisconnectStravaEnhanced();
+        break;
+      case 'openStravaPicker':
+        handleOpenStravaPickerEnhanced();
+        break;
+      case 'closeStravaPicker':
+        closeStravaPicker();
+        break;
+      case 'selectStravaTab':
+        handleSelectStravaTab(trigger.dataset.stravaTab);
+        break;
+      case 'loadMoreStravaItems':
+        void handleLoadMoreStravaItems();
+        break;
+      case 'importStravaUrl':
+        void handleImportStravaUrl();
+        break;
+      case 'importStravaRoute':
+        handleImportStravaRoute(trigger.dataset.stravaRouteId);
+        break;
+      case 'importStravaActivity':
+        handleImportStravaActivity(trigger.dataset.stravaActivityId);
+        break;
+      case 'resetActivitySection':
+        resetActivitySection();
+        break;
+      case 'toggleRaceDayMode':
+        toggleRaceDayMode();
+        break;
+      case 'selectActivity':
+        selectActivity(trigger);
+        break;
+      case 'selectPlannedEffort':
+        selectPlannedEffort(trigger.dataset.plannedEffort);
+        break;
+      case 'selectStartMode':
+        selectStartMode(trigger);
+        break;
+      case 'toggleManualWeatherOverride':
+        toggleManualWeatherOverride();
+        break;
+      case 'selectCheckpointModel':
+        selectCheckpointModel(trigger.dataset.checkpointModel);
+        break;
+      case 'toggleCustomMultisportLeg':
+        toggleCustomMultisportLeg(trigger.dataset.legKey);
+        break;
+      case 'selectDurationKey':
+        selectDurationKey(trigger.dataset.durationKey);
+        break;
+      case 'selectEventPreset':
+        selectEventPreset(trigger.dataset.eventKey);
+        break;
+      case 'pickSuggestion':
+        pickSuggestion(Number(trigger.dataset.index));
+        break;
+      case 'applyBestWindowResult':
+        applyBestWindowResult(trigger.dataset.startTime);
+        break;
+      default:
+        break;
+    }
   });
 }
 

@@ -315,6 +315,22 @@
   text-decoration: none;
 }
 .attribution-card a:hover { text-decoration: underline; }
+.version-link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+.version-link:hover,
+.version-link:focus-visible {
+  color: color-mix(in srgb, var(--accent) 82%, white 18%);
+}
   #race-day-mode-btn {
     position: relative;
     overflow: hidden;

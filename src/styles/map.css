@@ -307,6 +307,63 @@
   .strava-picker-panel {
     width: min(820px, 100%);
   }
+  .changelog-panel {
+    width: min(860px, 100%);
+  }
+  .changelog-content {
+    display: grid;
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .changelog-entry {
+    border: 1px solid color-mix(in srgb, var(--accent2) 12%, var(--border));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--surface) 94%, var(--surface2) 6%);
+    padding: 14px 16px;
+  }
+  .changelog-entry h2,
+  .changelog-entry h3,
+  .changelog-entry h4 {
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .changelog-entry h2 + *,
+  .changelog-entry h3 + *,
+  .changelog-entry h4 + * {
+    margin-top: 10px;
+  }
+  .changelog-entry p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.55;
+  }
+  .changelog-entry ul {
+    margin: 0;
+    padding-left: 1.15rem;
+    color: var(--text-soft);
+  }
+  .changelog-entry li + li {
+    margin-top: 6px;
+  }
+  .changelog-entry strong {
+    color: var(--text);
+  }
+  .changelog-entry code {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface2) 84%, var(--accent) 16%);
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.86em;
+  }
+  .changelog-entry hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 2px 0;
+  }
   .strava-picker-url-box {
     margin-top: 14px;
   }
