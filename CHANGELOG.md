@@ -817,3 +817,9 @@
 - Made the footer version number open an in-app changelog popup using the existing helper overlay pattern.
 - Added build-time `CHANGELOG.md` loading plus lightweight markdown rendering for headings, lists, separators, and inline code in the popup.
 - Refactored the main delegated click-action router from a chained `if/else if` block to a `switch` for cleaner UI action additions.
+
+## v11.2.3
+
+- Added a version-only changelog table of contents inside the popup for faster navigation across releases.
+- Changed changelog entries to collapsible sections, with the newest version open by default and older versions collapsed.
+- Added global Expand all and Collapse all controls for the changelog popup.

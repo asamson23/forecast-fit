@@ -310,16 +310,80 @@
   .changelog-panel {
     width: min(860px, 100%);
   }
+  .changelog-toolbar {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .changelog-toolbar-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .changelog-toc {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .changelog-toc-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 11px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+    background: color-mix(in srgb, var(--surface2) 82%, var(--accent) 18%);
+    color: var(--text);
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.74rem;
+  }
+  .changelog-toc-link:hover,
+  .changelog-toc-link:focus-visible {
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    background: color-mix(in srgb, var(--surface2) 68%, var(--accent) 32%);
+    outline: none;
+  }
   .changelog-content {
     display: grid;
     gap: 14px;
-    margin-top: 16px;
   }
   .changelog-entry {
     border: 1px solid color-mix(in srgb, var(--accent2) 12%, var(--border));
     border-radius: 16px;
     background: color-mix(in srgb, var(--surface) 94%, var(--surface2) 6%);
+  }
+  .changelog-entry summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    list-style: none;
+    cursor: pointer;
     padding: 14px 16px;
+  }
+  .changelog-entry summary::-webkit-details-marker {
+    display: none;
+  }
+  .changelog-entry-summary-text {
+    min-width: 0;
+  }
+  .changelog-entry-summary-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    color: var(--text-soft);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+  }
+  .changelog-entry-chevron {
+    transition: transform 0.18s ease;
+  }
+  .changelog-entry[open] .changelog-entry-chevron {
+    transform: rotate(90deg);
+  }
+  .changelog-entry-body {
+    padding: 0 16px 14px;
   }
   .changelog-entry h2,
   .changelog-entry h3,
@@ -363,6 +427,9 @@
     border: 0;
     border-top: 1px solid var(--border);
     margin: 2px 0;
+  }
+  .changelog-entry-latest {
+    color: var(--ok);
   }
   .strava-picker-url-box {
     margin-top: 14px;

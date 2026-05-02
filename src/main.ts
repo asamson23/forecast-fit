@@ -266,6 +266,7 @@ const quickStartOverlay = document.getElementById('quick-start-overlay');
 const quickStartSteps = document.getElementById('quick-start-steps');
 const quickStartCloseBtn = document.getElementById('quick-start-close-btn');
 const changelogOverlay = document.getElementById('changelog-overlay');
+const changelogToc = document.getElementById('changelog-toc');
 const changelogContent = document.getElementById('changelog-content');
 const changelogCloseBtn = document.getElementById('changelog-close-btn');
 const stravaPickerOverlay = document.getElementById('strava-picker-overlay');
@@ -2788,16 +2789,72 @@ function renderMarkdownSection(markdown) {
   return blocks.join('');
 }
 
-function buildChangelogHtml(markdown) {
+function slugifyChangelogHeading(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[`*_]+/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'version';
+}
+
+function parseChangelogSections(markdown) {
   const normalized = String(markdown || '').replace(/\r\n?/g, '\n');
   const sectionStarts = [...normalized.matchAll(/^##\s+.+$/gm)].map(match => match.index ?? 0);
   const sections = sectionStarts.length
     ? sectionStarts.map((start, index) => normalized.slice(start, sectionStarts[index + 1] ?? normalized.length).trim()).filter(Boolean)
     : [normalized];
   return sections
-    .reverse()
-    .map(section => `<article class="changelog-entry">${renderMarkdownSection(section)}</article>`)
+    .map((section, index) => {
+      const headingMatch = section.match(/^##\s+(.+)$/m);
+      const heading = headingMatch?.[1]?.trim() || `Version ${index + 1}`;
+      return {
+        heading,
+        id: `changelog-${slugifyChangelogHeading(heading)}`,
+        html: renderMarkdownSection(section),
+      };
+    })
+    .reverse();
+}
+
+function buildChangelogTocHtml(sections) {
+  return sections
+    .map(section => `<a class="changelog-toc-link" href="#${escapeHtml(section.id)}">${renderInlineMarkdown(section.heading)}</a>`)
     .join('');
+}
+
+function buildChangelogHtml(markdown) {
+  const sections = parseChangelogSections(markdown);
+  return {
+    tocHtml: buildChangelogTocHtml(sections),
+    bodyHtml: sections.map((section, index) => `
+      <details class="changelog-entry" id="${escapeHtml(section.id)}" ${index === 0 ? 'open' : ''}>
+        <summary>
+          <span class="changelog-entry-summary-text">${renderInlineMarkdown(section.heading)}</span>
+          <span class="changelog-entry-summary-meta">
+            ${index === 0 ? '<span class="changelog-entry-latest">latest</span>' : ''}
+            <span class="changelog-entry-chevron" aria-hidden="true">›</span>
+          </span>
+        </summary>
+        <div class="changelog-entry-body">${section.html}</div>
+      </details>`).join(''),
+  };
+}
+
+function setAllChangelogSectionsExpanded(expanded) {
+  if (!changelogContent) return;
+  changelogContent.querySelectorAll('details.changelog-entry').forEach((entry) => {
+    if (entry instanceof HTMLDetailsElement) entry.open = expanded;
+  });
+}
+
+function jumpToChangelogSection(hash) {
+  const targetId = String(hash || '').replace(/^#/, '');
+  if (!targetId || !changelogContent) return false;
+  const target = changelogContent.querySelector(`#${CSS.escape(targetId)}`);
+  if (!(target instanceof HTMLDetailsElement)) return false;
+  target.open = true;
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  return true;
 }
 
 function isFiniteNumber(value) {
@@ -7273,8 +7330,10 @@ function closeQuickStartGuide() {
 window.closeQuickStartGuide = closeQuickStartGuide;
 
 function renderChangelog() {
-  if (!changelogContent || changelogRendered) return;
-  changelogContent.innerHTML = buildChangelogHtml(changelogMarkdown);
+  if (!changelogContent || !changelogToc || changelogRendered) return;
+  const { tocHtml, bodyHtml } = buildChangelogHtml(changelogMarkdown);
+  changelogToc.innerHTML = tocHtml;
+  changelogContent.innerHTML = bodyHtml;
   changelogRendered = true;
 }
 
@@ -7291,6 +7350,15 @@ function closeChangelog() {
   changelogOverlay.hidden = true;
   document.body.classList.remove('helper-open');
 }
+
+changelogOverlay?.addEventListener('click', event => {
+  if (!(event.target instanceof Element)) return;
+  const tocLink = event.target.closest('.changelog-toc-link');
+  if (tocLink instanceof HTMLAnchorElement) {
+    event.preventDefault();
+    jumpToChangelogSection(tocLink.hash);
+  }
+});
 
 function jumpToQuickStartTarget(targetId) {
   const target = document.getElementById(targetId);
@@ -8323,6 +8391,12 @@ function bindDomActions() {
         break;
       case 'closeChangelog':
         closeChangelog();
+        break;
+      case 'expandAllChangelog':
+        setAllChangelogSectionsExpanded(true);
+        break;
+      case 'collapseAllChangelog':
+        setAllChangelogSectionsExpanded(false);
         break;
       case 'openQuickStartGuide':
         openQuickStartGuide();
