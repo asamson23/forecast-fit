@@ -843,3 +843,4 @@
 - Added worst-AQI smart checkpoint promotion and surfaced AQI on route checkpoint cards and popups when available.
 - Switched smart checkpoint markers to reason-specific colors, including blue for cold and red for hot.
 - Changed smart checkpoint marker symbols to emoji-style markers for cold, hot, wind, rain, UV, AQI, visibility, sunrise, sunset, and elevation checkpoints.
+- Added derived milestone names for `vMajor` and `vMajor.Minor` changelog entries, and surfaced the active parent milestone beside the footer version link without changing the numeric app version.

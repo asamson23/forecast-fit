@@ -270,6 +270,7 @@ const changelogTocToggleBtn = document.getElementById('changelog-toc-toggle-btn'
 const changelogToc = document.getElementById('changelog-toc');
 const changelogContent = document.getElementById('changelog-content');
 const changelogCloseBtn = document.getElementById('changelog-close-btn');
+const footerVersionLink = document.querySelector('.version-link');
 const stravaPickerOverlay = document.getElementById('strava-picker-overlay');
 const stravaPickerUrlInput = document.getElementById('strava-picker-url-input') as HTMLInputElement | null;
 const stravaPickerTabs = document.getElementById('strava-picker-tabs');
@@ -327,6 +328,8 @@ let stravaPickerRoutesHasMore = true;
 let stravaPickerActivitiesHasMore = true;
 let changelogRendered = false;
 let changelogTocCollapsed = false;
+let changelogSectionsCache = null;
+let changelogMilestoneNameByVersion = null;
 let stravaPickerRouteError = '';
 let stravaPickerActivityError = '';
 let routeMap = null;
@@ -3015,6 +3018,67 @@ function slugifyChangelogHeading(text) {
     .replace(/^-+|-+$/g, '') || 'version';
 }
 
+function parseVersionHeading(heading) {
+  const match = String(heading || '').trim().match(/^v(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?$/i);
+  if (!match) return null;
+  const segments = match
+    .slice(1)
+    .filter(segment => segment != null)
+    .map(segment => Number(segment));
+  if (!segments.length || segments.some(segment => !Number.isFinite(segment))) return null;
+  return {
+    segments,
+    normalized: `v${segments.join('.')}`,
+  };
+}
+
+function isMilestoneVersionHeading(heading) {
+  const parsed = parseVersionHeading(heading);
+  return Boolean(parsed && (parsed.segments.length === 1 || parsed.segments.length === 2));
+}
+
+function deriveMilestoneLabel(sourceLine) {
+  let label = String(sourceLine || '')
+    .replace(/^[*-]\s*/, '')
+    .replace(/[`*_]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[.;,:-]+$/, '');
+  if (!label) return '';
+
+  const nounPhraseMatch = label.match(/^(.+?)\s+(?:now\s+)?(?:adds?|added|fixes?|fixed|switches?|switched|extends?|extended|changes?|changed|makes?|made|updates?|updated|hides?|hid|removes?|removed|corrects?|corrected|keeps?|kept|relaxes?|relaxed|constrains?|constrained|limits?|limited|adapts?|adapted|surfaces?|surfaced|restores?|restored|refactors?|refactored)\b/i);
+  if (nounPhraseMatch?.[1]) {
+    label = nounPhraseMatch[1].trim();
+  } else {
+    label = label.replace(/^(?:adds?|added|fixes?|fixed|switches?|switched|extends?|extended|changes?|changed|makes?|made|updates?|updated|hides?|hid|removes?|removed|corrects?|corrected|keeps?|kept|relaxes?|relaxed|constrains?|constrained|limits?|limited|adapts?|adapted|surfaces?|surfaced|restores?|restored|refactors?|refactored)\s+/i, '');
+  }
+
+  label = label
+    .replace(/\s+(?:so|while|instead of|through|via|alongside|inside)\b.*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[.;,:-]+$/, '');
+
+  if (!label) return '';
+  if (label.length > 44) {
+    const shortened = label.slice(0, 44).replace(/\s+\S*$/, '').trim();
+    if (shortened) label = shortened;
+  }
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function deriveMilestoneNameFromSection(section) {
+  const body = String(section || '').replace(/^##\s+.+$/m, '').trim();
+  if (!body) return '';
+  const lines = body
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !/^-{3,}$/.test(line) && !/^#{1,4}\s+/.test(line));
+  const bulletLine = lines.find(line => /^-\s+/.test(line));
+  const candidate = bulletLine || lines[0] || '';
+  return deriveMilestoneLabel(candidate);
+}
+
 function parseChangelogSections(markdown) {
   const normalized = String(markdown || '').replace(/\r\n?/g, '\n');
   const sectionStarts = [...normalized.matchAll(/^##\s+.+$/gm)].map(match => match.index ?? 0);
@@ -3025,30 +3089,69 @@ function parseChangelogSections(markdown) {
     .map((section, index) => {
       const headingMatch = section.match(/^##\s+(.+)$/m);
       const heading = headingMatch?.[1]?.trim() || `Version ${index + 1}`;
+      const versionInfo = parseVersionHeading(heading);
+      const milestoneName = isMilestoneVersionHeading(heading) ? deriveMilestoneNameFromSection(section) : '';
       return {
         heading,
         id: `changelog-${slugifyChangelogHeading(heading)}`,
         html: renderMarkdownSection(section),
+        version: versionInfo?.normalized || '',
+        isMilestone: Boolean(versionInfo && milestoneName),
+        milestoneName,
       };
     })
     .reverse();
 }
 
+function getChangelogSections() {
+  if (!changelogSectionsCache) changelogSectionsCache = parseChangelogSections(changelogMarkdown);
+  return changelogSectionsCache;
+}
+
+function getChangelogMilestoneNameByVersion() {
+  if (!changelogMilestoneNameByVersion) {
+    changelogMilestoneNameByVersion = new Map();
+    getChangelogSections().forEach(section => {
+      if (section.isMilestone && section.version && section.milestoneName && !changelogMilestoneNameByVersion.has(section.version)) {
+        changelogMilestoneNameByVersion.set(section.version, section.milestoneName);
+      }
+    });
+  }
+  return changelogMilestoneNameByVersion;
+}
+
+function findMilestoneNameForVersion(versionLabel) {
+  const parsed = parseVersionHeading(versionLabel);
+  if (!parsed) return '';
+  const milestoneMap = getChangelogMilestoneNameByVersion();
+  if (parsed.segments.length >= 2) {
+    const minorVersion = `v${parsed.segments.slice(0, 2).join('.')}`;
+    const minorMilestone = milestoneMap.get(minorVersion);
+    if (minorMilestone) return minorMilestone;
+  }
+  return milestoneMap.get(`v${parsed.segments[0]}`) || '';
+}
+
 function buildChangelogTocHtml(sections) {
   return sections
     .filter(section => /^v\d/i.test(section.heading))
-    .map(section => `<a class="changelog-toc-link" href="#${escapeHtml(section.id)}">${renderInlineMarkdown(section.heading)}</a>`)
+    .map(section => {
+      const milestoneHtml = section.isMilestone && section.milestoneName
+        ? `<span class="changelog-milestone-name">${escapeHtml(section.milestoneName)}</span>`
+        : '';
+      return `<a class="changelog-toc-link" href="#${escapeHtml(section.id)}"><span class="changelog-version-label">${renderInlineMarkdown(section.heading)}</span>${milestoneHtml}</a>`;
+    })
     .join('');
 }
 
-function buildChangelogHtml(markdown) {
-  const sections = parseChangelogSections(markdown);
+function buildChangelogHtml() {
+  const sections = getChangelogSections();
   return {
     tocHtml: buildChangelogTocHtml(sections),
     bodyHtml: sections.map((section, index) => `
       <details class="changelog-entry" id="${escapeHtml(section.id)}" ${index === 0 ? 'open' : ''}>
         <summary>
-          <span class="changelog-entry-summary-text">${renderInlineMarkdown(section.heading)}</span>
+          <span class="changelog-entry-summary-text"><span class="changelog-version-label">${renderInlineMarkdown(section.heading)}</span>${section.isMilestone && section.milestoneName ? `<span class="changelog-milestone-name">${escapeHtml(section.milestoneName)}</span>` : ''}</span>
           <span class="changelog-entry-summary-meta">
             ${index === 0 ? '<span class="changelog-entry-latest">latest</span>' : ''}
             <span class="changelog-entry-chevron" aria-hidden="true">›</span>
@@ -3084,6 +3187,15 @@ function jumpToChangelogSection(hash) {
   target.open = true;
   target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   return true;
+}
+
+function decorateFooterVersionLink() {
+  if (!(footerVersionLink instanceof HTMLButtonElement)) return;
+  const rawVersionLabel = footerVersionLink.textContent?.trim() || '';
+  const milestoneName = findMilestoneNameForVersion(rawVersionLabel);
+  if (!milestoneName) return;
+  footerVersionLink.textContent = `${rawVersionLabel} | ${milestoneName}`;
+  footerVersionLink.setAttribute('aria-label', `Open changelog for Forecast Fit version ${rawVersionLabel}, milestone ${milestoneName}`);
 }
 
 function isFiniteNumber(value) {
@@ -7563,7 +7675,7 @@ window.closeQuickStartGuide = closeQuickStartGuide;
 
 function renderChangelog() {
   if (!changelogContent || !changelogToc || changelogRendered) return;
-  const { tocHtml, bodyHtml } = buildChangelogHtml(changelogMarkdown);
+  const { tocHtml, bodyHtml } = buildChangelogHtml();
   changelogToc.innerHTML = tocHtml;
   changelogContent.innerHTML = bodyHtml;
   changelogRendered = true;
@@ -7630,6 +7742,7 @@ document.addEventListener('keydown', event => {
 // Initial UI state and event wiring.
 // The app is intentionally dependency-light, so most controls are plain DOM
 // elements with direct listeners rather than a framework state store.
+decorateFooterVersionLink();
 setCurrentLocationButtonState(false);
 setupActivityGroupToggles();
 setupPlannerSubsectionToggles();

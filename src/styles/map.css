@@ -335,6 +335,7 @@
   .changelog-toc-link {
     display: inline-flex;
     align-items: center;
+    gap: 8px;
     padding: 7px 11px;
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
@@ -343,7 +344,24 @@
     text-decoration: none;
     font-family: 'DM Mono', monospace;
     font-size: 0.74rem;
-    white-space: nowrap;
+    white-space: normal;
+  }
+  .changelog-version-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .changelog-milestone-name {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent2) 20%, var(--border));
+    background: color-mix(in srgb, var(--surface) 78%, var(--accent2) 22%);
+    color: var(--text-soft);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.76rem;
+    line-height: 1.2;
   }
   .changelog-toc-link:hover,
   .changelog-toc-link:focus-visible {
@@ -375,6 +393,10 @@
   }
   .changelog-entry-summary-text {
     min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
   }
   .changelog-entry-summary-meta {
     display: inline-flex;

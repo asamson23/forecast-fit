@@ -35,6 +35,7 @@ Run:
 ## Versioning
 - Whenever a bugfix or feature addition is shipped, update the app version numbers in every user-facing/version-tracked location that this repo uses.
 - Keep at least `package.json` and the visible version string in `index.html` in sync.
+- Keep milestone names separate from the numeric app version: `vMajor` and `vMajor.Minor` releases may carry milestone labels, but those labels must be derived from the corresponding `CHANGELOG.md` entry content rather than replacing or mutating the stored semver.
 - Update `CHANGELOG.md` for every shipped bugfix or feature addition in the same change.
 - If the current change also updates version notes or inline changelog comments, keep those aligned with the new version number.
 - When bumping to a new minor release, format it as `X.Y` rather than `X.Y.0`.
