@@ -450,6 +450,50 @@
     color: white;
     border-color: color-mix(in srgb, var(--accent2) 55%, white 20%);
   }
+  .checkpoint-marker.cold {
+    background: #2f80ed;
+    border-color: color-mix(in srgb, #2f80ed 55%, white 20%);
+  }
+  .checkpoint-marker.hot {
+    background: #d94841;
+    border-color: color-mix(in srgb, #d94841 55%, white 20%);
+  }
+  .checkpoint-marker.lowvis {
+    background: #6b7280;
+    border-color: color-mix(in srgb, #6b7280 55%, white 20%);
+  }
+  .checkpoint-marker.uv {
+    background: #e0a106;
+    border-color: color-mix(in srgb, #e0a106 55%, white 20%);
+  }
+  .checkpoint-marker.high {
+    background: #2f9e44;
+    border-color: color-mix(in srgb, #2f9e44 55%, white 20%);
+  }
+  .checkpoint-marker.low {
+    background: #0f766e;
+    border-color: color-mix(in srgb, #0f766e 55%, white 20%);
+  }
+  .checkpoint-marker.aqi {
+    background: #8b5cf6;
+    border-color: color-mix(in srgb, #8b5cf6 55%, white 20%);
+  }
+  .checkpoint-marker.wind {
+    background: #2563eb;
+    border-color: color-mix(in srgb, #2563eb 55%, white 20%);
+  }
+  .checkpoint-marker.wet {
+    background: #0ea5e9;
+    border-color: color-mix(in srgb, #0ea5e9 55%, white 20%);
+  }
+  .checkpoint-marker.sunrise {
+    background: #f59e0b;
+    border-color: color-mix(in srgb, #f59e0b 55%, white 20%);
+  }
+  .checkpoint-marker.sunset {
+    background: #7c3aed;
+    border-color: color-mix(in srgb, #7c3aed 55%, white 20%);
+  }
   .chart-zero-line {
     stroke: color-mix(in srgb, var(--text) 55%, var(--border));
     stroke-width: 1.2;

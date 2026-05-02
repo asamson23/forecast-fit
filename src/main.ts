@@ -2168,6 +2168,7 @@ function buildCheckpointFromIndex(pointIndex, reason, model, totalMinutes) {
     pointIndex,
     lat: p.lat,
     lon: p.lon,
+    ele: firstFinite(p.ele, null),
     kmFromStart: p.kmFromStart,
     fraction: routeState.totalKm > 0 ? p.kmFromStart / routeState.totalKm : 0,
     minuteFromStart,
@@ -2246,7 +2247,212 @@ function applyBaseCheckpointLabels(samples) {
   return sorted;
 }
 
+function getCheckpointFeelsMin(cp) {
+  return firstFinite(cp?.windowWeather?.feelsMin, cp?.weather?.feels, cp?.weather?.temp, null);
+}
+
+function getCheckpointFeelsMax(cp) {
+  return firstFinite(cp?.windowWeather?.feelsMax, cp?.weather?.feels, cp?.weather?.temp, null);
+}
+
+function getCheckpointMaxWind(cp) {
+  return firstFinite(cp?.windowWeather?.maxWind, cp?.weather?.wind, 0);
+}
+
+function getCheckpointWetScore(cp) {
+  return Math.max(firstFinite(cp?.windowWeather?.maxPrecipProb, cp?.weather?.precipProb, 0), firstFinite(cp?.windowWeather?.maxPrecip, cp?.weather?.precip, 0) * 100);
+}
+
+function getCheckpointMaxUv(cp) {
+  return firstFinite(cp?.windowWeather?.maxUv, cp?.weather?.uv, 0);
+}
+
+function getCheckpointMaxAqi(cp) {
+  return firstFinite(cp?.windowWeather?.maxAqi, cp?.weather?.aqi, null);
+}
+
+function getCheckpointElevation(cp) {
+  return firstFinite(cp?.ele, routeState?.points?.[cp?.pointIndex]?.ele, null);
+}
+
+function getVisibilityPenalty(cp) {
+  const code = Number(firstFinite(cp?.weather?.code, -1));
+  if ([45, 48].includes(code)) return 5;
+  if ([95, 96, 99].includes(code)) return 4;
+  if ([75, 77, 82, 86].includes(code)) return 3.5;
+  if ([65, 67, 73, 81, 85].includes(code)) return 3;
+  if ([55, 57, 63, 66].includes(code)) return 2;
+  if ([51, 53, 56, 61, 71, 80].includes(code)) return 1;
+  return 0;
+}
+
+function hasLowVisibilityConditions(cp) {
+  return getVisibilityPenalty(cp) >= 3;
+}
+
+function addCheckpointReason(cp, kind, label) {
+  if (!cp.reasons.includes(kind)) cp.reasons.push(kind);
+  if (!cp.reasonLabels.includes(label)) cp.reasonLabels.push(label);
+}
+
+function decorateSmartCheckpointMarkers(samples) {
+  (samples || []).forEach(cp => {
+    if (cp.reasons.includes('start')) {
+      cp.markerTone = 'start';
+    } else if (cp.reasons.includes('finish')) {
+      cp.markerTone = 'finish';
+    } else if (cp.reasons.includes('sunrise')) {
+      cp.label = 'Sunrise';
+      cp.markerShort = '🌅';
+      cp.markerKind = 'event';
+      cp.markerTone = 'sunrise';
+    } else if (cp.reasons.includes('sunset')) {
+      cp.label = 'Sunset';
+      cp.markerShort = '🌇';
+      cp.markerKind = 'event';
+      cp.markerTone = 'sunset';
+    } else if (cp.reasons.includes('pooraqi')) {
+      cp.label = 'Poor AQI';
+      cp.markerShort = '😷';
+      cp.markerKind = 'event';
+      cp.markerTone = 'aqi';
+    } else if (cp.reasons.includes('lowvis')) {
+      cp.label = 'Low visibility';
+      cp.markerShort = '🌫️';
+      cp.markerKind = 'event';
+      cp.markerTone = 'lowvis';
+    } else if (cp.reasons.includes('wettest')) {
+      cp.label = 'Rain risk';
+      cp.markerShort = '☔';
+      cp.markerKind = 'event';
+      cp.markerTone = 'wet';
+    } else if (cp.reasons.includes('uvpeak')) {
+      cp.label = 'Peak UV';
+      cp.markerShort = '☀️';
+      cp.markerKind = 'event';
+      cp.markerTone = 'uv';
+    } else if (cp.reasons.includes('peakwind')) {
+      cp.label = 'Peak wind';
+      cp.markerShort = '💨';
+      cp.markerKind = 'event';
+      cp.markerTone = 'wind';
+    } else if (cp.reasons.includes('coldest')) {
+      cp.label = 'Coldest';
+      cp.markerShort = '🥶';
+      cp.markerKind = 'event';
+      cp.markerTone = 'cold';
+    } else if (cp.reasons.includes('hottest')) {
+      cp.label = 'Hottest';
+      cp.markerShort = '🥵';
+      cp.markerKind = 'event';
+      cp.markerTone = 'hot';
+    } else if (cp.reasons.includes('highpoint')) {
+      cp.label = 'High point';
+      cp.markerShort = '⛰️';
+      cp.markerKind = 'event';
+      cp.markerTone = 'high';
+    } else if (cp.reasons.includes('lowpoint')) {
+      cp.label = 'Low point';
+      cp.markerShort = '🕳️';
+      cp.markerKind = 'event';
+      cp.markerTone = 'low';
+    } else {
+      cp.markerTone = cp.markerKind || 'mid';
+    }
+  });
+  return samples;
+}
+
+function applySmartEventLabels(samples, modelName) {
+  let genericIndex = 1;
+  [...samples].sort((a, b) => a.minuteFromStart - b.minuteFromStart).forEach(cp => {
+    if (cp.reasons.includes('start')) {
+      cp.label = 'Start';
+      cp.markerShort = 'S';
+      cp.markerKind = 'start';
+    } else if (cp.reasons.includes('finish')) {
+      cp.label = 'Finish';
+      cp.markerShort = 'F';
+      cp.markerKind = 'finish';
+    } else if (cp.reasons.includes('sunrise')) {
+      cp.label = 'Sunrise';
+      cp.markerShort = '↑';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('sunset')) {
+      cp.label = 'Sunset';
+      cp.markerShort = '↓';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('lowvis')) {
+      cp.label = 'Low visibility';
+      cp.markerShort = 'Fg';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('wettest')) {
+      cp.label = 'Rain risk';
+      cp.markerShort = '☔';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('uvpeak')) {
+      cp.label = 'Peak UV';
+      cp.markerShort = '☀';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('peakwind')) {
+      cp.label = 'Peak wind';
+      cp.markerShort = '↯';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('coldest')) {
+      cp.label = 'Coldest';
+      cp.markerShort = '❄';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('hottest')) {
+      cp.label = 'Hottest';
+      cp.markerShort = 'Ht';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('highpoint')) {
+      cp.label = 'High point';
+      cp.markerShort = 'Hi';
+      cp.markerKind = 'event';
+    } else if (cp.reasons.includes('lowpoint')) {
+      cp.label = 'Low point';
+      cp.markerShort = 'Lo';
+      cp.markerKind = 'event';
+    } else {
+      cp.label = modelName === 'smart' ? `Forecast checkpoint ${genericIndex}` : `Weather checkpoint ${genericIndex}`;
+      cp.markerShort = `${genericIndex}`;
+      cp.markerKind = 'mid';
+      genericIndex++;
+    }
+  });
+  return samples;
+}
+
+function promoteSmartCheckpointEvents(samples, modelName) {
+  applyCheckpointLabelsForModel(samples, modelName);
+  if (modelName !== 'smart') return samples;
+  const mids = samples.filter(cp => !cp.reasons.includes('start') && !cp.reasons.includes('finish') && cp.weather);
+  if (!mids.length) return samples;
+  const coldest = [...mids].sort((a, b) => firstFinite(getCheckpointFeelsMin(a), 999) - firstFinite(getCheckpointFeelsMin(b), 999))[0];
+  const hottest = [...mids].sort((a, b) => firstFinite(getCheckpointFeelsMax(b), -999) - firstFinite(getCheckpointFeelsMax(a), -999))[0];
+  const windiest = [...mids].sort((a, b) => getCheckpointMaxWind(b) - getCheckpointMaxWind(a))[0];
+  const wettest = [...mids].sort((a, b) => getCheckpointWetScore(b) - getCheckpointWetScore(a))[0];
+  const uvPeak = [...mids].sort((a, b) => getCheckpointMaxUv(b) - getCheckpointMaxUv(a))[0];
+  const worstAqi = [...mids].filter(cp => isFiniteNumber(getCheckpointMaxAqi(cp))).sort((a, b) => getCheckpointMaxAqi(b) - getCheckpointMaxAqi(a))[0];
+  const highest = [...mids].filter(cp => isFiniteNumber(getCheckpointElevation(cp))).sort((a, b) => getCheckpointElevation(b) - getCheckpointElevation(a))[0];
+  const lowest = [...mids].filter(cp => isFiniteNumber(getCheckpointElevation(cp))).sort((a, b) => getCheckpointElevation(a) - getCheckpointElevation(b))[0];
+  const lowestVisibility = [...mids].sort((a, b) => getVisibilityPenalty(b) - getVisibilityPenalty(a))[0];
+  if (coldest && firstFinite(getCheckpointFeelsMin(coldest), 99) <= 6) addCheckpointReason(coldest, 'coldest', 'Coldest feels-like');
+  if (hottest && firstFinite(getCheckpointFeelsMax(hottest), -99) >= 28) addCheckpointReason(hottest, 'hottest', 'Hottest feels-like');
+  if (windiest && getCheckpointMaxWind(windiest) >= 25) addCheckpointReason(windiest, 'peakwind', 'Peak wind');
+  if (wettest && (firstFinite(wettest.windowWeather?.maxPrecipProb, wettest.weather?.precipProb, 0) >= 45 || firstFinite(wettest.windowWeather?.maxPrecip, wettest.weather?.precip, 0) >= 0.3)) addCheckpointReason(wettest, 'wettest', 'Rain risk');
+  if (uvPeak && isOutdoorUvRelevantActivity(selectedActivity) && getCheckpointMaxUv(uvPeak) >= 6) addCheckpointReason(uvPeak, 'uvpeak', 'Peak UV');
+  if (worstAqi && firstFinite(getCheckpointMaxAqi(worstAqi), 0) >= 51) addCheckpointReason(worstAqi, 'pooraqi', 'Worst AQI on route');
+  const distinctAltitudeExtremes = highest && lowest && highest.pointIndex !== lowest.pointIndex;
+  if (distinctAltitudeExtremes) addCheckpointReason(highest, 'highpoint', 'Highest sampled elevation');
+  if (distinctAltitudeExtremes) addCheckpointReason(lowest, 'lowpoint', 'Lowest sampled elevation');
+  if (lowestVisibility && hasLowVisibilityConditions(lowestVisibility)) addCheckpointReason(lowestVisibility, 'lowvis', 'Lowest visibility conditions');
+  return decorateSmartCheckpointMarkers(applySmartEventLabels(samples, modelName));
+}
+
 function markSmartWeatherEventCheckpoints(samples) {
+  return promoteSmartCheckpointEvents(samples, checkpointModel);
   applyBaseCheckpointLabels(samples);
   if (checkpointModel !== 'smart') return samples;
   const mids = samples.filter(cp => !cp.reasons.includes('start') && !cp.reasons.includes('finish') && cp.weather);
@@ -2406,13 +2612,14 @@ function getRouteSampleCount() {
 
 function buildRouteCheckpointMarker(cp) {
   const kind = cp.markerKind || (cp.label === 'Start' ? 'start' : (cp.label === 'Finish' ? 'finish' : 'mid'));
+  const toneClass = cp.markerTone ? ` ${cp.markerTone}` : '';
   const shortLabel = cp.markerShort || (kind === 'start' ? 'S' : (kind === 'finish' ? 'F' : '•'));
   return L.marker([cp.lat, cp.lon], {
     icon: L.divIcon({
       className: 'route-checkpoint-marker-wrapper',
-      html: `<span class="checkpoint-marker ${kind}" title="${escapeHtml(cp.label)}">${escapeHtml(shortLabel)}</span>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
+      html: `<span class="checkpoint-marker ${kind}${toneClass}" title="${escapeHtml(cp.label)}">${escapeHtml(shortLabel)}</span>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
       popupAnchor: [0, -10]
     })
   });
@@ -2486,6 +2693,7 @@ function summarizeCheckpointWeatherWindow(hourly, eta, minutes = 15) {
   const precips = points.map(p => p.precip).filter(isFiniteNumber);
   const probs = points.map(p => p.precipProb).filter(isFiniteNumber);
   const uvs = points.map(p => p.uv).filter(isFiniteNumber);
+  const aqis = points.map(p => p.aqi).filter(isFiniteNumber);
   return {
     tempMin: temps.length ? Math.min(...temps) : null,
     tempMax: temps.length ? Math.max(...temps) : null,
@@ -2495,7 +2703,8 @@ function summarizeCheckpointWeatherWindow(hourly, eta, minutes = 15) {
     maxGust: gusts.length ? Math.max(...gusts) : null,
     maxPrecip: precips.length ? Math.max(...precips) : null,
     maxPrecipProb: probs.length ? Math.max(...probs) : null,
-    maxUv: uvs.length ? Math.max(...uvs) : null
+    maxUv: uvs.length ? Math.max(...uvs) : null,
+    maxAqi: aqis.length ? Math.max(...aqis) : null
   };
 }
 
@@ -2504,7 +2713,10 @@ async function fetchRouteCheckpointForecast(cp) {
   const cache = routeState.weatherCache[cacheKey] || (routeState.weatherCache[cacheKey] = {});
   if (!cache.hourly) {
     const url = `${WEATHER_API}?latitude=${cp.lat}&longitude=${cp.lon}&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code,is_day,uv_index&forecast_days=14&wind_speed_unit=kmh&timezone=auto`;
-    const res = await fetchWithTimeout(url, {}, 12000, 'Route checkpoint weather');
+    const [res, aqiPayload] = await Promise.all([
+      fetchWithTimeout(url, {}, 12000, 'Route checkpoint weather'),
+      settleOptional(fetchAirQuality(cp.lat, cp.lon), null, 8000, 'Route checkpoint air quality')
+    ]);
     if (!res.ok) throw new Error(`Route checkpoint weather HTTP ${res.status}`);
     const json = await res.json();
     cache.hourly = (json.hourly?.time || []).map((time, i) => ({
@@ -2518,6 +2730,7 @@ async function fetchRouteCheckpointForecast(cp) {
       gusts: json.hourly.wind_gusts_10m?.[i],
       windDir: json.hourly.wind_direction_10m?.[i],
       uv: json.hourly.uv_index?.[i],
+      aqi: matchAqiToHourlyTime(aqiPayload, time),
       code: json.hourly.weather_code?.[i],
       isDay: json.hourly.is_day?.[i]
     }));
@@ -3039,6 +3252,7 @@ function buildRouteCheckpointPopupHtml(cp) {
       <div class="popup-row"><span class="popup-row-left">${weatherIconHtml(w.code, 'cp-icon')} <span>${escapeHtml(desc)}</span></span><span class="popup-row-right"><span>${Math.round(w.temp)}°C</span><span class="popup-muted">feels ${Math.round(w.feels)}°C</span></span></div>
       <div class="popup-row"><span class="popup-row-left"><span>💨 ${windBits.speedText}</span>${windBits.dirHtml}</span><span class="popup-row-right"><span>↯ Gusts ${windBits.gustText}</span></span></div>
       <div class="popup-row"><span class="popup-row-left"><span>🌧 ${Math.round(w.precipProb || 0)}%</span></span><span class="popup-row-right">${routeWind}</span></div>
+      ${isFiniteNumber(w.aqi) ? `<div class="popup-row"><span class="popup-row-left"><span>😷 ${renderAqiBadge(w.aqi, true)}</span></span></div>` : ''}
       ${windowSummary ? `<div class="popup-row"><span class="popup-row-left"><span>${escapeHtml(windowSummary)}</span></span></div>` : ''}
     </div>`;
 }
@@ -3111,7 +3325,7 @@ function buildRouteWeatherHtml() {
             ${w ? `
               <div class="cp-temp">${Math.round(w.temp)}° · feels ${Math.round(w.feels)}°</div>
               <div class="cp-humidity">${renderSymbolIconHtml('💧', 'inline-symbol-icon', 'Humidity', true)} ${isFiniteNumber(w.humidity) ? `${Math.round(w.humidity)}% RH` : '—'}</div>
-              <div class="cp-meta">${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>↯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : '—'} km/h${isFiniteNumber(w.uv) ? `<br>${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(w.uv, true)}` : ''}<br>${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
+              <div class="cp-meta">${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>↯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : '—'} km/h${isFiniteNumber(w.uv) ? `<br>${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(w.uv, true)}` : ''}${isFiniteNumber(w.aqi) ? `<br>${renderSymbolIconHtml('😷', 'inline-symbol-icon', 'AQI', true)} ${renderAqiBadge(w.aqi, true)}` : ''}<br>${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
             ` : `<div class="cp-temp">Loading…</div>`}
           </div>`;
       }).join('')}
@@ -5213,6 +5427,7 @@ function buildCheckpointFromIndexForStart(pointIndex, reason, model, totalMinute
     pointIndex,
     lat: p.lat,
     lon: p.lon,
+    ele: firstFinite(p.ele, null),
     kmFromStart: p.kmFromStart,
     fraction: routeState.totalKm > 0 ? p.kmFromStart / routeState.totalKm : 0,
     minuteFromStart,
@@ -5257,6 +5472,7 @@ function applyCheckpointLabelsForModel(samples, modelName) {
 }
 
 function markSmartWeatherEventCheckpointsForModel(samples, modelName) {
+  return promoteSmartCheckpointEvents(samples, modelName);
   applyCheckpointLabelsForModel(samples, modelName);
   if (modelName !== 'smart') return samples;
   const mids = samples.filter(cp => !cp.reasons.includes('start') && !cp.reasons.includes('finish') && cp.weather);

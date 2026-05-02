@@ -831,3 +831,15 @@
 - Added a toolbar toggle to hide or show the changelog table of contents on demand.
 - Increased the spacing between the changelog toolbar and the entry list for a cleaner separation.
 - Fixed the changelog table-of-contents toggle so hiding it now actually removes the flex layout from view.
+
+## v11.2.5
+
+- Added smart checkpoint event promotions for hottest feels-like, highest sampled elevation, lowest sampled elevation, and lowest-visibility route segments.
+- Kept coldest and hottest checkpoint logic on feels-like so wind and exposure still influence the route-planning call.
+- Kept the new smart event promotions inside the existing sampled-checkpoint limits instead of creating extra checkpoints beyond the current cap.
+
+## v11.2.6
+
+- Added worst-AQI smart checkpoint promotion and surfaced AQI on route checkpoint cards and popups when available.
+- Switched smart checkpoint markers to reason-specific colors, including blue for cold and red for hot.
+- Changed smart checkpoint marker symbols to emoji-style markers for cold, hot, wind, rain, UV, AQI, visibility, sunrise, sunset, and elevation checkpoints.

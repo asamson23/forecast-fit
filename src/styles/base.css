@@ -272,16 +272,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
   border: 2px solid var(--surface);
   box-shadow: 0 2px 8px rgba(0,0,0,0.22);
-  font-family: 'DM Mono', monospace;
-  font-size: 0.58rem;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'DM Mono', monospace;
+  font-size: 0.7rem;
   font-weight: 700;
   line-height: 1;
   color: #fff;
+  overflow: hidden;
 }
 .checkpoint-marker.start { background: var(--ok); }
 .checkpoint-marker.finish { background: var(--accent); }
