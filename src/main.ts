@@ -1246,16 +1246,28 @@ function getRaceDayPlanningWindow(data, eventStartTime = null) {
   const bufferMinutes = getRaceDayBufferMinutes(durationState.minutes);
   const defaultDayStart = clampDateToRange(addMinutesToDate(eventStart, -bufferMinutes), absoluteRange.minDate, eventStart);
   const defaultDayEnd = clampDateToRange(addMinutesToDate(eventEnd, bufferMinutes), eventEnd, absoluteRange.maxDate);
-  const dayStart = clampDateToRange(parseLocalString(raceDayStartInput?.value || '') || defaultDayStart, absoluteRange.minDate, eventStart);
-  const dayEnd = clampDateToRange(parseLocalString(raceDayEndInput?.value || '') || defaultDayEnd, eventEnd, absoluteRange.maxDate);
+  const requestedDayStart = clampDateToRange(parseLocalString(raceDayStartInput?.value || '') || defaultDayStart, absoluteRange.minDate, absoluteRange.maxDate);
+  const requestedDayEnd = clampDateToRange(parseLocalString(raceDayEndInput?.value || '') || defaultDayEnd, absoluteRange.minDate, absoluteRange.maxDate);
+  const validationErrors = [];
+  if (requestedDayStart > eventStart) validationErrors.push('Day start must be at or before the event start.');
+  if (requestedDayEnd < eventEnd) validationErrors.push('Day end must be at or after the event end.');
+  if (requestedDayStart >= requestedDayEnd) validationErrors.push('Day start must be earlier than day end.');
+  const isValid = !validationErrors.length;
+  const dayStart = isValid ? requestedDayStart : defaultDayStart;
+  const dayEnd = isValid ? requestedDayEnd : defaultDayEnd;
   return {
     durationState,
     eventStart,
     eventEnd,
     dayStart,
     dayEnd,
+    requestedDayStart,
+    requestedDayEnd,
     absoluteRange,
     bufferMinutes,
+    isValid,
+    validationMessage: validationErrors.join(' '),
+    usingFallbackWindow: !isValid,
     warmupMinutes: Math.max(0, Math.round((eventStart.getTime() - dayStart.getTime()) / 60000)),
     cooldownMinutes: Math.max(0, Math.round((dayEnd.getTime() - eventEnd.getTime()) / 60000)),
   };
@@ -3284,6 +3296,7 @@ function getEyewearSuggestionItem(activity, point, planned, light, wetLike, isRa
   const gloomy = !light?.isDay || light?.tone === 'warn' || firstFinite(point?.code, 3) >= 3;
   const wetWindow = !!wetLike || !!planned?.anyWet || firstFinite(planned?.maxPrecipProb, 0) >= 35;
   const bright = !!light?.isDay && !gloomy && !wetWindow && [0, 1].includes(firstFinite(point?.code, 0));
+  const raceDayWindow = null;
 
   if (activity === 'cycling' || activity === 'triathlon') {
     if (!light?.isDay) return item('Clear-lens cycling glasses', 'Best for dark starts, bugs, and keeping wind out without killing contrast.', ['eyewear']);
@@ -3648,6 +3661,12 @@ function setFlatpickrDisabledState(picker, disabled) {
   if (picker.altInput) picker.altInput.disabled = disabled;
 }
 
+function setFlatpickrInvalidState(picker, invalid) {
+  if (!picker) return;
+  if (picker.input) picker.input.classList.toggle('input-invalid', invalid);
+  if (picker.altInput) picker.altInput.classList.toggle('input-invalid', invalid);
+}
+
 function syncRaceDayTimingInputs(data, changedField = null) {
   if (!raceDayStartInput || !raceDayEndInput) return;
   const visible = shouldShowRaceDayTimingPanel();
@@ -3660,41 +3679,40 @@ function syncRaceDayTimingInputs(data, changedField = null) {
   if (!visible || !data) return;
 
   const eventStart = parseLocalString(laterInput?.value || '') || getValidLaterRange(data).minDate;
-  const durationState = getRaceDayDurationState();
-  const eventEnd = durationState ? addMinutesToDate(eventStart, durationState.minutes) : eventStart;
-  const absoluteRange = getAbsoluteForecastRange(data);
-  const bufferMinutes = getRaceDayBufferMinutes(durationState?.minutes || 0);
-  const defaultDayStart = clampDateToRange(addMinutesToDate(eventStart, -bufferMinutes), absoluteRange.minDate, eventStart);
-  const defaultDayEnd = clampDateToRange(addMinutesToDate(eventEnd, bufferMinutes), eventEnd, absoluteRange.maxDate);
-
-  let dayStart = parseLocalString(raceDayStartInput.value || '') || defaultDayStart;
-  let dayEnd = parseLocalString(raceDayEndInput.value || '') || defaultDayEnd;
-
-  dayStart = clampDateToRange(dayStart, absoluteRange.minDate, eventStart);
-  dayEnd = clampDateToRange(dayEnd, eventEnd, absoluteRange.maxDate);
-
-  if (changedField === 'day-start' && dayStart > eventStart) dayStart = new Date(eventStart.getTime());
-  if (changedField === 'day-end' && dayEnd < eventEnd) dayEnd = new Date(eventEnd.getTime());
+  const raceDayWindow = getRaceDayPlanningWindow(data, formatDateTimeLocal(eventStart).slice(0, 16));
+  if (!raceDayWindow) return;
+  const { absoluteRange, requestedDayStart, requestedDayEnd } = raceDayWindow;
+  const dayStartValue = changedField === 'day-start' || raceDayStartInput.value ? requestedDayStart : raceDayWindow.dayStart;
+  const dayEndValue = changedField === 'day-end' || raceDayEndInput.value ? requestedDayEnd : raceDayWindow.dayEnd;
 
   if (raceDayStartPicker) {
     raceDayStartPicker.set('minDate', absoluteRange.minDate);
-    raceDayStartPicker.set('maxDate', eventStart);
-    raceDayStartPicker.setDate(dayStart, false, 'Y-m-d\\TH:i');
+    raceDayStartPicker.set('maxDate', absoluteRange.maxDate);
+    raceDayStartPicker.setDate(dayStartValue, false, 'Y-m-d\\TH:i');
   } else {
-    raceDayStartInput.value = formatDateTimeLocal(dayStart).slice(0, 16);
+    raceDayStartInput.value = formatDateTimeLocal(dayStartValue).slice(0, 16);
   }
 
   if (raceDayEndPicker) {
-    raceDayEndPicker.set('minDate', eventEnd);
+    raceDayEndPicker.set('minDate', absoluteRange.minDate);
     raceDayEndPicker.set('maxDate', absoluteRange.maxDate);
-    raceDayEndPicker.setDate(dayEnd, false, 'Y-m-d\\TH:i');
+    raceDayEndPicker.setDate(dayEndValue, false, 'Y-m-d\\TH:i');
   } else {
-    raceDayEndInput.value = formatDateTimeLocal(dayEnd).slice(0, 16);
+    raceDayEndInput.value = formatDateTimeLocal(dayEndValue).slice(0, 16);
   }
 
-  const raceDayWindow = getRaceDayPlanningWindow(data, formatDateTimeLocal(eventStart).slice(0, 16));
-  if (raceDayTimingStatus && raceDayWindow) {
-    raceDayTimingStatus.textContent = `Day ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))} to ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · event ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}–${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))} · warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)} · cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}.`;
+  const invalid = !raceDayWindow.isValid;
+  setFlatpickrInvalidState(raceDayStartPicker, invalid);
+  setFlatpickrInvalidState(raceDayEndPicker, invalid);
+  raceDayStartInput.classList.toggle('input-invalid', invalid);
+  raceDayEndInput.classList.toggle('input-invalid', invalid);
+  if (raceDayTimingPanel) raceDayTimingPanel.classList.toggle('invalid', invalid);
+
+  if (raceDayTimingStatus) {
+    raceDayTimingStatus.classList.toggle('error', invalid);
+    raceDayTimingStatus.textContent = invalid
+      ? `${raceDayWindow.validationMessage} Showing the default race-day weather window until this is fixed.`
+      : `Day ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))} to ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · event ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}-${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))} · warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)} · cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}.`;
   }
 }
 
@@ -5683,6 +5701,11 @@ function buildWizard(data, activity) {
   ];
   if (routeState?.points?.length) chips.push({ label: `🗺 route ${distanceText}`, tone: '' });
   if (isRaceDay) chips.push({ label: '🏁 race day mode', tone: '' });
+  if (raceDayWindow && shouldShowRaceDayTimingPanel()) {
+    chips.push({ label: `🗓 day ${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}-${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))}`, tone: raceDayWindow.isValid ? '' : 'warn' });
+    chips.push({ label: `🔥 warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)}`, tone: '' });
+    chips.push({ label: `🧊 cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}`, tone: '' });
+  }
   if (temperaturePreference !== 0) chips.push({ label: tempPreferenceInfo.chip, tone: temperaturePreference < 0 ? 'warn' : '' });
   if (plannedEffort !== 'steady' && isEffortRelevantActivity(activity)) chips.push({ label: effortInfo.chip, tone: effortOffset < 0 ? 'warn' : '' });
   if (planned.precipitationWindowNote) chips.push({ label: `🌧 ${planned.precipitationWindowNote}`, tone: 'warn' });

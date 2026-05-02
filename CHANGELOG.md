@@ -805,3 +805,9 @@
 - Race day later planning now adds separate day-start and day-end pickers alongside the existing event-start picker.
 - The race-day weather timeline can now highlight the main event span inside the selected day window.
 - Race-day clothing planning now adds warmup and cooldown guidance from the surrounding day-start and day-end conditions.
+
+## v11.2.1
+
+- Fixed the race-day render path so the weather panel no longer disappears behind a `raceDayWindow` runtime error.
+- Relaxed the day-start and day-end pickers to the full forecast range, then added a visible validation message when the chosen day window no longer surrounds the event.
+- Kept race-day forecast rendering alive by falling back to the default race-day window while invalid custom day-start or day-end picks are being corrected.
