@@ -96,7 +96,22 @@
     margin-bottom: 12px;
     letter-spacing: 0.05em;
   }
+  .location-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .location-name-row .location-name {
+    margin-bottom: 0;
+    min-width: 0;
+  }
   .location-name span { color: var(--text); font-weight: 500; }
+  .result-refresh-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
 
   .mini-chips {
     display: flex;

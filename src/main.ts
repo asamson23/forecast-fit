@@ -277,6 +277,8 @@ const stravaPickerTabs = document.getElementById('strava-picker-tabs');
 const stravaPickerStatus = document.getElementById('strava-picker-status');
 const stravaPickerList = document.getElementById('strava-picker-list');
 const stravaPickerCloseBtn = document.getElementById('strava-picker-close-btn');
+const clearAllOverlay = document.getElementById('clear-all-overlay');
+const confirmClearAllBtn = document.getElementById('confirm-clear-all-btn');
 const customMultisportSection = document.getElementById('custom-multisport-section');
 const customMultisportSummary = document.getElementById('custom-multisport-summary');
 const customMultisportStatus = document.getElementById('custom-multisport-status');
@@ -336,6 +338,8 @@ let routeMap = null;
 let routeLayer = null;
 let routeMarkersLayer = null;
 let routeTileLayer = null;
+let routeMapBounds = null;
+let routeFitControlButton = null;
 let laterPicker = null;
 let raceDayStartPicker = null;
 let raceDayEndPicker = null;
@@ -1908,12 +1912,46 @@ function initRouteMap() {
   refreshRouteMapTheme();
   routeLayer = L.layerGroup().addTo(routeMap);
   routeMarkersLayer = L.layerGroup().addTo(routeMap);
+  const FitRouteControl = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd() {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control route-fit-control');
+      const button = L.DomUtil.create('button', 'route-fit-control-btn', container);
+      button.type = 'button';
+      button.innerHTML = '<svg class="route-fit-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      button.setAttribute('aria-label', 'Fit map to route');
+      button.title = 'Fit map to route';
+      routeFitControlButton = button;
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.on(button, 'click', (event) => {
+        L.DomEvent.stop(event);
+        fitRouteMapToBounds();
+      });
+      updateRouteFitControlUi();
+      return container;
+    }
+  });
+  new FitRouteControl().addTo(routeMap);
   if (window.matchMedia) {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => refreshRouteMapTheme();
     if (typeof media.addEventListener === 'function') media.addEventListener('change', handler);
     else if (typeof media.addListener === 'function') media.addListener(handler);
   }
+}
+
+function updateRouteFitControlUi() {
+  if (!routeFitControlButton) return;
+  const disabled = !routeMapBounds;
+  routeFitControlButton.disabled = disabled;
+  routeFitControlButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  routeFitControlButton.title = disabled ? 'Load a route to fit the map' : 'Fit map to route';
+}
+
+function fitRouteMapToBounds() {
+  if (!routeMap || !routeMapBounds) return;
+  routeMap.fitBounds(routeMapBounds, { padding: [24, 24] });
+  setTimeout(() => routeMap.invalidateSize(), 0);
 }
 
 function clearRouteMapLayers() {
@@ -2633,6 +2671,8 @@ function buildRouteCheckpointMarker(cp) {
 
 function renderRouteMap() {
   if (!routeState?.points?.length) {
+    routeMapBounds = null;
+    updateRouteFitControlUi();
     mapCard.style.display = 'none';
     return;
   }
@@ -2641,14 +2681,15 @@ function renderRouteMap() {
   clearRouteMapLayers();
   const latlngs = routeState.points.map(p => [p.lat, p.lon]);
   const poly = L.polyline(latlngs, { color: '#3a6b8a', weight: 4, opacity: 0.9 }).addTo(routeLayer);
+  routeMapBounds = poly.getBounds();
+  updateRouteFitControlUi();
   const checkpoints = routeState.samples?.length ? routeState.samples : sampleRouteCheckpoints();
   checkpoints.forEach(cp => {
     buildRouteCheckpointMarker(cp)
       .bindPopup(buildRouteCheckpointPopupHtml(cp))
       .addTo(routeMarkersLayer);
   });
-  routeMap.fitBounds(poly.getBounds(), { padding: [24, 24] });
-  setTimeout(() => routeMap.invalidateSize(), 0);
+  fitRouteMapToBounds();
   const gainText = routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : '';
   const modelText = checkpointModel === 'smart' ? ' · smart checkpoints' : ' · standard checkpoints';
   routeSummary.textContent = `${routeState.fileName} · ${routeState.points.length} points · ${formatKm(routeState.totalKm)}${gainText}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''}${modelText}`;
@@ -2815,11 +2856,13 @@ async function handleRouteFileChange(event) {
 
 function clearRoute() {
   routeState = null;
+  routeMapBounds = null;
   restoreRouteDistanceInputSnapshot();
   routeFileInput.value = '';
   clearRouteBtn.style.display = 'none';
   routeStatus.textContent = 'Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when timing data exists.';
   updateLocationCardCollapseUi();
+  updateRouteFitControlUi();
   mapCard.style.display = 'none';
   if (routeLayer) clearRouteMapLayers();
   const slot = document.getElementById('route-weather-slot');
@@ -2843,7 +2886,7 @@ function resetLocationSection() {
 }
 window.resetLocationSection = resetLocationSection;
 
-function clearAllTool() {
+function performClearAllTool() {
   forecastOnlyMode = false;
   raceDayMode = false;
   manualWeatherPanelOpen = false;
@@ -2878,6 +2921,27 @@ function clearAllTool() {
   updateCheckpointModelUi();
   updateForecastOnlyModeUi();
   renderPlannerState();
+}
+
+function clearAllTool() {
+  if (!clearAllOverlay) {
+    performClearAllTool();
+    return;
+  }
+  clearAllOverlay.hidden = false;
+  document.body.classList.add('helper-open');
+  confirmClearAllBtn?.focus({ preventScroll: true });
+}
+
+function closeClearAllConfirm() {
+  if (!clearAllOverlay) return;
+  clearAllOverlay.hidden = true;
+  document.body.classList.remove('helper-open');
+}
+
+function confirmClearAll() {
+  closeClearAllConfirm();
+  performClearAllTool();
 }
 window.clearAllTool = clearAllTool;
 
@@ -7079,6 +7143,15 @@ function refreshIndoorAdviceIfNeeded() {
   return false;
 }
 
+function renderResultLocationHeader(locationName) {
+  return `
+    <div class="location-name-row">
+      <div class="location-name">📍 <span>${escapeHtml(locationName)}</span></div>
+      <button class="mode-toggle-btn result-refresh-btn" type="button" data-action="forceRefreshWeather">Refresh weather</button>
+    </div>
+  `;
+}
+
 // Final render pass that ties weather, forecast, route checkpoints, and clothing together.
 /** 
  * Main render orchestrator for a selected weather/activity state.
@@ -7118,10 +7191,10 @@ function renderAdvice(data, activity) {
 
   const durationState = getDurationState(getSelectedEvent());
   if (!durationState) {
-    resultInner.innerHTML = upgradeEmojiMarkup(`
-      <div class="result-sections">
-        <section class="result-panel">
-          <div class="location-name">📍 <span>${escapeHtml(data.locationName)}</span></div>
+      resultInner.innerHTML = upgradeEmojiMarkup(`
+        <div class="result-sections">
+          <section class="result-panel">
+          ${renderResultLocationHeader(data.locationName)}
           <div class="weather-strip">
             ${weatherIconHtml(point.code, 'weather-icon')}
             <div class="weather-main">
@@ -7156,7 +7229,7 @@ function renderAdvice(data, activity) {
     resultInner.innerHTML = upgradeEmojiMarkup(`
       <div class="result-sections">
         <section class="result-panel">
-          <div class="location-name">📍 <span>${escapeHtml(data.locationName)}</span></div>
+          ${renderResultLocationHeader(data.locationName)}
           <div class="weather-strip">
             ${weatherIconHtml(point.code, 'weather-icon')}
             <div class="weather-main">
@@ -7192,7 +7265,7 @@ function renderAdvice(data, activity) {
   resultInner.innerHTML = upgradeEmojiMarkup(`
     <div class="result-sections">
       <section class="result-panel">
-        <div class="location-name">📍 <span>${escapeHtml(data.locationName)}</span></div>
+        ${renderResultLocationHeader(data.locationName)}
         <div class="weather-strip">
           ${weatherIconHtml(point.code, 'weather-icon')}
           <div class="weather-main">
@@ -7728,6 +7801,10 @@ quickStartCloseBtn?.addEventListener('click', closeQuickStartGuide);
 
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
+  if (clearAllOverlay && !clearAllOverlay.hidden) {
+    closeClearAllConfirm();
+    return;
+  }
   if (stravaPickerOverlay && !stravaPickerOverlay.hidden) {
     closeStravaPicker();
     return;
@@ -8768,6 +8845,12 @@ function bindDomActions() {
         break;
       case 'clearAllTool':
         clearAllTool();
+        break;
+      case 'closeClearAllConfirm':
+        closeClearAllConfirm();
+        break;
+      case 'confirmClearAll':
+        confirmClearAll();
         break;
       case 'useCurrentLocation':
         useCurrentLocation();

@@ -1,6 +1,6 @@
 {
   "name": "forecast-fit",
-  "version": "11.2.6",
+  "version": "11.3",
   "private": true,
   "type": "module",
   "scripts": {

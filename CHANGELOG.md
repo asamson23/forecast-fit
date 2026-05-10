@@ -844,3 +844,10 @@
 - Switched smart checkpoint markers to reason-specific colors, including blue for cold and red for hot.
 - Changed smart checkpoint marker symbols to emoji-style markers for cold, hot, wind, rain, UV, AQI, visibility, sunrise, sunset, and elevation checkpoints.
 - Added derived milestone names for `vMajor` and `vMajor.Minor` changelog entries, and surfaced the active parent milestone beside the footer version link without changing the numeric app version.
+
+## v11.3
+
+- Added a dedicated small-tablet portrait responsive tier for roughly 8-inch devices, while preserving the denser desktop-style layout for the Location & route chooser, activity/event/duration/planned-effort rows, and custom duration inline fields where it reads better.
+- Added an in-map route-fit control under the Leaflet zoom buttons, changed it to an icon-only button, and kept it disabled until a route is loaded while reusing the current route bounds for recentering.
+- Added a second `Refresh weather` button on the result-panel location line, bound to the same refresh action used in the Location & route section.
+- Replaced the native `Clear all` browser confirm with an in-page styled confirmation overlay before wiping the current setup.

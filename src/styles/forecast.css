@@ -473,6 +473,12 @@
   .inline-fields {
     grid-template-columns: minmax(0, 1fr) minmax(130px, 170px);
   }
+  .custom-grid .inline-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 170px);
+    gap: 12px;
+    align-items: stretch;
+  }
   .forecast-box {
     overflow: hidden;
   }

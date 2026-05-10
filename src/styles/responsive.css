@@ -66,9 +66,40 @@
     }
   }
 
+  @media (min-width: 721px) and (max-width: 840px) {
+    .header-actions {
+      flex-wrap: wrap;
+    }
+    .route-file-row {
+      grid-template-columns: 1fr;
+    }
+    .start-mode-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .event-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .duration-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .planned-effort-row {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .best-window-range-grid {
+      grid-template-columns: 1fr;
+    }
+    .inline-fields {
+      grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
+    }
+  }
+
   @media (max-width: 720px) {
     body {
       padding-top: calc(32px + env(safe-area-inset-top, 0px));
+    }
+    .location-name-row {
+      flex-wrap: wrap;
+      align-items: flex-start;
     }
     header p {
       max-width: 36rem;
