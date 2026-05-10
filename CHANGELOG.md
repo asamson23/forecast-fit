@@ -856,3 +856,8 @@
 
 - Tightened `.location-route-choice-grid` spacing from `12px` to `6px`.
 - Allowed the `Connect Strava` button text to wrap onto a second line instead of forcing a single-line label.
+
+## v11.4
+
+- Kept the selected planned-duration preset visibly active even when a custom or calculated duration is in use, so the baseline plan stays visible.
+- Added a dedicated planned-duration summary line that shows the saved preset alongside any active custom, calculated, or route-time override.

@@ -223,6 +223,7 @@ const distanceUnitSelect = document.getElementById('distance-unit-select');
 const distanceStatus = document.getElementById('distance-status');
 const customDurationInput = document.getElementById('custom-duration-input');
 const durationUnitSelect = document.getElementById('duration-unit-select');
+const durationSummary = document.getElementById('duration-summary');
 const durationStatus = document.getElementById('duration-status');
 const averageInput = document.getElementById('average-input');
 const averageUnitSelect = document.getElementById('average-unit-select');
@@ -1721,6 +1722,10 @@ function hasPlannedDurationSelection(eventPreset = getSelectedEvent()) {
   return !!selectedDuration;
 }
 
+function getSelectedDurationPreset() {
+  return selectedDuration && durationProfiles[selectedDuration] ? durationProfiles[selectedDuration] : null;
+}
+
 function refreshSelectionNotes() {
   updateCustomStatusTexts();
 }
@@ -1739,8 +1744,7 @@ function getSelectedEvent() {
 function renderDurationButtons() {
   const el = document.getElementById('duration-grid');
   const locked = routeHasDurationOverride();
-  const hasManualOverride = !!getCustomDurationMinutes() || !!getDerivedDurationMinutesFromAverage();
-  const activeKey = locked ? (routeState.derivedDurationKey || selectedDuration) : (hasManualOverride ? null : (selectedDuration || null));
+  const activeKey = locked ? (routeState.derivedDurationKey || selectedDuration) : (selectedDuration || null);
   el.innerHTML = durationOrder.map(key => {
     const p = durationProfiles[key];
     return `<button class="duration-btn ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} data-action="selectDurationKey" data-duration-key="${escapeHtml(key)}"><div class="label">${escapeHtml(p.label)}</div><div class="sublabel">${escapeHtml(locked && activeKey === key ? `${p.sublabel} · route` : p.sublabel)}</div></button>`;
@@ -1811,6 +1815,7 @@ function updateCustomStatusTexts() {
   const eventPreset = getSelectedEvent();
   const distanceState = getDistanceState(eventPreset);
   const durationState = getDurationState(eventPreset);
+  const presetDuration = getSelectedDurationPreset();
   const avg = getAverageMetric();
   const derivedAvg = getDerivedAverageMetric(eventPreset);
   const rawDuration = String(customDurationInput?.value || '').trim();
@@ -1827,13 +1832,23 @@ function updateCustomStatusTexts() {
         ? `Calculated distance from custom duration + average: ${distanceState.label}.`
         : 'Preset distance is used.';
 
+  if (durationSummary) {
+    durationSummary.textContent = durationState.source === 'route'
+      ? `Planned preset: ${presetDuration?.label || 'None'}. Route time active: ${durationState.label}.`
+      : durationState.source === 'custom'
+        ? `Planned preset: ${presetDuration?.label || 'None'}. Custom override: ${durationState.label}.`
+        : durationState.source === 'derived'
+          ? `Planned preset: ${presetDuration?.label || 'None'}. Calculated active duration: ${durationState.label}.`
+          : `Planned preset: ${presetDuration?.label || 'None'}.`;
+  }
+
   durationStatus.textContent = durationState.source === 'route'
-    ? `Route timing is active: ${durationState.label}.`
+    ? `Planned preset is ${presetDuration?.label || 'none'}. Route timing is active: ${durationState.label}.`
     : durationState.source === 'custom'
-      ? `Using custom duration: ${durationState.label}.`
+      ? `Planned preset is ${presetDuration?.label || 'none'}. Custom duration is active: ${durationState.label}.`
       : durationState.source === 'derived'
-        ? `${hasCustomDistance && hasCustomAverage ? 'Calculated' : 'Estimated'} duration from ${hasCustomDistance && hasCustomAverage ? 'custom distance + average' : 'distance + average'}: ${durationState.label}.`
-        : (parsedCustomDuration ? `Using custom duration: ${formatDurationDisplay(parsedCustomDuration)}.` : 'Preset duration is used.');
+        ? `Planned preset is ${presetDuration?.label || 'none'}. ${hasCustomDistance && hasCustomAverage ? 'Calculated' : 'Estimated'} duration from ${hasCustomDistance && hasCustomAverage ? 'custom distance + average' : 'distance + average'}: ${durationState.label}.`
+        : `Using planned preset: ${presetDuration?.label || 'none'}.`;
 
   averageStatus.textContent = !hasCustomAverage
     ? (derivedAvg?.label
@@ -7592,7 +7607,9 @@ function getQuickStartSteps() {
         target: 'duration-section',
         title: 'Planned duration',
         body: durationState?.source === 'custom'
-          ? `Using a custom duration: ${durationState.label}.`
+          ? `Planned preset ${getSelectedDurationPreset()?.label || 'none'} with a custom override of ${durationState.label}.`
+          : durationState?.source === 'derived'
+            ? `Planned preset ${getSelectedDurationPreset()?.label || 'none'} with a calculated active duration of ${durationState.label}.`
           : 'Pick or enter how long the outing or forecast window should be. Duration controls how much forecast time and hazard context the results summarize.',
         state: durationState?.source === 'custom' ? helperState('custom', 'done') : helperState('preset', 'optional')
       },
@@ -7656,7 +7673,9 @@ function getQuickStartSteps() {
       body: routeHasDurationOverride()
         ? 'The uploaded route includes timing, so route time is controlling duration.'
         : durationState?.source === 'custom'
-          ? `Using a custom duration: ${durationState.label}.`
+          ? `Planned preset ${getSelectedDurationPreset()?.label || 'none'} with a custom override of ${durationState.label}.`
+          : durationState?.source === 'derived'
+            ? `Planned preset ${getSelectedDurationPreset()?.label || 'none'} with a calculated active duration of ${durationState.label}.`
           : 'Pick or enter how long you will be out. Duration changes exposure, forecast window, and what extras become worthwhile.',
       state: durationState?.source === 'custom' ? helperState('custom', 'done') : routeHasDurationOverride() ? helperState('route', 'done') : helperState('preset', 'optional')
     },
