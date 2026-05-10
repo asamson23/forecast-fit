@@ -400,7 +400,7 @@
   .location-route-choice-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
-    gap: 12px;
+    gap: 6px;
     align-items: stretch;
   }
   .location-route-choice-grid.forecast-only-active {
@@ -455,6 +455,11 @@
     width: 48px;
     min-width: 48px;
     padding: 0;
+  }
+  #strava-connect-panel .btn {
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
   }
   .locate-icon,
   .locate-icon svg {

@@ -847,7 +847,12 @@
 
 ## v11.3
 
-- Added a dedicated small-tablet portrait responsive tier for roughly 8-inch devices, while preserving the denser desktop-style layout for the Location & route chooser, activity/event/duration/planned-effort rows, and custom duration inline fields where it reads better.
+- Added a dedicated small-tablet portrait responsive tier for roughly 8-inch devices starting at `700px`, while preserving the denser desktop-style layout for the Location & route chooser, activity/event/duration/planned-effort rows, and custom duration inline fields where it reads better.
 - Added an in-map route-fit control under the Leaflet zoom buttons, changed it to an icon-only button, and kept it disabled until a route is loaded while reusing the current route bounds for recentering.
 - Added a second `Refresh weather` button on the result-panel location line, bound to the same refresh action used in the Location & route section.
 - Replaced the native `Clear all` browser confirm with an in-page styled confirmation overlay before wiping the current setup.
+
+## v11.3.1
+
+- Tightened `.location-route-choice-grid` spacing from `12px` to `6px`.
+- Allowed the `Connect Strava` button text to wrap onto a second line instead of forcing a single-line label.
