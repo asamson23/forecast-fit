@@ -381,6 +381,14 @@
     #route-map {
       height: 300px;
     }
+    .route-elevation-svg {
+      height: 150px;
+    }
+    .route-elevation-marker text,
+    .route-elevation-y-label,
+    .route-elevation-extreme text {
+      font-size: 10px;
+    }
 
     .helper-overlay {
       align-items: end;
