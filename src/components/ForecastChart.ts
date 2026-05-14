@@ -1,7 +1,7 @@
 import { getAqiInfo } from '../data/aqiScale';
 import { isFiniteNumber, round1 } from '../utils/math';
 import { escapeHtml, windDirectionHtml } from '../utils/format';
-import { parseAnyTime, formatShortTime, formatShortDateTime } from '../utils/dateTime';
+import { parseAnyTime, formatShortTime, formatShortDateTime, formatHumanDate } from '../utils/dateTime';
 import { renderAqiBadge, formatUvValue } from './WarningPanel';
 
 let chartTooltipGlobalDismissBound = false;
@@ -13,10 +13,12 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
     endTime: unknown;
     highlightStartTime?: unknown;
     highlightEndTime?: unknown;
+    mode?: string;
   } | null;
   const d = data as { daily?: Record<string, unknown>[] } | null;
   const points = sel?.points || [];
   if (!points.length) return '';
+  if (sel?.mode === 'daily') return buildDailyForecastChart(points);
 
   const width = 760;
   const height = 210;
@@ -153,6 +155,128 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
     </div>`;
 }
 
+
+const MAX_DAILY_CHART_POINTS = 10;
+
+function sampleChartPoints<T>(points: T[], maxPoints: number): T[] {
+  if (points.length <= maxPoints) return points;
+  if (maxPoints <= 2) return [points[0], points[points.length - 1]];
+
+  const lastIndex = points.length - 1;
+  const sampledIndexes = new Set<number>([0, lastIndex]);
+  const slots = maxPoints - 1;
+  for (let i = 1; i < slots; i += 1) {
+    sampledIndexes.add(Math.round((lastIndex * i) / slots));
+  }
+
+  return Array.from(sampledIndexes)
+    .sort((a, b) => a - b)
+    .map(i => points[i]);
+}
+
+function valueForRange(values: unknown[]): number[] {
+  return values.filter(isFiniteNumber) as number[];
+}
+
+function buildPath(points: Record<string, unknown>[], xForIndex: (i: number) => number, key: string, yFn: (v: number) => number): string {
+  let path = '';
+  points.forEach((p, i) => {
+    if (!isFiniteNumber(p[key])) return;
+    path += `${path ? ' L' : 'M'} ${xForIndex(i).toFixed(1)} ${yFn(p[key] as number).toFixed(1)}`;
+  });
+  return path;
+}
+
+function formatDailyRange(max: unknown, min: unknown): string {
+  if (!isFiniteNumber(max) || !isFiniteNumber(min)) return '—';
+  return `${round1(max)}° / ${round1(min)}°`;
+}
+
+function buildDailyForecastChart(rawPoints: Record<string, unknown>[]): string {
+  const points = sampleChartPoints(rawPoints, MAX_DAILY_CHART_POINTS);
+  const width = 760;
+  const height = 210;
+  const pad = { top: 20, right: 42, bottom: 34, left: 30 };
+  const tempValues = valueForRange(points.flatMap(p => [p.tMax, p.tMin, p.feelsMax, p.feelsMin]));
+  if (!tempValues.length) return '';
+  const precipValues = points.map(p => isFiniteNumber(p.precipSum) ? p.precipSum as number : 0);
+  const minTemp = Math.floor(Math.min(...tempValues) - 1);
+  const maxTemp = Math.ceil(Math.max(...tempValues) + 1);
+  const maxPrecip = Math.max(0.5, Math.ceil(Math.max(...precipValues, 0) * 2) / 2);
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  const stepX = points.length > 1 ? innerW / (points.length - 1) : 0;
+  const xForIndex = (i: number) => pad.left + stepX * i;
+  const yForTemp = (v: number) => pad.top + ((maxTemp - v) / Math.max(1, maxTemp - minTemp)) * innerH;
+  const yForPrecip = (v: number) => pad.top + ((maxPrecip - Math.max(0, Math.min(maxPrecip, v || 0))) / Math.max(0.1, maxPrecip)) * innerH;
+  const tempGrid = [minTemp, Math.round((minTemp + maxTemp) / 2), maxTemp];
+  const precipGrid = [0, round1(maxPrecip / 2), maxPrecip];
+  const labelEvery = points.length > 8 ? Math.ceil(points.length / 6) : 1;
+  const dailyRangeLines = points.map((p, i) => {
+    if (!isFiniteNumber(p.tMax) || !isFiniteNumber(p.tMin)) return '';
+    const x = xForIndex(i).toFixed(1);
+    return `<line x1="${x}" y1="${yForTemp(p.tMax as number).toFixed(1)}" x2="${x}" y2="${yForTemp(p.tMin as number).toFixed(1)}" class="chart-range-temp"></line>`;
+  }).join('');
+  const feelsRangeLines = points.map((p, i) => {
+    if (!isFiniteNumber(p.feelsMax) || !isFiniteNumber(p.feelsMin)) return '';
+    const x = xForIndex(i).toFixed(1);
+    return `<line x1="${x}" y1="${yForTemp(p.feelsMax as number).toFixed(1)}" x2="${x}" y2="${yForTemp(p.feelsMin as number).toFixed(1)}" class="chart-range-feels"></line>`;
+  }).join('');
+  const hitRects = points.map((p, i) => {
+    const prevMid = i === 0 ? pad.left : (xForIndex(i - 1) + xForIndex(i)) / 2;
+    const nextMid = i === points.length - 1 ? width - pad.right : (xForIndex(i) + xForIndex(i + 1)) / 2;
+    const aqiInfo = isFiniteNumber(p.aqiMax) ? getAqiInfo(p.aqiMax as number) : null;
+    return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit` +
+      ` data-time="${escapeHtml(formatHumanDate(p.date))}"` +
+      ` data-temp-label="Temp range"` +
+      ` data-temp="${escapeHtml(formatDailyRange(p.tMax, p.tMin))}"` +
+      ` data-feels-label="Feels-like range"` +
+      ` data-feels="${escapeHtml(formatDailyRange(p.feelsMax, p.feelsMin))}"` +
+      ` data-precip="${escapeHtml(round1((p.precipSum as number) || 0))}"` +
+      ` data-precip-prob="${escapeHtml(Math.round((p.precipProbMax as number) || 0))}"` +
+      ` data-uv-value="${isFiniteNumber(p.uvMax) ? escapeHtml(p.uvMax) : ''}"` +
+      ` data-aqi="${aqiInfo ? escapeHtml(String(aqiInfo.value)) : ''}"` +
+      ` data-aqi-category="${aqiInfo ? escapeHtml(aqiInfo.category) : ''}"></rect>`;
+  }).join('');
+
+  return `
+    <div class="chart-wrap" data-chart-wrap>
+      <svg viewBox="0 0 ${width} ${height}" class="forecast-chart" aria-label="Daily forecast chart">
+        <g class="chart-grid">
+          ${tempGrid.map(v => `<line x1="${pad.left}" y1="${yForTemp(v).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(v).toFixed(1)}"></line>`).join('')}
+          ${minTemp <= 0 && maxTemp >= 0 ? `<line x1="${pad.left}" y1="${yForTemp(0).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(0).toFixed(1)}" class="chart-zero-line"></line>` : ''}
+        </g>
+        <g class="chart-axis">
+          ${tempGrid.map(v => `<text x="4" y="${(yForTemp(v) + 4).toFixed(1)}">${Math.round(v)}°</text>`).join('')}
+          ${minTemp <= 0 && maxTemp >= 0 && !tempGrid.includes(0) ? `<text x="4" y="${(yForTemp(0) + 4).toFixed(1)}">0°</text>` : ''}
+          ${precipGrid.map(v => `<text x="${width - pad.right + 8}" y="${(yForPrecip(v) + 4).toFixed(1)}">${escapeHtml(round1(v))} mm</text>`).join('')}
+          ${points.map((p, i) => {
+            const show = i === 0 || i === points.length - 1 || i % labelEvery === 0;
+            return show ? `<text x="${xForIndex(i).toFixed(1)}" y="${height - 8}" text-anchor="middle">${escapeHtml(formatHumanDate(p.date))}</text>` : '';
+          }).join('')}
+        </g>
+        <g>${feelsRangeLines}${dailyRangeLines}</g>
+        <path d="${buildPath(points, xForIndex, 'tMax', yForTemp)}" class="chart-line-temp chart-line-temp-high"></path>
+        <path d="${buildPath(points, xForIndex, 'tMin', yForTemp)}" class="chart-line-temp chart-line-temp-low"></path>
+        <path d="${buildPath(points, xForIndex, 'feelsMax', yForTemp)}" class="chart-line-feels chart-line-feels-high"></path>
+        <path d="${buildPath(points, xForIndex, 'feelsMin', yForTemp)}" class="chart-line-feels chart-line-feels-low"></path>
+        <path d="${buildPath(points, xForIndex, 'precipSum', yForPrecip)}" class="chart-line-precip"></path>
+        ${points.map((p, i) => isFiniteNumber(p.tMax) ? `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForTemp(p.tMax as number).toFixed(1)}" r="3.4" class="chart-dot-temp"></circle>` : '').join('')}
+        ${points.map((p, i) => isFiniteNumber(p.tMin) ? `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForTemp(p.tMin as number).toFixed(1)}" r="2.8" class="chart-dot-temp chart-dot-temp-low"></circle>` : '').join('')}
+        ${points.map((p, i) => isFiniteNumber(p.feelsMax) ? `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForTemp(p.feelsMax as number).toFixed(1)}" r="3.1" class="chart-dot-feels"></circle>` : '').join('')}
+        ${points.map((p, i) => isFiniteNumber(p.feelsMin) ? `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForTemp(p.feelsMin as number).toFixed(1)}" r="2.6" class="chart-dot-feels chart-dot-feels-low"></circle>` : '').join('')}
+        ${points.map((p, i) => `<circle cx="${xForIndex(i).toFixed(1)}" cy="${yForPrecip(p.precipSum as number).toFixed(1)}" r="2.9" class="chart-dot-precip"></circle>`).join('')}
+        ${hitRects}
+      </svg>
+      <div class="chart-tooltip" data-chart-tooltip></div>
+    </div>
+    <div class="chart-legend">
+      <span class="temp"><i></i> Temp high / low</span>
+      <span class="feels"><i></i> Feels high / low</span>
+      <span class="precip"><i></i> Precip total + chance %</span>
+    </div>`;
+}
+
 export function getForecastChartTooltipPortal(): HTMLElement {
   let tooltip = document.getElementById('chart-tooltip-portal');
   if (!tooltip) {
@@ -186,20 +310,30 @@ export function bindForecastChartTooltips(root: Element = document.body): void {
   };
 
   const show = (hit: HTMLElement, event: { clientX?: number; clientY?: number }) => {
-    const gustText = hit.dataset.windGust ? `${hit.dataset.windGust} km/h` : '—';
-    const dirHtml = hit.dataset.windDir
-      ? windDirectionHtml(Number(hit.dataset.windDir), 'wind-dir-inline', true)
-      : windDirectionHtml(NaN, 'wind-dir-inline', true);
+    const tempLabel = hit.dataset.tempLabel || 'Temp';
+    const tempText = hit.dataset.tempLabel ? hit.dataset.temp || '—' : `${hit.dataset.temp}°C`;
+    const feelsLabel = hit.dataset.feelsLabel || 'Feels like';
+    const feelsText = hit.dataset.feelsLabel ? hit.dataset.feels || '—' : `${hit.dataset.feels}°C`;
     const precipChance = hit.dataset.precipProb ? `${hit.dataset.precipProb}%` : '—';
+    const windRows = hit.dataset.wind
+      ? (() => {
+          const gustText = hit.dataset.windGust ? `${hit.dataset.windGust} km/h` : '—';
+          const dirHtml = hit.dataset.windDir
+            ? windDirectionHtml(Number(hit.dataset.windDir), 'wind-dir-inline', true)
+            : windDirectionHtml(NaN, 'wind-dir-inline', true);
+          return `
+            <div class="tt-row"><span>Wind</span><strong>${hit.dataset.wind} km/h ${dirHtml}</strong></div>
+            <div class="tt-row"><span>Gusts</span><strong>${gustText}</strong></div>`;
+        })()
+      : '';
     tooltip.innerHTML = `
       <div class="tt-time">${hit.dataset.time}</div>
-      <div class="tt-row"><span>Temp</span><strong>${hit.dataset.temp}°C</strong></div>
-      <div class="tt-row"><span>Feels like</span><strong>${hit.dataset.feels}°C</strong></div>
+      <div class="tt-row"><span>${escapeHtml(tempLabel)}</span><strong>${escapeHtml(tempText)}</strong></div>
+      <div class="tt-row"><span>${escapeHtml(feelsLabel)}</span><strong>${escapeHtml(feelsText)}</strong></div>
       ${hit.dataset.humidity ? `<div class="tt-row"><span>Humidity</span><strong>${escapeHtml(hit.dataset.humidity)}%</strong></div>` : ''}
       <div class="tt-row"><span>Precip amount</span><strong>${hit.dataset.precip} mm</strong></div>
       <div class="tt-row"><span>Precip chance</span><strong>${precipChance}</strong></div>
-      <div class="tt-row"><span>Wind</span><strong>${hit.dataset.wind} km/h ${dirHtml}</strong></div>
-      <div class="tt-row"><span>Gusts</span><strong>${gustText}</strong></div>
+      ${windRows}
       <div class="tt-row"><span>UV</span><strong>${hit.dataset.uvValue ? `UV ${escapeHtml(formatUvValue(Number(hit.dataset.uvValue)))}` : '—'}</strong></div>
       ${hit.dataset.aqi ? `<div class="tt-row"><span>AQI</span><strong>${renderAqiBadge(Number(hit.dataset.aqi), true)}</strong></div>` : ''}`;
     tooltip.classList.add('visible');
