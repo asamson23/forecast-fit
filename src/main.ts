@@ -110,6 +110,7 @@ import {
   getForecastChartTooltipPortal as getForecastChartTooltipPortalFromModule,
 } from './components/ForecastChart';
 import { renderForecastBlock as renderForecastBlockFromModule } from './components/ForecastCells';
+import { renderRouteElevationProfile } from './components/RouteElevationProfile';
 import {
   bestWindowRangeOverrunMinutes as bestWindowRangeOverrunMinutesFromModule,
   buildBestWindowReasons as buildBestWindowReasonsFromModule,
@@ -252,6 +253,7 @@ const stravaConnectPanel = document.getElementById('strava-connect-panel');
 const stravaStatus = document.getElementById('strava-status');
 const mapCard = document.getElementById('map-card');
 const routeSummary = document.getElementById('route-summary');
+const routeElevationProfile = document.getElementById('route-elevation-profile');
 const locationCardToggleBtn = document.getElementById('location-card-toggle-btn');
 const locationCardBody = document.getElementById('location-card-body');
 const locationCardSummary = document.getElementById('location-card-summary');
@@ -2684,14 +2686,30 @@ function buildRouteCheckpointMarker(cp) {
   });
 }
 
+function renderRouteElevationProfilePanel() {
+  if (!routeElevationProfile) return;
+  if (!routeState?.points?.length) {
+    routeElevationProfile.innerHTML = '';
+    return;
+  }
+  if (!routeState.hasElevation) {
+    routeElevationProfile.innerHTML = '<p class="route-elevation-empty">No elevation data in this route.</p>';
+    return;
+  }
+  const profileHtml = renderRouteElevationProfile(routeState.points);
+  routeElevationProfile.innerHTML = profileHtml || '<p class="route-elevation-empty">No elevation data in this route.</p>';
+}
+
 function renderRouteMap() {
   if (!routeState?.points?.length) {
     routeMapBounds = null;
     updateRouteFitControlUi();
+    if (routeElevationProfile) routeElevationProfile.innerHTML = '';
     mapCard.style.display = 'none';
     return;
   }
   mapCard.style.display = 'block';
+  renderRouteElevationProfilePanel();
   initRouteMap();
   clearRouteMapLayers();
   const latlngs = routeState.points.map(p => [p.lat, p.lon]);

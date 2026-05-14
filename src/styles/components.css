@@ -1251,4 +1251,60 @@
     letter-spacing: 0.08em;
     margin-bottom: 6px;
   }
+
+.route-elevation-profile {
+  margin-top: 12px;
+  color: var(--accent);
+}
+.route-elevation-svg {
+  display: block;
+  width: 100%;
+  height: 190px;
+  color: var(--accent);
+  overflow: visible;
+}
+.route-elevation-bg {
+  fill: color-mix(in srgb, var(--surface2) 94%, white 6%);
+  stroke: var(--border);
+}
+.route-elevation-axis,
+.route-elevation-marker line {
+  stroke: color-mix(in srgb, var(--text-muted) 32%, transparent);
+  stroke-width: 1;
+}
+.route-elevation-marker text,
+.route-elevation-y-label,
+.route-elevation-extreme text {
+  fill: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+}
+.route-elevation-area {
+  fill: url(#route-elevation-fill);
+}
+.route-elevation-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.route-elevation-extreme circle {
+  fill: var(--surface);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.route-elevation-extreme text {
+  font-weight: 700;
+}
+.route-elevation-empty {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface2) 88%, transparent);
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
   .inline-fields {

@@ -1,0 +1,95 @@
+import type { EnrichedRoutePoint } from '../features/route/routeMetrics';
+import type { RoutePoint } from '../types/route';
+
+export type RouteElevationProfilePoint = Pick<RoutePoint, 'ele'> & Partial<Pick<EnrichedRoutePoint, 'kmFromStart'>>;
+
+const CHART_WIDTH = 720;
+const CHART_HEIGHT = 180;
+const PAD_LEFT = 52;
+const PAD_RIGHT = 20;
+const PAD_TOP = 22;
+const PAD_BOTTOM = 38;
+
+function isFiniteRouteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function formatKm(value: number): string {
+  return value >= 10 ? `${Math.round(value)} km` : `${Math.round(value * 10) / 10} km`;
+}
+
+function buildDistanceMarkers(totalKm: number): number[] {
+  if (!Number.isFinite(totalKm) || totalKm <= 0) return [0];
+  const markerCount = totalKm < 8 ? 4 : 5;
+  const markers = Array.from({ length: markerCount + 1 }, (_, index) => (totalKm * index) / markerCount);
+  return markers.filter((value, index) => index === 0 || value - markers[index - 1] > 0.05);
+}
+
+function getPointKm(point: RouteElevationProfilePoint, fallbackIndex: number, totalFallbackPoints: number): number {
+  if (isFiniteRouteNumber(point.kmFromStart)) return point.kmFromStart;
+  const denominator = Math.max(1, totalFallbackPoints - 1);
+  return fallbackIndex / denominator;
+}
+
+export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]): string {
+  const elevationPoints = points
+    .map((point, index) => ({
+      km: getPointKm(point, index, points.length),
+      ele: isFiniteRouteNumber(point.ele) ? point.ele : null,
+    }))
+    .filter((point): point is { km: number; ele: number } => isFiniteRouteNumber(point.km) && isFiniteRouteNumber(point.ele));
+
+  if (elevationPoints.length < 2) return '';
+
+  const totalKm = Math.max(...elevationPoints.map((point) => point.km), 0);
+  const elevations = elevationPoints.map((point) => point.ele);
+  const minEle = Math.min(...elevations);
+  const maxEle = Math.max(...elevations);
+  const eleRange = Math.max(1, maxEle - minEle);
+  const paddedMinEle = minEle - eleRange * 0.08;
+  const paddedMaxEle = maxEle + eleRange * 0.08;
+  const paddedRange = Math.max(1, paddedMaxEle - paddedMinEle);
+  const plotWidth = CHART_WIDTH - PAD_LEFT - PAD_RIGHT;
+  const plotHeight = CHART_HEIGHT - PAD_TOP - PAD_BOTTOM;
+  const xForKm = (km: number) => PAD_LEFT + (totalKm > 0 ? (km / totalKm) * plotWidth : 0);
+  const yForEle = (ele: number) => PAD_TOP + ((paddedMaxEle - ele) / paddedRange) * plotHeight;
+  const linePath = elevationPoints
+    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${xForKm(point.km).toFixed(1)} ${yForEle(point.ele).toFixed(1)}`)
+    .join(' ');
+  const areaPath = `${linePath} L ${xForKm(elevationPoints[elevationPoints.length - 1].km).toFixed(1)} ${PAD_TOP + plotHeight} L ${xForKm(elevationPoints[0].km).toFixed(1)} ${PAD_TOP + plotHeight} Z`;
+  const minPoint = elevationPoints.reduce((lowest, point) => (point.ele < lowest.ele ? point : lowest), elevationPoints[0]);
+  const maxPoint = elevationPoints.reduce((highest, point) => (point.ele > highest.ele ? point : highest), elevationPoints[0]);
+  const distanceMarkers = buildDistanceMarkers(totalKm);
+  const minLabel = `${Math.round(minEle)} m min`;
+  const maxLabel = `${Math.round(maxEle)} m max`;
+
+  return `
+    <svg class="route-elevation-svg" viewBox="0 0 ${CHART_WIDTH} ${CHART_HEIGHT}" role="img" aria-label="Route elevation profile from 0 to ${formatKm(totalKm)}, ${minLabel}, ${maxLabel}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="route-elevation-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="currentColor" stop-opacity="0.24" />
+          <stop offset="100%" stop-color="currentColor" stop-opacity="0.04" />
+        </linearGradient>
+      </defs>
+      <rect class="route-elevation-bg" x="0" y="0" width="${CHART_WIDTH}" height="${CHART_HEIGHT}" rx="14" />
+      <line class="route-elevation-axis" x1="${PAD_LEFT}" x2="${CHART_WIDTH - PAD_RIGHT}" y1="${PAD_TOP + plotHeight}" y2="${PAD_TOP + plotHeight}" />
+      <line class="route-elevation-axis" x1="${PAD_LEFT}" x2="${PAD_LEFT}" y1="${PAD_TOP}" y2="${PAD_TOP + plotHeight}" />
+      ${distanceMarkers.map((km) => {
+        const x = xForKm(km);
+        return `<g class="route-elevation-marker"><line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${PAD_TOP}" y2="${PAD_TOP + plotHeight}" /><text x="${x.toFixed(1)}" y="${CHART_HEIGHT - 13}" text-anchor="middle">${formatKm(km)}</text></g>`;
+      }).join('')}
+      <path class="route-elevation-area" d="${areaPath}" />
+      <path class="route-elevation-line" d="${linePath}" />
+      <g class="route-elevation-extreme route-elevation-max">
+        <circle cx="${xForKm(maxPoint.km).toFixed(1)}" cy="${yForEle(maxPoint.ele).toFixed(1)}" r="3.8" />
+        <text x="${Math.min(CHART_WIDTH - 72, Math.max(PAD_LEFT + 42, xForKm(maxPoint.km))).toFixed(1)}" y="${Math.max(PAD_TOP + 12, yForEle(maxPoint.ele) - 8).toFixed(1)}" text-anchor="middle">${maxLabel}</text>
+      </g>
+      <g class="route-elevation-extreme route-elevation-min">
+        <circle cx="${xForKm(minPoint.km).toFixed(1)}" cy="${yForEle(minPoint.ele).toFixed(1)}" r="3.8" />
+        <text x="${Math.min(CHART_WIDTH - 70, Math.max(PAD_LEFT + 40, xForKm(minPoint.km))).toFixed(1)}" y="${Math.min(CHART_HEIGHT - PAD_BOTTOM - 8, yForEle(minPoint.ele) + 18).toFixed(1)}" text-anchor="middle">${minLabel}</text>
+      </g>
+      <text class="route-elevation-y-label" x="14" y="${PAD_TOP + 12}">${Math.round(maxEle)} m</text>
+      <text class="route-elevation-y-label" x="14" y="${PAD_TOP + plotHeight}">${Math.round(minEle)} m</text>
+    </svg>
+  `;
+}
