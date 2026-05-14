@@ -861,3 +861,9 @@
 
 - Kept the selected planned-duration preset visibly active even when a custom or calculated duration is in use, so the baseline plan stays visible.
 - Added a dedicated planned-duration summary line that shows the saved preset alongside any active custom, calculated, or route-time override.
+
+## v11.5
+
+- Added route elevation profile styling and kept it inside valid stylesheet module boundaries for Vercel builds.
+- Added daily forecast chart styling while preserving valid CSS import chunks.
+- Fixed the split CSS files so each imported stylesheet parses independently during production builds.

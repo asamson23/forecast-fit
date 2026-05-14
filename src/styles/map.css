@@ -1,9 +1,3 @@
-    padding: 5px 10px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface2);
-    color: var(--text);
-  }
   .comfort-slider {
     --comfort-track-height: 12px;
     width: 100%;
@@ -611,4 +605,10 @@
     margin-top: 10px;
     color: var(--text-muted);
     font-size: 0.88rem;
+  }
+  .helper-step-state {
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+    color: var(--text-soft);
+    background: var(--surface2);
   }

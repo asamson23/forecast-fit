@@ -1,3 +1,4 @@
+  .inline-fields {
     display: grid;
     grid-template-columns: minmax(280px, 1fr) 170px;
     gap: 12px;
@@ -632,3 +633,9 @@
     align-items: center;
     justify-content: center;
     min-height: 28px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface2);
+    color: var(--text);
+  }
