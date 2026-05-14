@@ -33,6 +33,7 @@ export function renderForecastBlock(
   if (!selection.points.length) return '';
 
   if (selection.mode === 'daily') {
+    const chartHtml = buildForecastChart(data, selection, routeSamples);
     const cells = selection.points.map(p => {
       const daylightH = isFiniteNumber(p.daylightDuration) ? round1((p.daylightDuration as number) / 3600) : null;
       return `
@@ -50,7 +51,10 @@ export function renderForecastBlock(
           <span>${escapeHtml(selection.headerMeta || `${profile.label} · daily overview`)}</span>
         </div>
         <div class="forecast-scroll">
-          <div class="daily-forecast-grid">${cells}</div>
+          <div>
+            ${chartHtml}
+            <div class="daily-forecast-grid">${cells}</div>
+          </div>
         </div>
       </div>`;
   }

@@ -319,6 +319,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 10px;
+    margin-top: 14px;
   }
   .daily-forecast-cell {
     background: color-mix(in srgb, var(--surface) 82%, var(--surface2) 18%);
@@ -369,6 +370,25 @@
     stroke-width: 2.1;
     stroke-dasharray: 3 4;
   }
+  .chart-line-temp-low,
+  .chart-line-feels-low {
+    opacity: 0.72;
+  }
+  .chart-line-temp-low,
+  .chart-line-feels-low,
+  .chart-dot-temp-low,
+  .chart-dot-feels-low {
+    filter: saturate(0.85);
+  }
+  .chart-range-temp,
+  .chart-range-feels {
+    stroke-width: 7;
+    stroke-linecap: round;
+    opacity: 0.18;
+    vector-effect: non-scaling-stroke;
+  }
+  .chart-range-temp { stroke: var(--accent); }
+  .chart-range-feels { stroke: var(--accent2); }
   .chart-dot-temp,
   .chart-dot-feels,
   .chart-dot-precip {
