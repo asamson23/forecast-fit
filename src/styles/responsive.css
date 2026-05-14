@@ -1,9 +1,3 @@
-  .helper-step-state {
-    font-size: 0.65rem;
-    letter-spacing: 0.03em;
-    color: var(--text-soft);
-    background: var(--surface2);
-  }
   .helper-step-state.done {
     color: var(--ok);
     border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
