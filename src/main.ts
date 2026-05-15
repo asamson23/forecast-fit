@@ -5562,6 +5562,12 @@ function getFineForecastStepMinutes(totalMinutes) {
   return null;
 }
 
+function getMultiDayChartStepMinutes(totalMinutes) {
+  if (totalMinutes <= 48 * 60) return 180;
+  if (totalMinutes <= 72 * 60) return 240;
+  return 360;
+}
+
 /**
  * Build the forecast slice for the chosen start time and duration.
  * Short events can use interpolated 5/10/15-minute slices; long ones stay hourly/daily.
@@ -5573,7 +5579,27 @@ function getForecastSelection(data, startTime) {
     let startIndex = data.daily.findIndex(d => d.date >= startDate);
     if (startIndex < 0) startIndex = 0;
     const points = data.daily.slice(startIndex, startIndex + (profile.daysWindow || 1));
-    return { mode: 'daily', points, startTime, endTime: points[points.length - 1]?.date || startDate };
+    const endTime = addMinutesToLocalString(startTime, profile.minutes);
+    const chartStepMinutes = getMultiDayChartStepMinutes(profile.minutes);
+    const chartPoints = [];
+    for (let offset = 0; offset <= profile.minutes; offset += chartStepMinutes) {
+      chartPoints.push(getInterpolatedHourlyPoint(data, addMinutesToLocalString(startTime, offset)));
+    }
+    if (chartPoints[chartPoints.length - 1]?.time !== endTime) {
+      chartPoints.push(getInterpolatedHourlyPoint(data, endTime));
+    }
+    return {
+      mode: 'daily',
+      points,
+      startTime,
+      endTime: points[points.length - 1]?.date || startDate,
+      chartMode: 'hourly',
+      chartPoints,
+      chartStartTime: startTime,
+      chartEndTime: endTime,
+      sliceMinutes: chartStepMinutes,
+      interpolated: chartStepMinutes < 60,
+    };
   }
   const endTime = addMinutesToLocalString(startTime, profile.minutes);
   const fineStep = getFineForecastStepMinutes(profile.minutes);

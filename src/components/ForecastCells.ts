@@ -13,6 +13,10 @@ export interface DurationProfile {
 export interface ForecastSelection {
   points: Record<string, unknown>[];
   mode?: string;
+  chartMode?: string;
+  chartPoints?: Record<string, unknown>[];
+  chartStartTime?: unknown;
+  chartEndTime?: unknown;
   interpolated?: boolean;
   sliceMinutes?: number;
   startTime?: unknown;
@@ -33,7 +37,16 @@ export function renderForecastBlock(
   if (!selection.points.length) return '';
 
   if (selection.mode === 'daily') {
-    const chartHtml = buildForecastChart(data, selection, routeSamples);
+    const chartSelection = selection.chartPoints?.length
+      ? {
+          ...selection,
+          mode: selection.chartMode || 'hourly',
+          points: selection.chartPoints,
+          startTime: selection.chartStartTime ?? selection.startTime,
+          endTime: selection.chartEndTime ?? selection.endTime,
+        }
+      : selection;
+    const chartHtml = buildForecastChart(data, chartSelection, routeSamples);
     const cells = selection.points.map(p => {
       const daylightH = isFiniteNumber(p.daylightDuration) ? round1((p.daylightDuration as number) / 3600) : null;
       return `
@@ -48,7 +61,7 @@ export function renderForecastBlock(
       <div class="forecast-box">
         <div class="forecast-header">
           <strong>${escapeHtml(selection.headerTitle || 'Forecast over the planned duration')}</strong>
-          <span>${escapeHtml(selection.headerMeta || `${profile.label} · daily overview`)}</span>
+          <span>${escapeHtml(selection.headerMeta || `${profile.label} · daily overview + timeline chart`)}</span>
         </div>
         <div class="forecast-scroll">
           <div>

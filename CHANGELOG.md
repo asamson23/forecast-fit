@@ -904,3 +904,8 @@
 - Stopped elevation-profile clicks and checkpoint clicks from mutating the planner start time; route-point weather refreshes now keep the existing selected start mode and time intact.
 - Added a `Back to start` action in the result header whenever the current forecast is showing a clicked route point or checkpoint instead of the route start.
 - Kept route-point refreshes targeting the active clicked point so `Refresh weather` no longer snaps back to the route start while inspecting a route location.
+
+## v11.5.7
+
+- Changed multi-day forecast charts to render a denser hourly-style timeline across the planned trip window instead of only plotting sparse daily aggregate points.
+- Kept the existing daily forecast cards for multi-day activities, so the chart adds more detail without changing the surrounding summary layout.
