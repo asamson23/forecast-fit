@@ -96,5 +96,6 @@ export function stravaActivityStreamsToImportedRoute(activity: StravaActivitySum
     elevationGainMeters: Number(activity?.total_elevation_gain) || undefined,
     estimatedMovingTimeSeconds: Number(activity?.moving_time) || undefined,
     hasRealTimestamps: geometry.some((point) => !!point.time),
+    sourceUrl: activity?.id ? `https://www.strava.com/activities/${encodeURIComponent(String(activity.id))}` : undefined,
   };
 }

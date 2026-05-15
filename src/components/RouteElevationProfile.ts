@@ -2,6 +2,12 @@ import type { EnrichedRoutePoint } from '../features/route/routeMetrics';
 import type { RoutePoint } from '../types/route';
 
 export type RouteElevationProfilePoint = Pick<RoutePoint, 'ele'> & Partial<Pick<EnrichedRoutePoint, 'kmFromStart'>>;
+export interface RouteElevationRenderablePoint {
+  lat: number | undefined;
+  lon: number | undefined;
+  km: number;
+  ele: number;
+}
 
 const CHART_WIDTH = 720;
 const CHART_HEIGHT = 180;
@@ -9,6 +15,15 @@ const PAD_LEFT = 52;
 const PAD_RIGHT = 20;
 const PAD_TOP = 22;
 const PAD_BOTTOM = 38;
+
+export const ROUTE_ELEVATION_PROFILE_METRICS = {
+  chartWidth: CHART_WIDTH,
+  chartHeight: CHART_HEIGHT,
+  padLeft: PAD_LEFT,
+  padRight: PAD_RIGHT,
+  padTop: PAD_TOP,
+  padBottom: PAD_BOTTOM,
+};
 
 function isFiniteRouteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
@@ -31,13 +46,19 @@ function getPointKm(point: RouteElevationProfilePoint, fallbackIndex: number, to
   return fallbackIndex / denominator;
 }
 
-export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]): string {
-  const elevationPoints = points
+export function getRouteElevationRenderablePoints(points: Array<RouteElevationProfilePoint & Partial<RoutePoint>>): RouteElevationRenderablePoint[] {
+  return points
     .map((point, index) => ({
       km: getPointKm(point, index, points.length),
       ele: isFiniteRouteNumber(point.ele) ? point.ele : null,
+      lat: typeof point.lat === 'number' ? point.lat : undefined,
+      lon: typeof point.lon === 'number' ? point.lon : undefined,
     }))
-    .filter((point): point is { km: number; ele: number } => isFiniteRouteNumber(point.km) && isFiniteRouteNumber(point.ele));
+    .filter((point): point is RouteElevationRenderablePoint => isFiniteRouteNumber(point.km) && isFiniteRouteNumber(point.ele));
+}
+
+export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]): string {
+  const elevationPoints = getRouteElevationRenderablePoints(points);
 
   if (elevationPoints.length < 2) return '';
 
@@ -64,7 +85,7 @@ export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]
   const maxLabel = `${Math.round(maxEle)} m max`;
 
   return `
-    <svg class="route-elevation-svg" viewBox="0 0 ${CHART_WIDTH} ${CHART_HEIGHT}" role="img" aria-label="Route elevation profile from 0 to ${formatKm(totalKm)}, ${minLabel}, ${maxLabel}" preserveAspectRatio="none">
+    <svg class="route-elevation-svg" data-route-elevation-chart viewBox="0 0 ${CHART_WIDTH} ${CHART_HEIGHT}" role="img" aria-label="Route elevation profile from 0 to ${formatKm(totalKm)}, ${minLabel}, ${maxLabel}" preserveAspectRatio="none">
       <defs>
         <linearGradient id="route-elevation-fill" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stop-color="currentColor" stop-opacity="0.24" />
@@ -90,6 +111,10 @@ export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]
       </g>
       <text class="route-elevation-y-label" x="14" y="${PAD_TOP + 12}">${Math.round(maxEle)} m</text>
       <text class="route-elevation-y-label" x="14" y="${PAD_TOP + plotHeight}">${Math.round(minEle)} m</text>
+      <g class="route-elevation-hover" data-route-elevation-hover hidden>
+        <line class="route-elevation-hover-line" data-route-elevation-hover-line x1="${PAD_LEFT}" x2="${PAD_LEFT}" y1="${PAD_TOP}" y2="${PAD_TOP + plotHeight}" />
+        <circle class="route-elevation-hover-dot" data-route-elevation-hover-dot cx="${PAD_LEFT}" cy="${PAD_TOP + plotHeight}" r="4.5" />
+      </g>
     </svg>
   `;
 }

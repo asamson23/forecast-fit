@@ -110,7 +110,11 @@ import {
   getForecastChartTooltipPortal as getForecastChartTooltipPortalFromModule,
 } from './components/ForecastChart';
 import { renderForecastBlock as renderForecastBlockFromModule } from './components/ForecastCells';
-import { renderRouteElevationProfile } from './components/RouteElevationProfile';
+import {
+  getRouteElevationRenderablePoints,
+  renderRouteElevationProfile,
+  ROUTE_ELEVATION_PROFILE_METRICS,
+} from './components/RouteElevationProfile';
 import {
   bestWindowRangeOverrunMinutes as bestWindowRangeOverrunMinutesFromModule,
   buildBestWindowReasons as buildBestWindowReasonsFromModule,
@@ -254,6 +258,8 @@ const stravaStatus = document.getElementById('strava-status');
 const mapCard = document.getElementById('map-card');
 const routeSummary = document.getElementById('route-summary');
 const routeElevationProfile = document.getElementById('route-elevation-profile');
+const routeOpenSourceBtn = document.getElementById('route-open-source-btn');
+const routeDownloadGpxBtn = document.getElementById('route-download-gpx-btn');
 const locationCardToggleBtn = document.getElementById('location-card-toggle-btn');
 const locationCardBody = document.getElementById('location-card-body');
 const locationCardSummary = document.getElementById('location-card-summary');
@@ -341,6 +347,7 @@ let routeMap = null;
 let routeLayer = null;
 let routeMarkersLayer = null;
 let routeTileLayer = null;
+let routeHoverLayer = null;
 let routeMapBounds = null;
 let routeFitControlButton = null;
 let laterPicker = null;
@@ -1935,6 +1942,7 @@ function initRouteMap() {
   refreshRouteMapTheme();
   routeLayer = L.layerGroup().addTo(routeMap);
   routeMarkersLayer = L.layerGroup().addTo(routeMap);
+  routeHoverLayer = L.layerGroup().addTo(routeMap);
   const FitRouteControl = L.Control.extend({
     options: { position: 'topleft' },
     onAdd() {
@@ -1980,6 +1988,7 @@ function fitRouteMapToBounds() {
 function clearRouteMapLayers() {
   if (routeLayer) routeLayer.clearLayers();
   if (routeMarkersLayer) routeMarkersLayer.clearLayers();
+  if (routeHoverLayer) routeHoverLayer.clearLayers();
 }
 
 function normalizeRoutePoints(points) {
@@ -2025,6 +2034,29 @@ function bearingDegrees(lat1, lon1, lat2, lon2) {
 
 function buildRouteState(points, fileName) {
   return buildRouteStateModel(points, fileName, { parseTime: parseAnyTime, nearestDurationKey });
+}
+
+function buildImportedRouteSourceMeta(importedRoute, sourceLabel) {
+  if (!importedRoute) return null;
+  const normalizedSourceLabel = String(sourceLabel || '').toLowerCase();
+  return {
+    provider: importedRoute.provider || 'manual',
+    kind: normalizedSourceLabel.includes('activity') ? 'activity' : 'route',
+    providerRouteId: importedRoute.providerRouteId ? String(importedRoute.providerRouteId) : '',
+    sourceUrl: importedRoute.sourceUrl || '',
+    elevationGainMeters: Number(importedRoute.elevationGainMeters) || 0,
+    estimatedMovingTimeSeconds: Number(importedRoute.estimatedMovingTimeSeconds) || 0,
+    canDownloadGpx: importedRoute.provider === 'strava' && normalizedSourceLabel.includes('route') && !!importedRoute.providerRouteId,
+  };
+}
+
+function buildRouteStateWithSource(points, fileName, routeSource = null) {
+  const nextState = buildRouteState(points, fileName);
+  nextState.routeSource = routeSource;
+  if ((!nextState.hasElevation || nextState.totalGain <= 0) && Number(routeSource?.elevationGainMeters) > 0) {
+    nextState.totalGain = Number(routeSource.elevationGainMeters);
+  }
+  return nextState;
 }
 
 function getRouteTimingMinutes() {
@@ -2692,18 +2724,181 @@ function buildRouteCheckpointMarker(cp) {
   });
 }
 
+function getRouteElevationTooltipPortal() {
+  let tooltip = document.getElementById('route-elevation-tooltip-portal');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.id = 'route-elevation-tooltip-portal';
+    tooltip.className = 'chart-tooltip chart-tooltip-portal route-elevation-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltip);
+  }
+  return tooltip;
+}
+
+function hideRouteElevationHoverState() {
+  const tooltip = document.getElementById('route-elevation-tooltip-portal');
+  if (tooltip) tooltip.classList.remove('visible');
+  if (routeElevationProfile) {
+    const hoverGroup = routeElevationProfile.querySelector('[data-route-elevation-hover]');
+    if (hoverGroup instanceof SVGGElement) hoverGroup.hidden = true;
+  }
+  if (routeHoverLayer) routeHoverLayer.clearLayers();
+}
+
+function positionFloatingTooltip(tooltip, event) {
+  const margin = 12;
+  const gap = 14;
+  const width = tooltip.offsetWidth || 210;
+  const height = tooltip.offsetHeight || 140;
+  const clientX = Number.isFinite(event?.clientX) ? event.clientX : (window.innerWidth / 2);
+  const clientY = Number.isFinite(event?.clientY) ? event.clientY : (window.innerHeight / 2);
+  let x = clientX + gap;
+  let y = clientY - height - gap;
+  if (x + width > window.innerWidth - margin) x = clientX - width - gap;
+  if (y < margin) y = clientY + gap;
+  x = Math.max(margin, Math.min(window.innerWidth - width - margin, x));
+  y = Math.max(margin, Math.min(window.innerHeight - height - margin, y));
+  tooltip.style.left = `${x}px`;
+  tooltip.style.top = `${y}px`;
+}
+
+function updateRouteHeaderActions() {
+  const source = routeState?.routeSource || null;
+  if (routeOpenSourceBtn instanceof HTMLButtonElement) {
+    const canOpen = !!source?.sourceUrl;
+    routeOpenSourceBtn.hidden = !canOpen;
+    routeOpenSourceBtn.disabled = !canOpen;
+    routeOpenSourceBtn.textContent = source?.provider === 'strava' ? 'Open in Strava' : 'Open source';
+  }
+  if (routeDownloadGpxBtn instanceof HTMLButtonElement) {
+    const canDownload = !!source?.canDownloadGpx;
+    routeDownloadGpxBtn.hidden = !canDownload;
+    routeDownloadGpxBtn.disabled = !canDownload;
+    routeDownloadGpxBtn.textContent = 'Download GPX';
+  }
+}
+
+function bindRouteElevationProfileInteractions() {
+  if (!routeElevationProfile) return;
+  const svg = routeElevationProfile.querySelector('[data-route-elevation-chart]');
+  if (!(svg instanceof SVGSVGElement) || !routeState?.points?.length) return;
+
+  const elevationPoints = getRouteElevationRenderablePoints(routeState.points);
+  if (elevationPoints.length < 2) return;
+
+  const {
+    chartWidth,
+    chartHeight,
+    padLeft,
+    padRight,
+    padTop,
+    padBottom,
+  } = ROUTE_ELEVATION_PROFILE_METRICS;
+  const totalKm = Math.max(...elevationPoints.map((point) => point.km), 0);
+  const elevations = elevationPoints.map((point) => point.ele);
+  const minEle = Math.min(...elevations);
+  const maxEle = Math.max(...elevations);
+  const eleRange = Math.max(1, maxEle - minEle);
+  const paddedMinEle = minEle - eleRange * 0.08;
+  const paddedMaxEle = maxEle + eleRange * 0.08;
+  const paddedRange = Math.max(1, paddedMaxEle - paddedMinEle);
+  const plotWidth = chartWidth - padLeft - padRight;
+  const plotHeight = chartHeight - padTop - padBottom;
+  const xForKm = (km) => padLeft + (totalKm > 0 ? (km / totalKm) * plotWidth : 0);
+  const yForEle = (ele) => padTop + ((paddedMaxEle - ele) / paddedRange) * plotHeight;
+  const hoverGroup = svg.querySelector('[data-route-elevation-hover]');
+  const hoverLine = svg.querySelector('[data-route-elevation-hover-line]');
+  const hoverDot = svg.querySelector('[data-route-elevation-hover-dot]');
+  const tooltip = getRouteElevationTooltipPortal();
+
+  const showPoint = (point, event) => {
+    const x = xForKm(point.km);
+    const y = yForEle(point.ele);
+    if (hoverGroup instanceof SVGGElement) hoverGroup.hidden = false;
+    if (hoverLine instanceof SVGLineElement) {
+      hoverLine.setAttribute('x1', x.toFixed(1));
+      hoverLine.setAttribute('x2', x.toFixed(1));
+    }
+    if (hoverDot instanceof SVGCircleElement) {
+      hoverDot.setAttribute('cx', x.toFixed(1));
+      hoverDot.setAttribute('cy', y.toFixed(1));
+    }
+
+    tooltip.innerHTML = `
+      <div class="tt-time">${escapeHtml(formatKm(point.km))} from start</div>
+      <div class="tt-row"><span>Elevation</span><strong>${escapeHtml(`${Math.round(point.ele)} m`)}</strong></div>
+      <div class="tt-row"><span>Position</span><strong>${escapeHtml(`${round1(point.lat)}°, ${round1(point.lon)}°`)}</strong></div>
+    `;
+    tooltip.classList.add('visible');
+    positionFloatingTooltip(tooltip, event);
+
+    if (routeHoverLayer && isFiniteNumber(point.lat) && isFiniteNumber(point.lon)) {
+      routeHoverLayer.clearLayers();
+      L.circleMarker([point.lat, point.lon], {
+        radius: 7,
+        color: '#244e68',
+        weight: 3,
+        opacity: 1,
+        fillColor: '#f6fbff',
+        fillOpacity: 0.95,
+      }).addTo(routeHoverLayer);
+    }
+  };
+
+  const handlePointerMove = (event) => {
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const svgX = ratio * chartWidth;
+    let nearestPoint = elevationPoints[0];
+    let nearestDistance = Math.abs(xForKm(nearestPoint.km) - svgX);
+    for (let index = 1; index < elevationPoints.length; index += 1) {
+      const point = elevationPoints[index];
+      const distance = Math.abs(xForKm(point.km) - svgX);
+      if (distance < nearestDistance) {
+        nearestPoint = point;
+        nearestDistance = distance;
+      }
+    }
+    showPoint(nearestPoint, event);
+  };
+
+  svg.onmouseenter = handlePointerMove;
+  svg.onmousemove = handlePointerMove;
+  svg.onmouseleave = hideRouteElevationHoverState;
+  svg.ontouchstart = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    handlePointerMove(touch);
+  };
+  svg.ontouchmove = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    handlePointerMove(touch);
+  };
+  svg.ontouchend = hideRouteElevationHoverState;
+  svg.ontouchcancel = hideRouteElevationHoverState;
+}
+
 function renderRouteElevationProfilePanel() {
   if (!routeElevationProfile) return;
   if (!routeState?.points?.length) {
     routeElevationProfile.innerHTML = '';
+    hideRouteElevationHoverState();
     return;
   }
   if (!routeState.hasElevation) {
-    routeElevationProfile.innerHTML = '<p class="route-elevation-empty">No elevation data in this route.</p>';
+    const totalGain = Number(routeState?.routeSource?.elevationGainMeters) > 0
+      ? ` Strava still reports about +${Math.round(routeState.routeSource.elevationGainMeters)} m total climbing for this route.`
+      : '';
+    routeElevationProfile.innerHTML = `<p class="route-elevation-empty">No point-by-point elevation profile is available for this route.${totalGain}</p>`;
+    hideRouteElevationHoverState();
     return;
   }
   const profileHtml = renderRouteElevationProfile(routeState.points);
   routeElevationProfile.innerHTML = profileHtml || '<p class="route-elevation-empty">No elevation data in this route.</p>';
+  bindRouteElevationProfileInteractions();
 }
 
 function renderRouteMap() {
@@ -2711,10 +2906,13 @@ function renderRouteMap() {
     routeMapBounds = null;
     updateRouteFitControlUi();
     if (routeElevationProfile) routeElevationProfile.innerHTML = '';
+    updateRouteHeaderActions();
+    hideRouteElevationHoverState();
     mapCard.style.display = 'none';
     return;
   }
   mapCard.style.display = 'block';
+  updateRouteHeaderActions();
   renderRouteElevationProfilePanel();
   initRouteMap();
   clearRouteMapLayers();
@@ -2903,6 +3101,8 @@ function clearRoute() {
   routeStatus.textContent = 'Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when timing data exists.';
   updateLocationCardCollapseUi();
   updateRouteFitControlUi();
+  updateRouteHeaderActions();
+  hideRouteElevationHoverState();
   mapCard.style.display = 'none';
   if (routeLayer) clearRouteMapLayers();
   const slot = document.getElementById('route-weather-slot');
@@ -8413,7 +8613,7 @@ async function importStravaFirstRoute() {
     durationMinutes: Number(route?.estimated_moving_time) > 0 ? Number(route.estimated_moving_time) / 60 : null,
     shouldSetDuration: !importedRoute?.hasRealTimestamps,
   });
-  routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
+  routeState = buildRouteStateWithSource(importedRoute.geometry, importedRoute.name || 'Strava route', buildImportedRouteSourceMeta(importedRoute, 'Strava route'));
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
   collapsePlannerSubsection('duration');
@@ -8421,7 +8621,7 @@ async function importStravaFirstRoute() {
   renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  routeStatus.textContent = `${importedRoute.name} imported from Strava · ${formatKm(routeState.totalKm)} · ${routeState.points.length} points`;
+  routeStatus.textContent = `${importedRoute.name} imported from Strava · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points`;
   if (routeState?.points?.[0]) {
     await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
   }
@@ -8461,7 +8661,7 @@ async function handleOpenStravaPicker() {
 async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutofill = null) {
   applyStravaPlannerAutofill(plannerAutofill);
   captureRouteDistanceInputSnapshot();
-  routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
+  routeState = buildRouteStateWithSource(importedRoute.geometry, importedRoute.name || 'Strava route', buildImportedRouteSourceMeta(importedRoute, sourceLabel));
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
   collapsePlannerSubsection('duration');
@@ -8469,7 +8669,7 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
   renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  routeStatus.textContent = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)} · ${routeState.points.length} points`;
+  routeStatus.textContent = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points`;
   if (routeState?.points?.[0]) {
     await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
   }
@@ -8749,6 +8949,49 @@ async function importStravaActivityById(activityId) {
   });
 }
 
+function handleOpenRouteSource() {
+  const sourceUrl = routeState?.routeSource?.sourceUrl;
+  if (!sourceUrl) return;
+  window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+}
+
+function sanitizeRouteDownloadFileName(name) {
+  return String(name || 'strava-route')
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001F]+/g, '-')
+    .replace(/\s+/g, ' ')
+    .replace(/\.+$/g, '')
+    || 'strava-route';
+}
+
+async function handleDownloadRouteGpx() {
+  const source = routeState?.routeSource;
+  if (!source?.canDownloadGpx || !source.providerRouteId) return;
+  if (!(routeDownloadGpxBtn instanceof HTMLButtonElement)) return;
+
+  const originalLabel = routeDownloadGpxBtn.textContent || 'Download GPX';
+  routeDownloadGpxBtn.disabled = true;
+  routeDownloadGpxBtn.textContent = 'Preparing GPX...';
+
+  try {
+    const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, source.providerRouteId);
+    const blob = new Blob([gpxText], { type: 'application/gpx+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = `${sanitizeRouteDownloadFileName(routeState?.fileName || 'strava-route')}.gpx`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    routeStatus.textContent = error instanceof Error ? error.message : 'Unable to download GPX for this Strava route.';
+  } finally {
+    routeDownloadGpxBtn.disabled = !source?.canDownloadGpx;
+    routeDownloadGpxBtn.textContent = originalLabel;
+  }
+}
+
 function renderStravaConnectionStateEnhanced() {
   if (!stravaConnectPanel) return;
   const session = getStravaSession();
@@ -8906,6 +9149,12 @@ function bindDomActions() {
       case 'clearRoute':
         clearRoute();
         break;
+      case 'openRouteSource':
+        handleOpenRouteSource();
+        break;
+      case 'downloadRouteGpx':
+        void handleDownloadRouteGpx();
+        break;
       case 'connectStrava':
         handleConnectStravaEnhanced();
         break;
@@ -8982,5 +9231,6 @@ stravaPickerUrlInput?.addEventListener('keydown', (event) => {
 });
 
 renderStravaConnectionStateEnhanced();
+updateRouteHeaderActions();
 bindDomActions();
 

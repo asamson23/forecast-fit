@@ -872,3 +872,9 @@
 
 - Auto-collapse the Planned duration pane when a route loads, when a Strava activity/route autofill loads duration context, or when a planned-duration preset is clicked after an activity is already selected.
 - Kept manual activity-button clicks from collapsing the Planned duration pane by themselves.
+
+## v11.5.2
+
+- Preserved Strava route source metadata on imported routes so the Route card can expose Strava-specific actions without affecting manual GPX or GeoJSON uploads.
+- Added Route-card actions for imported Strava data: `Download GPX` for Strava routes and `Open in Strava` when the imported route or activity includes a Strava source URL.
+- Added interactive elevation-profile hover state with a floating point tooltip and a synchronized map highlight, and improved the empty-profile message for Strava routes that only return summary geometry instead of point-by-point elevation samples.
