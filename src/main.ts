@@ -350,6 +350,7 @@ let routeTileLayer = null;
 let routeHoverLayer = null;
 let routeMapBounds = null;
 let routeFitControlButton = null;
+let pendingChartSelectedStartTime = null;
 let laterPicker = null;
 let raceDayStartPicker = null;
 let raceDayEndPicker = null;
@@ -2802,7 +2803,6 @@ function bindRouteElevationProfileInteractions() {
 
   const elevationPoints = getRouteElevationRenderablePoints(routeState.points);
   if (elevationPoints.length < 2) return;
-  const { highPoint, lowPoint } = getRouteElevationExtremes(elevationPoints);
 
   const {
     chartWidth,
@@ -2842,24 +2842,11 @@ function bindRouteElevationProfileInteractions() {
       hoverDot.setAttribute('cy', y.toFixed(1));
     }
 
-    const pointRole = point === highPoint
-      ? 'Current point · high point'
-      : point === lowPoint
-        ? 'Current point · low point'
-        : 'Current point';
-    const highPointText = highPoint
-      ? `${Math.round(highPoint.ele)} m at ${formatRouteCoordinate(highPoint.lat)}, ${formatRouteCoordinate(highPoint.lon)}`
-      : '—';
-    const lowPointText = lowPoint
-      ? `${Math.round(lowPoint.ele)} m at ${formatRouteCoordinate(lowPoint.lat)}, ${formatRouteCoordinate(lowPoint.lon)}`
-      : '—';
     tooltip.innerHTML = `
       <div class="tt-time">${escapeHtml(formatKm(point.km))} from start</div>
-      <div class="tt-row"><span>Point type</span><strong>${escapeHtml(pointRole)}</strong></div>
+      <div class="tt-row"><span>Point type</span><strong>Current point</strong></div>
       <div class="tt-row"><span>Elevation</span><strong>${escapeHtml(`${Math.round(point.ele)} m`)}</strong></div>
       <div class="tt-row"><span>Current position</span><strong>${escapeHtml(`${formatRouteCoordinate(point.lat)}°, ${formatRouteCoordinate(point.lon)}°`)}</strong></div>
-      <div class="tt-row"><span>High point</span><strong>${escapeHtml(highPointText)}</strong></div>
-      <div class="tt-row"><span>Low point</span><strong>${escapeHtml(lowPointText)}</strong></div>
     `;
     tooltip.classList.add('visible');
     positionFloatingTooltip(tooltip, event);
@@ -4970,6 +4957,7 @@ async function fetchWeather() {
     const resolvedPlace = await resolvePlaceQuery(loc);
     await fetchWeatherFromResult(resolvedPlace);
   } catch (e) {
+    pendingChartSelectedStartTime = null;
     showError(e.message || 'Something went wrong.');
     resultCard.style.display = 'none';
   } finally {
@@ -4986,6 +4974,10 @@ async function fetchWeatherFromResult(place) {
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
     configureLaterInput(weatherData);
+    if (pendingChartSelectedStartTime) {
+      applyLaterStartTimeSelection(pendingChartSelectedStartTime, weatherData);
+      pendingChartSelectedStartTime = null;
+    }
     renderAdvice(weatherData, selectedActivity);
     await refreshRouteWeatherIfPossible();
   } catch (e) {
@@ -5351,24 +5343,7 @@ async function fetchWeatherCore(place) {
 }
 
 function getValidLaterRange(data) {
-  const profile = getDurationProfile();
-  const currentDate = roundUpToHour(parseLocalString(data.currentTime));
-  if (!profile) {
-    const maxPoint = data.hourly[data.hourly.length - 1];
-    const maxDate = maxPoint ? parseLocalString(maxPoint.time) : currentDate;
-    return { minDate: currentDate, maxDate: maxDate < currentDate ? currentDate : maxDate };
-  }
-  if (profile.mode === 'daily') {
-    const lastDaily = data.daily[data.daily.length - 1];
-    if (!lastDaily) return { minDate: currentDate, maxDate: currentDate };
-    const maxDate = parseLocalString(`${lastDaily.date}T23:00`);
-    maxDate.setDate(maxDate.getDate() - Math.max(0, (profile.daysWindow || 1) - 1));
-    return { minDate: currentDate, maxDate: maxDate < currentDate ? currentDate : maxDate };
-  }
-  const maxPoint = data.hourly[data.hourly.length - 1];
-  const maxDate = maxPoint ? parseLocalString(maxPoint.time) : currentDate;
-  maxDate.setMinutes(maxDate.getMinutes() - Math.max(0, profile.minutes || 0));
-  return { minDate: currentDate, maxDate: maxDate < currentDate ? currentDate : maxDate };
+  return getAbsoluteForecastRange(data);
 }
 
 // Compute the valid later-start window so the picker never goes past the forecast range.
@@ -5398,6 +5373,63 @@ function configureLaterInput(data) {
   laterStatus.textContent = `Choose a start time from ${formatShortDateTime(formatDateTimeLocal(minDate).slice(0,16))} to ${formatShortDateTime(formatDateTimeLocal(maxDate).slice(0,16))}.`;
   syncRaceDayTimingInputs(data);
   configureBestWindowUi(data);
+}
+
+function applyLaterStartTimeSelection(timeValue, data = weatherData) {
+  if (!data || !timeValue) return;
+  startMode = 'later';
+  document.querySelectorAll('.toggle-btn[data-start-mode]').forEach(btn => btn.classList.toggle('active', btn.dataset.startMode === 'later'));
+  laterBox?.classList.toggle('visible', true);
+  bestWindowBox?.classList.toggle('visible', false);
+  bestWindowSelectedStart = null;
+  configureLaterInput(data);
+  const { minDate, maxDate } = getValidLaterRange(data);
+  const target = clampDateToRange(parseLocalString(String(timeValue)), minDate, maxDate);
+  if (laterPicker) laterPicker.setDate(target, false, 'Y-m-d\\TH:i');
+  else if (laterInput) laterInput.value = formatDateTimeLocal(target).slice(0, 16);
+}
+
+function bindForecastChartInteractions(root = resultInner) {
+  root.querySelectorAll('[data-chart-jump]').forEach((el) => {
+    const trigger = el as HTMLElement;
+    if (trigger.dataset.chartJumpBound === '1') return;
+    trigger.dataset.chartJumpBound = '1';
+    trigger.addEventListener('click', async (event) => {
+      event.preventDefault();
+      const timeValue = trigger.dataset.chartTimeValue || '';
+      const latValue = Number(trigger.dataset.chartLat);
+      const lonValue = Number(trigger.dataset.chartLon);
+      const label = trigger.dataset.chartLabel || weatherData?.locationName || 'Selected forecast point';
+      if (!timeValue) return;
+
+      const hasPointLocation = isFiniteNumber(latValue) && isFiniteNumber(lonValue);
+      const currentMatches = hasPointLocation
+        && weatherData
+        && isFiniteNumber(weatherData.latitude)
+        && isFiniteNumber(weatherData.longitude)
+        && Math.abs(Number(weatherData.latitude) - latValue) < 0.0001
+        && Math.abs(Number(weatherData.longitude) - lonValue) < 0.0001;
+
+      if (!hasPointLocation || currentMatches) {
+        applyLaterStartTimeSelection(timeValue, weatherData);
+        if (weatherData) {
+          renderAdvice(weatherData, selectedActivity);
+          void refreshRouteWeatherIfPossible();
+        }
+        return;
+      }
+
+      pendingChartSelectedStartTime = timeValue;
+      await fetchWeatherFromResult({
+        latitude: latValue,
+        longitude: lonValue,
+        name: label,
+        admin1: '',
+        country: '',
+        country_code: '',
+      });
+    });
+  });
 }
 
 function getSelectedStartTime(data) {
@@ -5523,8 +5555,9 @@ function getForecastSelectionForRange(data, startTime, endTime, extra = {}) {
 
 function getDisplayForecastSelection(data, startTime) {
   const selection = getForecastSelection(data, startTime);
+  const baseSelection = { ...selection, chartLatitude: data?.latitude, chartLongitude: data?.longitude, chartLocationName: data?.locationName };
   const raceDayWindow = getRaceDayPlanningWindow(data, startTime);
-  if (!raceDayWindow || selection.mode !== 'hourly' || !shouldShowRaceDayTimingPanel()) return selection;
+  if (!raceDayWindow || selection.mode !== 'hourly' || !shouldShowRaceDayTimingPanel()) return baseSelection;
   return getForecastSelectionForRange(
     data,
     formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16),
@@ -5533,6 +5566,9 @@ function getDisplayForecastSelection(data, startTime) {
       highlightStartTime: formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16),
       highlightEndTime: formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16),
       headerTitle: 'Race-day weather timeline',
+      chartLatitude: data?.latitude,
+      chartLongitude: data?.longitude,
+      chartLocationName: data?.locationName,
       headerMeta: `${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}–${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · main event highlighted`
     }
   );
@@ -7492,6 +7528,7 @@ function renderAdvice(data, activity) {
     `);
     updateManualWeatherStatus();
     bindForecastChartTooltips();
+    bindForecastChartInteractions();
     return;
   }
 
@@ -7528,6 +7565,7 @@ function renderAdvice(data, activity) {
     `);
     updateManualWeatherStatus();
     bindForecastChartTooltips();
+    bindForecastChartInteractions();
     return;
   }
 
@@ -7577,6 +7615,7 @@ function renderAdvice(data, activity) {
   `);
   syncInteractiveAdvice();
   bindForecastChartTooltips();
+  bindForecastChartInteractions();
   updateManualWeatherStatus();
   if (activity === 'road_trip') triggerRoadTripItinerary();
 }

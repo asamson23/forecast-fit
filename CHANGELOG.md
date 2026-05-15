@@ -885,3 +885,10 @@
 - Changed direct Strava route and activity proxy lookups to pass string IDs through untouched, and added a frontend fallback Strava URL builder when Strava omits `permalink_url`.
 - Expanded the route elevation hover tooltip to show higher-precision coordinates plus the current hovered point, the route high point, and the route low point.
 - Added a small in-memory air-quality request cache to reduce repeated Open-Meteo AQI lookups that can trigger upstream `429 Too Many Requests` responses during repeated rerenders.
+
+## v11.5.4
+
+- Restored the later-date picker to the full forecast horizon so Flatpickr again exposes the complete available 14-day range instead of truncating the selectable start dates by the currently selected duration.
+- Added clickable forecast-chart interactions: hourly and daily chart points can now promote their time into the planner, and route checkpoint markers on the chart can jump the forecast to that checkpoint's time and location.
+- Replaced the chart's generic route-checkpoint glyphs with the same checkpoint marker vocabulary used on the route map, including the shared marker tones and event icons.
+- Restored the AQI helper request horizon to 14 forecast days so air-quality data stays aligned with the main forecast window.

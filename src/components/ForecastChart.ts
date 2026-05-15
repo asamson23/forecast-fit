@@ -1,24 +1,57 @@
 import { getAqiInfo } from '../data/aqiScale';
 import { isFiniteNumber, round1 } from '../utils/math';
-import { escapeHtml, windDirectionHtml } from '../utils/format';
+import { escapeHtml, renderSymbolIconHtml, windDirectionHtml } from '../utils/format';
 import { parseAnyTime, formatShortTime, formatShortDateTime, formatHumanDate } from '../utils/dateTime';
 import { renderAqiBadge, formatUvValue } from './WarningPanel';
 
 let chartTooltipGlobalDismissBound = false;
 
+type ForecastChartSelection = {
+  points: Record<string, unknown>[];
+  startTime: unknown;
+  endTime: unknown;
+  highlightStartTime?: unknown;
+  highlightEndTime?: unknown;
+  mode?: string;
+  chartLatitude?: unknown;
+  chartLongitude?: unknown;
+  chartLocationName?: unknown;
+};
+
+function buildChartCheckpointMarkerHtml(cp: any, x: number, y: number): string {
+  const kind = cp?.markerKind || (cp?.label === 'Start' ? 'start' : (cp?.label === 'Finish' ? 'finish' : 'mid'));
+  const toneClass = cp?.markerTone ? ` ${escapeHtml(cp.markerTone)}` : '';
+  const shortLabel = cp?.markerShort || (kind === 'start' ? 'S' : (kind === 'finish' ? 'F' : '•'));
+  const markerInner = kind === 'event'
+    ? renderSymbolIconHtml(shortLabel, 'checkpoint-marker-icon', cp?.label || shortLabel, true)
+    : escapeHtml(shortLabel);
+  const title = escapeHtml(`${cp?.label || 'Route checkpoint'} · ${formatShortTime(cp?.eta)}`);
+
+  return `
+    <foreignObject x="${(x - 11).toFixed(1)}" y="${(y - 11).toFixed(1)}" width="22" height="22" class="chart-checkpoint-fo">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="chart-checkpoint-fo-box">
+        <button
+          type="button"
+          class="chart-checkpoint-button"
+          data-chart-jump="checkpoint"
+          data-chart-time-value="${escapeHtml(String(cp?.eta || ''))}"
+          data-chart-lat="${escapeHtml(String(cp?.lat ?? ''))}"
+          data-chart-lon="${escapeHtml(String(cp?.lon ?? ''))}"
+          data-chart-label="${escapeHtml(String(cp?.label || 'Route checkpoint'))}"
+          title="${title}"
+          aria-label="${title}">
+          <span class="checkpoint-marker ${escapeHtml(kind)}${toneClass}">${markerInner}</span>
+        </button>
+      </div>
+    </foreignObject>`;
+}
+
 export function buildForecastChart(data: unknown, selection: unknown, routeSamples: unknown[] = []): string {
-  const sel = selection as {
-    points: Record<string, unknown>[];
-    startTime: unknown;
-    endTime: unknown;
-    highlightStartTime?: unknown;
-    highlightEndTime?: unknown;
-    mode?: string;
-  } | null;
+  const sel = selection as ForecastChartSelection | null;
   const d = data as { daily?: Record<string, unknown>[] } | null;
   const points = sel?.points || [];
   if (!points.length) return '';
-  if (sel?.mode === 'daily') return buildDailyForecastChart(points);
+  if (sel?.mode === 'daily') return buildDailyForecastChart(points, sel);
 
   const width = 760;
   const height = 210;
@@ -82,14 +115,10 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
       if (!Number.isFinite(ms) || ms < startMs || ms > endMs) return '';
       const ratio = startMs === endMs ? 0 : (ms - startMs) / Math.max(1, endMs - startMs);
       const x = pad.left + ratio * innerW;
-      const label = escapeHtml(cp.markerShort || '•');
-      const title = escapeHtml(`${cp.label} · ${formatShortTime(cp.eta)}`);
       return `
         <g>
-          <line x1="${x.toFixed(1)}" y1="${pad.top}" x2="${x.toFixed(1)}" y2="${height - pad.bottom}" class="chart-checkpoint-line"></line>
-          <circle cx="${x.toFixed(1)}" cy="${height - pad.bottom}" r="3.4" class="chart-checkpoint-dot"></circle>
-          <text x="${x.toFixed(1)}" y="${pad.top + 10}" text-anchor="middle" class="chart-checkpoint-label">${label}</text>
-          <title>${title}</title>
+          <line x1="${x.toFixed(1)}" y1="${pad.top}" x2="${x.toFixed(1)}" y2="${(height - pad.bottom - 12).toFixed(1)}" class="chart-checkpoint-line"></line>
+          ${buildChartCheckpointMarkerHtml(cp, x, height - pad.bottom - 12)}
         </g>`;
     }).join('');
 
@@ -98,6 +127,11 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
     const nextMid = i === points.length - 1 ? width - pad.right : (xForIndex(i) + xForIndex(i + 1)) / 2;
     const aqiInfo = isFiniteNumber(p.aqi) ? getAqiInfo(p.aqi as number) : null;
     return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit` +
+      ` data-chart-jump="forecast"` +
+      ` data-chart-time-value="${escapeHtml(String(p.time || ''))}"` +
+      ` data-chart-lat="${escapeHtml(String(sel?.chartLatitude ?? ''))}"` +
+      ` data-chart-lon="${escapeHtml(String(sel?.chartLongitude ?? ''))}"` +
+      ` data-chart-label="${escapeHtml(String(sel?.chartLocationName || 'Forecast point'))}"` +
       ` data-time="${escapeHtml(formatShortDateTime(p.time))}"` +
       ` data-temp="${escapeHtml(round1(p.temp as number))}"` +
       ` data-feels="${escapeHtml(round1(p.feels as number))}"` +
@@ -151,10 +185,9 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
       <span class="sunrise"><i></i> Sunrise</span>
       <span class="sunset"><i></i> Sunset</span>
       ${hasEventHighlight ? `<span class="event"><i></i> Main event</span>` : ''}
-      ${hasCheckpoints ? `<span class="checkpoints"><i></i> Route checkpoints</span>` : ''}
+      ${hasCheckpoints ? `<span class="checkpoints"><span class="checkpoint-marker mid chart-checkpoint-legend-marker">1</span> Route checkpoints</span>` : ''}
     </div>`;
 }
-
 
 const MAX_DAILY_CHART_POINTS = 10;
 
@@ -192,7 +225,7 @@ function formatDailyRange(max: unknown, min: unknown): string {
   return `${round1(max)}° / ${round1(min)}°`;
 }
 
-function buildDailyForecastChart(rawPoints: Record<string, unknown>[]): string {
+function buildDailyForecastChart(rawPoints: Record<string, unknown>[], selection?: ForecastChartSelection | null): string {
   const points = sampleChartPoints(rawPoints, MAX_DAILY_CHART_POINTS);
   const width = 760;
   const height = 210;
@@ -227,6 +260,11 @@ function buildDailyForecastChart(rawPoints: Record<string, unknown>[]): string {
     const nextMid = i === points.length - 1 ? width - pad.right : (xForIndex(i) + xForIndex(i + 1)) / 2;
     const aqiInfo = isFiniteNumber(p.aqiMax) ? getAqiInfo(p.aqiMax as number) : null;
     return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit` +
+      ` data-chart-jump="forecast"` +
+      ` data-chart-time-value="${escapeHtml(String(p.date ? `${p.date}T12:00` : ''))}"` +
+      ` data-chart-lat="${escapeHtml(String(selection?.chartLatitude ?? ''))}"` +
+      ` data-chart-lon="${escapeHtml(String(selection?.chartLongitude ?? ''))}"` +
+      ` data-chart-label="${escapeHtml(String(selection?.chartLocationName || 'Forecast point'))}"` +
       ` data-time="${escapeHtml(formatHumanDate(p.date))}"` +
       ` data-temp-label="Temp range"` +
       ` data-temp="${escapeHtml(formatDailyRange(p.tMax, p.tMin))}"` +

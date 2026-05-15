@@ -19,7 +19,7 @@ export async function fetchAirQuality(latitude: number, longitude: number): Prom
   if (cached) return cached;
 
   const pending = (async () => {
-    const url = `${AIR_QUALITY_API}?latitude=${latitude}&longitude=${longitude}&hourly=us_aqi&forecast_days=7&timezone=auto`;
+    const url = `${AIR_QUALITY_API}?latitude=${latitude}&longitude=${longitude}&hourly=us_aqi&forecast_days=14&timezone=auto`;
     try {
       const res = await fetch(url);
       if (!res.ok) return null;

@@ -470,23 +470,43 @@
   }
   .chart-legend .checkpoints { color: var(--text); }
   .chart-legend .checkpoints i { border-top-style: dotted; }
+  .chart-checkpoint-legend-marker {
+    display: inline-flex;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: translateY(-1px);
+  }
   .chart-checkpoint-line {
     stroke: color-mix(in srgb, var(--text) 55%, var(--accent2));
     stroke-width: 1.1;
     stroke-dasharray: 2 4;
     vector-effect: non-scaling-stroke;
   }
-  .chart-checkpoint-dot {
-    fill: var(--surface);
-    stroke: color-mix(in srgb, var(--accent2) 80%, white 10%);
-    stroke-width: 1.4;
-    vector-effect: non-scaling-stroke;
+  .chart-checkpoint-fo {
+    overflow: visible;
   }
-  .chart-checkpoint-label {
-    font-size: 9px;
-    fill: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
+  .chart-checkpoint-fo-box {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chart-checkpoint-button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .chart-checkpoint-button:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 70%, white 12%);
+    outline-offset: 2px;
+    border-radius: 999px;
   }
   .checkpoint-marker.event {
     background: var(--accent2);
