@@ -49,3 +49,50 @@ Planning and follow-up notes for future work.
   - a high-level module diagram
   - a route/weather data flow diagram
   - a forecast mode state and interaction diagram
+
+## PWA Shortcuts And Entry Points
+
+- Add a PWA shortcut to launch directly into `Forecast-only mode`.
+- Add a PWA shortcut to launch directly into the `Strava` importer flow.
+- Evaluate adding a PWA shortcut to launch directly into `Current location`.
+- Define the expected startup behavior for each shortcut so the app opens in a clear, stable state without requiring extra taps.
+- Evaluate whether PWA shortcuts should support more launch targets beyond the initial shortlist, based on the most common user entry flows.
+- Define a general deep-link and startup routing model for the app, not just PWA shortcuts.
+- Review whether URL params and deep links can be used more effectively for launch behavior, preselected modes, import entry points, and shareable app state.
+- Decide which startup states should be supported through:
+  - PWA shortcuts
+  - URL params or query flags
+  - saved last-session state
+  - installable launcher entries
+- Add an `entry intent` state layer so launches into forecast-only mode, provider import, current location, and future flows are handled consistently.
+- Define fallback behavior when a launch target cannot complete immediately, such as:
+  - geolocation permission denied
+  - provider auth expired
+  - required prior state missing
+- Review which launch entry points should also exist in-app so browser users get the same convenience as installed PWA users.
+- Add validation coverage for launch-entry behavior so useful entry points can be confirmed and edge cases are exercised.
+
+## Performance And Caching
+
+- Evaluate caching forecast, route-derived, and computed planner data in browser storage where it is safe and worthwhile.
+- Identify which expensive calculations or fetch results can be reused to reduce recomputing and improve repeat-load responsiveness.
+- Define cache invalidation rules so saved weather, route, and derived planning state do not become stale or misleading.
+- Use different cache lifetimes by data type, for example:
+  - weather data on a short time window such as a few hours
+  - imported service routes on a longer-lived window
+  - uploaded routes only if there is a clear, privacy-safe, storage-safe local strategy
+- Decide how uploaded GPX or manually imported routes should be cached locally, if at all, without creating storage bloat or unclear stale-state behavior.
+
+## Provider Browser UX
+
+- In the `Strava` and future `RideWithGPS` route or activity browser, evaluate showing a lightweight `SVG`-style miniature route trace preview for each item.
+- Keep provider-browser preview traces focused on route shape only unless there is a strong reason to add more detail later.
+
+## Sharing
+
+- Evaluate sharing of route, weather, and selected activity state.
+- Define which parts of planner state are safe and useful to share through a link versus local-only state.
+- Explore whether share links should use URL params alone, compressed encoded state, or a lightweight backend-backed share token.
+- For route sharing, define a graceful caching or storage strategy that avoids excessive bandwidth or host storage usage.
+- For shared routes, prefer deduplication, compact geometry storage, or expiring share records if backend persistence is introduced.
+- Define privacy and permission expectations for shared state, especially for imported provider routes or location-derived plans.
