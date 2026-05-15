@@ -180,6 +180,8 @@ const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
 let ndbcActiveStationsCache = null;
+const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
+const MOBILE_LAYOUT_MAX_WIDTH = 699;
 
 let selectedActivity = null;
 let selectedEventKey = null;
@@ -953,10 +955,53 @@ function togglePlannerSubsection(section: Element | null) {
   updatePlannerSubsectionCollapseUi();
 }
 
-function collapsePlannerSubsection(key: keyof typeof plannerSubsectionCollapsed) {
+function isMobilePlannerLayout() {
+  return window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px)`).matches;
+}
+
+function isElementVisibleForScrollTarget(element: Element | null) {
+  if (!(element instanceof HTMLElement)) return false;
+  if (element.hidden) return false;
+  const style = window.getComputedStyle(element);
+  return style.display !== 'none' && style.visibility !== 'hidden';
+}
+
+function scrollPlannerFlowToNextSection(fromKey: keyof typeof plannerSubsectionCollapsed) {
+  if (!isMobilePlannerLayout()) return;
+  const sections = Array.from(document.querySelectorAll('[data-planner-subsection]'));
+  const currentIndex = sections.findIndex(section => section instanceof HTMLElement && section.dataset.plannerSubsection === fromKey);
+  if (currentIndex < 0) return;
+
+  let target: HTMLElement | null = null;
+  for (const section of sections.slice(currentIndex + 1)) {
+    const toggle = section.querySelector('[data-planner-subsection-toggle]');
+    if (isElementVisibleForScrollTarget(section) && toggle instanceof HTMLElement && isElementVisibleForScrollTarget(toggle)) {
+      target = toggle;
+      break;
+    }
+  }
+
+  if (!target) {
+    const startTimeSection = document.getElementById('start-time-section');
+    if (startTimeSection && isElementVisibleForScrollTarget(startTimeSection)) {
+      const label = startTimeSection.querySelector('label');
+      target = label instanceof HTMLElement ? label : startTimeSection;
+    }
+  }
+
+  if (!target) return;
+  const rect = target.getBoundingClientRect();
+  if (rect.top >= 0 && rect.top <= 120) return;
+  window.requestAnimationFrame(() => {
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function collapsePlannerSubsection(key: keyof typeof plannerSubsectionCollapsed, options: { scrollToNextOnMobile?: boolean } = {}) {
   if (plannerSubsectionCollapsed[key]) return;
   plannerSubsectionCollapsed[key] = true;
   updatePlannerSubsectionCollapseUi();
+  if (options.scrollToNextOnMobile) scrollPlannerFlowToNextSection(key);
 }
 
 function setupPlannerSubsectionToggles() {
@@ -1786,7 +1831,8 @@ function renderDurationButtons() {
   const el = document.getElementById('duration-grid');
   const locked = routeHasDurationOverride();
   const activeKey = locked ? (routeState.derivedDurationKey || selectedDuration) : (selectedDuration || null);
-  el.innerHTML = durationOrder.map(key => {
+  const durationKeys = forecastOnlyMode ? FORECAST_ONLY_DURATION_KEYS : durationOrder;
+  el.innerHTML = durationKeys.map(key => {
     const p = durationProfiles[key];
     return `<button class="duration-btn ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} data-action="selectDurationKey" data-duration-key="${escapeHtml(key)}"><div class="label">${escapeHtml(p.label)}</div><div class="sublabel">${escapeHtml(locked && activeKey === key ? `${p.sublabel} · route` : p.sublabel)}</div></button>`;
   }).join('');
@@ -3182,7 +3228,7 @@ async function handleRouteFileChange(event) {
     routeState = buildRouteState(points, file.name);
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
-    collapsePlannerSubsection('duration');
+    collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
     routeStatus.textContent = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model.`;
     clearRouteBtn.style.display = 'inline-block';
     renderPlannerState();
@@ -4939,7 +4985,7 @@ function activateForecastOnlyMode() {
   forecastOnlyMode = true;
   selectedActivity = null;
   selectedEventKey = null;
-  selectedDuration = 'h3';
+  selectedDuration = 'h8';
   if (startMode === 'best') startMode = 'now';
   raceDayMode = false;
   clearPlannerCustomFields();
@@ -4999,7 +5045,7 @@ function selectDurationKey(key) {
   if (routeHasDurationOverride()) return;
   clearPlannerCustomFields();
   selectedDuration = key;
-  if (selectedActivity) collapsePlannerSubsection('duration');
+  if (selectedActivity) collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
   renderPlannerState();
   if (!weatherData) refreshIndoorAdviceIfNeeded();
   if (weatherData) configureLaterInput(weatherData);
@@ -7997,7 +8043,7 @@ function getQuickStartSteps() {
           ? `Planned preset ${getSelectedDurationPreset()?.label || 'none'} with a custom override of ${durationState.label}.`
           : durationState?.source === 'derived'
             ? `Planned preset ${getSelectedDurationPreset()?.label || 'none'} with a calculated active duration of ${durationState.label}.`
-          : 'Pick or enter how long the outing or forecast window should be. Duration controls how much forecast time and hazard context the results summarize.',
+          : 'Pick a forecast scale preset or enter a custom duration. Duration controls how much forecast time and hazard context the results summarize.',
         state: durationState?.source === 'custom' ? helperState('custom', 'done') : helperState('preset', 'optional')
       },
       {
@@ -8748,7 +8794,7 @@ function applyStravaPlannerAutofill(details) {
   }
 
   syncDurationFromEvent(getSelectedEvent());
-  if (activityKey || details?.shouldSetDuration) collapsePlannerSubsection('duration');
+  if (activityKey || details?.shouldSetDuration) collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
   renderPlannerState();
 }
 
@@ -8777,7 +8823,7 @@ async function importStravaFirstRoute() {
   routeState = buildRouteStateWithSource(importedRoute.geometry, importedRoute.name || 'Strava route', buildImportedRouteSourceMeta(importedRoute, 'Strava route'));
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
-  collapsePlannerSubsection('duration');
+  collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
   clearRouteBtn.style.display = 'inline-block';
   renderPlannerState();
   clearRouteMapLayers();
@@ -8825,7 +8871,7 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
   routeState = buildRouteStateWithSource(importedRoute.geometry, importedRoute.name || 'Strava route', buildImportedRouteSourceMeta(importedRoute, sourceLabel));
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
-  collapsePlannerSubsection('duration');
+  collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
   clearRouteBtn.style.display = 'inline-block';
   renderPlannerState();
   clearRouteMapLayers();
@@ -9026,7 +9072,7 @@ function openStravaPicker() {
   document.body.classList.add('helper-open');
   renderStravaPicker();
   if (stravaPickerUrlInput) stravaPickerUrlInput.value = '';
-  stravaPickerUrlInput?.focus({ preventScroll: true });
+  if (!isMobilePlannerLayout()) stravaPickerUrlInput?.focus({ preventScroll: true });
   void ensureStravaPickerTabLoaded(stravaPickerTab);
 }
 

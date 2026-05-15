@@ -165,6 +165,10 @@
     header h1 {
       font-size: clamp(2rem, 12vw, 2.7rem);
     }
+    .header-actions-legend {
+      justify-items: start;
+      text-align: left;
+    }
     .card {
       border-radius: 14px;
       padding: 16px;

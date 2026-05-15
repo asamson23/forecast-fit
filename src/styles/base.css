@@ -69,6 +69,19 @@
     font-weight: 400;
     letter-spacing: 0.01em;
   }
+  .header-actions-legend {
+    margin-top: 10px;
+    display: grid;
+    gap: 4px;
+    justify-items: center;
+    max-width: 48rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .header-actions-legend strong {
+    color: var(--text-soft);
+    font-weight: 600;
+  }
 
   .card {
     background: var(--surface);

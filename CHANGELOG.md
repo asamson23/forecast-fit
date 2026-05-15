@@ -915,3 +915,10 @@
 - Added explicit midnight separator lines to hourly forecast charts so cross-day timelines are easier to scan.
 - Made the route elevation profile scale with a fixed aspect ratio instead of stretching at a hardcoded height.
 - Changed forecast-chart touch tooltips to dismiss on outside taps, scrolling, resize, or touch cancellation rather than vanishing immediately on touch end.
+
+## v11.6
+
+- Changed Forecast-only mode to default to `8 h` and trimmed its duration presets to a smaller forecast-scale set: `1 h`, `3 h`, `6 h`, `8 h`, `12 h`, and `24 h`.
+- Added mobile-only auto-advance scrolling for app-driven planner section collapses so the next section header comes into view during guided flows.
+- Stopped the Strava import picker from auto-focusing its URL field on mobile, preventing the OS keyboard from opening until the field is tapped.
+- Added brief header legends under the `Forecast only` and `Quick start` buttons so their purpose is visible at a glance.
