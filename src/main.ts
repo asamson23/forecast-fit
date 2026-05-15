@@ -2039,11 +2039,16 @@ function buildRouteState(points, fileName) {
 function buildImportedRouteSourceMeta(importedRoute, sourceLabel) {
   if (!importedRoute) return null;
   const normalizedSourceLabel = String(sourceLabel || '').toLowerCase();
+  const providerRouteId = importedRoute.providerRouteId ? String(importedRoute.providerRouteId) : '';
+  const kind = normalizedSourceLabel.includes('activity') ? 'activity' : 'route';
+  const fallbackSourceUrl = importedRoute.provider === 'strava' && providerRouteId
+    ? `https://www.strava.com/${kind === 'activity' ? 'activities' : 'routes'}/${encodeURIComponent(providerRouteId)}`
+    : '';
   return {
     provider: importedRoute.provider || 'manual',
-    kind: normalizedSourceLabel.includes('activity') ? 'activity' : 'route',
-    providerRouteId: importedRoute.providerRouteId ? String(importedRoute.providerRouteId) : '',
-    sourceUrl: importedRoute.sourceUrl || '',
+    kind,
+    providerRouteId,
+    sourceUrl: importedRoute.sourceUrl || fallbackSourceUrl,
     elevationGainMeters: Number(importedRoute.elevationGainMeters) || 0,
     estimatedMovingTimeSeconds: Number(importedRoute.estimatedMovingTimeSeconds) || 0,
     canDownloadGpx: importedRoute.provider === 'strava' && normalizedSourceLabel.includes('route') && !!importedRoute.providerRouteId,
@@ -2779,6 +2784,17 @@ function updateRouteHeaderActions() {
   }
 }
 
+function formatRouteCoordinate(value) {
+  return isFiniteNumber(value) ? Number(value).toFixed(5) : '—';
+}
+
+function getRouteElevationExtremes(points) {
+  if (!Array.isArray(points) || !points.length) return { highPoint: null, lowPoint: null };
+  const highPoint = points.reduce((best, point) => (!best || point.ele > best.ele ? point : best), null);
+  const lowPoint = points.reduce((best, point) => (!best || point.ele < best.ele ? point : best), null);
+  return { highPoint, lowPoint };
+}
+
 function bindRouteElevationProfileInteractions() {
   if (!routeElevationProfile) return;
   const svg = routeElevationProfile.querySelector('[data-route-elevation-chart]');
@@ -2786,6 +2802,7 @@ function bindRouteElevationProfileInteractions() {
 
   const elevationPoints = getRouteElevationRenderablePoints(routeState.points);
   if (elevationPoints.length < 2) return;
+  const { highPoint, lowPoint } = getRouteElevationExtremes(elevationPoints);
 
   const {
     chartWidth,
@@ -2825,10 +2842,24 @@ function bindRouteElevationProfileInteractions() {
       hoverDot.setAttribute('cy', y.toFixed(1));
     }
 
+    const pointRole = point === highPoint
+      ? 'Current point · high point'
+      : point === lowPoint
+        ? 'Current point · low point'
+        : 'Current point';
+    const highPointText = highPoint
+      ? `${Math.round(highPoint.ele)} m at ${formatRouteCoordinate(highPoint.lat)}, ${formatRouteCoordinate(highPoint.lon)}`
+      : '—';
+    const lowPointText = lowPoint
+      ? `${Math.round(lowPoint.ele)} m at ${formatRouteCoordinate(lowPoint.lat)}, ${formatRouteCoordinate(lowPoint.lon)}`
+      : '—';
     tooltip.innerHTML = `
       <div class="tt-time">${escapeHtml(formatKm(point.km))} from start</div>
+      <div class="tt-row"><span>Point type</span><strong>${escapeHtml(pointRole)}</strong></div>
       <div class="tt-row"><span>Elevation</span><strong>${escapeHtml(`${Math.round(point.ele)} m`)}</strong></div>
-      <div class="tt-row"><span>Position</span><strong>${escapeHtml(`${round1(point.lat)}°, ${round1(point.lon)}°`)}</strong></div>
+      <div class="tt-row"><span>Current position</span><strong>${escapeHtml(`${formatRouteCoordinate(point.lat)}°, ${formatRouteCoordinate(point.lon)}°`)}</strong></div>
+      <div class="tt-row"><span>High point</span><strong>${escapeHtml(highPointText)}</strong></div>
+      <div class="tt-row"><span>Low point</span><strong>${escapeHtml(lowPointText)}</strong></div>
     `;
     tooltip.classList.add('visible');
     positionFloatingTooltip(tooltip, event);

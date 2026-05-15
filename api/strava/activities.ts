@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getBearerToken, handleOptions, parsePositiveInteger, proxyJsonResponse, respondWithProxyError, setCors, stravaFetch } from './stravaUtils.js';
+import { getBearerToken, handleOptions, parsePositiveInteger, proxyJsonResponsePreservingIds, respondWithProxyError, setCors, stravaFetch } from './stravaUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -9,7 +9,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!token) return res.status(401).json({ error: 'Missing bearer token' });
     const page = parsePositiveInteger(req.query.page, 1);
     const response = await stravaFetch(`/athlete/activities?page=${page}&per_page=25`, { headers: { Authorization: `Bearer ${token}` } });
-    return proxyJsonResponse(res, response);
+    return proxyJsonResponsePreservingIds(res, response);
   } catch (error) {
     return respondWithProxyError(res, error);
   }

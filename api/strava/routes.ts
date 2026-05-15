@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getBearerToken, getErrorMessage, handleOptions, parsePositiveInteger, proxyJsonResponse, readResponsePayload, respondWithProxyError, setCors, stravaFetch } from './stravaUtils.js';
+import { getBearerToken, getErrorMessage, handleOptions, parsePositiveInteger, proxyJsonResponsePreservingIds, readResponsePayload, respondWithProxyError, setCors, stravaFetch } from './stravaUtils.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const directRoutesResponse = await stravaFetch(`/athlete/routes?page=${page}&per_page=50`, { headers });
     if (directRoutesResponse.ok) {
-      return proxyJsonResponse(res, directRoutesResponse);
+      return proxyJsonResponsePreservingIds(res, directRoutesResponse);
     }
     const directRoutesPayload = await readResponsePayload(directRoutesResponse);
 
@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const athleteRoutesResponse = await stravaFetch(`/athletes/${athleteId}/routes?page=${page}&per_page=50`, { headers });
     if (athleteRoutesResponse.ok) {
-      return proxyJsonResponse(res, athleteRoutesResponse);
+      return proxyJsonResponsePreservingIds(res, athleteRoutesResponse);
     }
 
     const athleteRoutesPayload = await readResponsePayload(athleteRoutesResponse);

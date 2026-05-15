@@ -46,6 +46,21 @@ export async function readResponsePayload(response: Response): Promise<unknown> 
   }
 }
 
+function stringifyUnsafeIdLiterals(jsonText: string): string {
+  return jsonText.replace(/("id"\s*:\s*)(\d{16,})(?=\s*[,}])/g, '$1"$2"');
+}
+
+export async function readResponsePayloadPreservingIds(response: Response): Promise<unknown> {
+  const contentType = response?.headers?.get?.('content-type') || '';
+  try {
+    if (!contentType.includes('application/json')) return await response.text();
+    const text = await response.text();
+    return JSON.parse(stringifyUnsafeIdLiterals(text));
+  } catch {
+    return null;
+  }
+}
+
 export function getErrorMessage(payload: unknown, fallback: string): string {
   if (typeof payload === 'string' && payload.trim()) return payload.trim();
   if (!payload || typeof payload !== 'object') return fallback;
@@ -71,6 +86,16 @@ export function getErrorMessage(payload: unknown, fallback: string): string {
 
 export async function proxyJsonResponse(res: VercelResponse, response: Response) {
   const payload = await readResponsePayload(response);
+  if (!response?.ok) {
+    return res.status(response.status).json({
+      error: getErrorMessage(payload, `Strava API request failed (${response.status})`),
+    });
+  }
+  return res.status(response.status).json(payload);
+}
+
+export async function proxyJsonResponsePreservingIds(res: VercelResponse, response: Response) {
+  const payload = await readResponsePayloadPreservingIds(response);
   if (!response?.ok) {
     return res.status(response.status).json({
       error: getErrorMessage(payload, `Strava API request failed (${response.status})`),

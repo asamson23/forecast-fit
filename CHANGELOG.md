@@ -878,3 +878,10 @@
 - Preserved Strava route source metadata on imported routes so the Route card can expose Strava-specific actions without affecting manual GPX or GeoJSON uploads.
 - Added Route-card actions for imported Strava data: `Download GPX` for Strava routes and `Open in Strava` when the imported route or activity includes a Strava source URL.
 - Added interactive elevation-profile hover state with a floating point tooltip and a synchronized map highlight, and improved the empty-profile message for Strava routes that only return summary geometry instead of point-by-point elevation samples.
+
+## v11.5.3
+
+- Preserved large Strava route and activity IDs exactly through the API proxy instead of letting JSON number parsing round them, which fixes broken `route-gpx` lookups, restores Strava route elevation imports, and makes the Route-card Strava actions work again.
+- Changed direct Strava route and activity proxy lookups to pass string IDs through untouched, and added a frontend fallback Strava URL builder when Strava omits `permalink_url`.
+- Expanded the route elevation hover tooltip to show higher-precision coordinates plus the current hovered point, the route high point, and the route low point.
+- Added a small in-memory air-quality request cache to reduce repeated Open-Meteo AQI lookups that can trigger upstream `429 Too Many Requests` responses during repeated rerenders.
