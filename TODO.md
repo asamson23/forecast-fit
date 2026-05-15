@@ -1,10 +1,21 @@
-# Forecast Fit TODO
+# Forecast Fit Roadmap
 
 Planning and follow-up notes for future work.
 
-## Forecast Mode UX
+## Constraints
 
-- Show a confirmation/warning when switching to `Forecast mode` if the current setup has unsaved or customized state, similar to the existing `Clear all` warning flow.
+- Keep app startup stable.
+- Preserve existing user-facing behavior unless a change is intentional.
+- Keep route upload/import and weather fetching reliable.
+- Keep the frontend deployable as a static GitHub Pages build.
+- Do not put provider secrets or tokens in frontend code.
+- Avoid unrelated visual redesigns while doing UX cleanup.
+
+## Now
+
+### Forecast Mode UX Cleanup
+
+- Show a confirmation or warning when switching to `Forecast mode` if the current setup has unsaved or customized state, similar to the existing `Clear all` warning flow.
 - Add a dedicated `Forecast mode` summary banner so users can immediately see which controls are intentionally disabled in that mode.
 - In forecast mode, remove the `Activity parameters` column.
 - In forecast mode, let the planner parameters section expand to use the freed width.
@@ -16,41 +27,28 @@ Planning and follow-up notes for future work.
   - comfort adjustments
 - Preserve and restore hidden custom settings when leaving forecast mode instead of clearing them silently.
 - Add an empty-state message for forecast mode when required inputs are missing so the simplified layout still explains why results are absent.
+- Add mobile-layout validation tasks specifically for forecast-only mode so width and layout adjustments do not regress the phone experience.
 
-## Water Temperature
-
-- For water sports, if possible, show a forecasted water temperature line or range.
-- Investigate whether water temperature can be estimated algorithmically from available forecast/provider inputs and current app parameters.
-- In forecasted weather mode, when there is an air temperature forecast, also try to forecast water temperature if data or estimation is available.
-- If water temperature is estimated rather than sourced directly, label it clearly as `estimated` and show a confidence band or range when possible.
-
-## Route And Weather Refresh
+### Route And Weather Refresh
 
 - Validate that loading a route from GPX triggers a forced weather refresh.
 - Validate that loading a route from a service import triggers a forced weather refresh.
 - Apply the same forced refresh behavior when switching the forecast to a later date.
 - Add a visible `weather last refreshed` timestamp or status near the forecast panel.
 - Add a lightweight loading state when route or date changes trigger a weather refresh so the UI does not feel stale or ambiguous.
+- Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
+- Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
 
-## Ride With GPS
+### Baseline Validation
 
-- Begin implementation planning for `RideWithGPS`.
-- Define scope for:
-  - provider auth flow
-  - backend/API responsibilities
-  - frontend import UX
-  - normalization into `ImportedRoute`
-- Add a parity checklist against the current `Strava` flow so the `RideWithGPS` implementation stays behaviorally consistent where appropriate.
+- Add accessibility review items for keyboard flow, warning dialogs, forecast cells, color dependence, and touch-target sizing.
+- Add test coverage targets for:
+  - forecast mode toggling
+  - route import refresh behavior
 
-## Documentation
+## Next
 
-- Produce a UML diagram covering the app’s functions/modules and how they relate.
-- Split the UML/documentation work into:
-  - a high-level module diagram
-  - a route/weather data flow diagram
-  - a forecast mode state and interaction diagram
-
-## PWA Shortcuts And Entry Points
+### Launch And Entry Behavior
 
 - Add a PWA shortcut to launch directly into `Forecast-only mode`.
 - Add a PWA shortcut to launch directly into the `Strava` importer flow.
@@ -72,7 +70,23 @@ Planning and follow-up notes for future work.
 - Review which launch entry points should also exist in-app so browser users get the same convenience as installed PWA users.
 - Add validation coverage for launch-entry behavior so useful entry points can be confirmed and edge cases are exercised.
 
-## Performance And Caching
+### State And Provenance
+
+- Add a data provenance layer in the UI so key values can be labeled as live, cached, estimated, imported, or manually derived.
+- Define state persistence rules for reloads and repeat visits, including whether selected activity, presets, imported route, forecast mode, location, and dismissed warnings should persist.
+
+### Provider Browser UX
+
+- In the `Strava` and future `RideWithGPS` route or activity browser, evaluate showing a lightweight `SVG`-style miniature route trace preview for each item.
+- Keep provider-browser preview traces focused on route shape only unless there is a strong reason to add more detail later.
+
+### Diagnostics
+
+- Add support for exporting a readable diagnostics file such as `JSON` or `XML` covering cache status, last weather fetch, route source, and provider auth or import state.
+
+## Later
+
+### Performance And Caching
 
 - Evaluate caching forecast, route-derived, and computed planner data in browser storage where it is safe and worthwhile.
 - Identify which expensive calculations or fetch results can be reused to reduce recomputing and improve repeat-load responsiveness.
@@ -83,18 +97,12 @@ Planning and follow-up notes for future work.
   - uploaded routes only if there is a clear, privacy-safe, storage-safe local strategy
 - Decide how uploaded GPX or manually imported routes should be cached locally, if at all, without creating storage bloat or unclear stale-state behavior.
 
-## Offline And Resilience
+### Offline And Resilience
 
 - Define an explicit offline or degraded-mode plan for the PWA.
 - Decide which parts of the app should still work with cached route, cached planner state, or stale weather when fresh network data is unavailable.
-- Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
 
-## Provider Browser UX
-
-- In the `Strava` and future `RideWithGPS` route or activity browser, evaluate showing a lightweight `SVG`-style miniature route trace preview for each item.
-- Keep provider-browser preview traces focused on route shape only unless there is a strong reason to add more detail later.
-
-## Sharing
+### Sharing
 
 - Evaluate sharing of route, weather, and selected activity state.
 - Define which parts of planner state are safe and useful to share through a link versus local-only state.
@@ -103,32 +111,56 @@ Planning and follow-up notes for future work.
 - For shared routes, prefer deduplication, compact geometry storage, or expiring share records if backend persistence is introduced.
 - Define privacy and permission expectations for shared state, especially for imported provider routes or location-derived plans.
 
-## State And Provenance
-
-- Add a data provenance layer in the UI so key values can be labeled as live, cached, estimated, imported, or manually derived.
-- Define state persistence rules for reloads and repeat visits, including whether selected activity, presets, imported route, forecast mode, location, and dismissed warnings should persist.
-- Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
-
-## Provider Architecture
-
-- Review whether the current `Strava` implementation already exposes the right provider-agnostic seams before `RideWithGPS` support expands the integration surface.
-- Identify shared provider interfaces, normalization helpers, and import-state handling that should be standardized before multiple providers are fully supported.
-
-## UX Validation
-
-- Add mobile-layout validation tasks specifically for forecast-only mode so width and layout adjustments do not regress the phone experience.
-- Add accessibility review items for keyboard flow, warning dialogs, forecast cells, color dependence, and touch-target sizing.
-
-## Export And Diagnostics
+### Export
 
 - Review export and share parity so a shared plan can also be evaluated for export as a printable view or `PDF`.
-- Add support for exporting a readable diagnostics file such as `JSON` or `XML` covering cache status, last weather fetch, route source, and provider auth or import state.
 
-## Testing
+### Internationalization And Formatting
+
+- Add support for `12-hour` time formatting as an option where time is displayed.
+- Add translation support across the app, starting with `French (Canada)`.
+- Define how localized labels, units, date/time formatting, and forecast text should be managed so future translations do not require ad hoc string edits.
+
+## Research
+
+### Water Temperature
+
+- For water sports, if possible, show a forecasted water temperature line or range.
+- Investigate whether water temperature can be estimated algorithmically from available forecast/provider inputs and current app parameters.
+- In forecasted weather mode, when there is an air temperature forecast, also try to forecast water temperature if data or estimation is available.
+- If water temperature is estimated rather than sourced directly, label it clearly as `estimated` and show a confidence band or range when possible.
+
+### RideWithGPS
+
+- Begin implementation planning for `RideWithGPS`.
+- Define scope for:
+  - provider auth flow
+  - backend/API responsibilities
+  - frontend import UX
+  - normalization into `ImportedRoute`
+- Add a parity checklist against the current `Strava` flow so the `RideWithGPS` implementation stays behaviorally consistent where appropriate.
+- Review whether the current `Strava` implementation already exposes the right provider-agnostic seams before `RideWithGPS` support expands the integration surface.
+- Identify shared provider interfaces, normalization helpers, and import-state handling that should be standardized before multiple providers are fully supported.
+- Add test coverage targets for provider import normalization.
+
+### Documentation
+
+- Produce a UML diagram covering the app’s functions/modules and how they relate.
+- Split the UML/documentation work into:
+  - a high-level module diagram
+  - a route/weather data flow diagram
+  - a forecast mode state and interaction diagram
+
+### Future Testing
 
 - Add test coverage targets for:
-  - forecast mode toggling
-  - route import refresh behavior
   - cache invalidation
   - deep-link and launch-intent behavior
-  - provider import normalization
+
+## First Execution Batch
+
+- Forced weather refresh validation and fixes.
+- Forecast mode warning flow.
+- Forecast-only layout cleanup.
+- Duration preset simplification in forecast-only mode.
+- Refresh status and loading feedback.
