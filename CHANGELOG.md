@@ -898,3 +898,9 @@
 - Moved route-point weather selection onto the elevation profile so clicking the profile now refreshes weather for the nearest route location and, when route timing is available, carries that point's ETA into the planner.
 - Added route checkpoint markers directly onto the elevation profile using the same marker vocabulary as the map, and made those checkpoint markers clickable for location-and-time weather refreshes.
 - Made the forecast chart display-only again so chart clicks no longer advance the selected forecast time.
+
+## v11.5.6
+
+- Stopped elevation-profile clicks and checkpoint clicks from mutating the planner start time; route-point weather refreshes now keep the existing selected start mode and time intact.
+- Added a `Back to start` action in the result header whenever the current forecast is showing a clicked route point or checkpoint instead of the route start.
+- Kept route-point refreshes targeting the active clicked point so `Refresh weather` no longer snaps back to the route start while inspecting a route location.

@@ -351,6 +351,7 @@ let routeHoverLayer = null;
 let routeMapBounds = null;
 let routeFitControlButton = null;
 let pendingChartSelectedStartTime = null;
+let activeRoutePointForecast = null;
 let laterPicker = null;
 let raceDayStartPicker = null;
 let raceDayEndPicker = null;
@@ -861,6 +862,17 @@ function updateRefreshWeatherButtonUi(isLoading = false) {
 
 async function forceRefreshWeather() {
   hideSuggestions();
+  if (activeRoutePointForecast?.isRoutePoint && isFiniteNumber(activeRoutePointForecast.latitude) && isFiniteNumber(activeRoutePointForecast.longitude)) {
+    await fetchWeatherFromResult({
+      latitude: activeRoutePointForecast.latitude,
+      longitude: activeRoutePointForecast.longitude,
+      name: activeRoutePointForecast.label || 'Route point',
+      admin1: '',
+      country: '',
+      country_code: ''
+    });
+    return;
+  }
   const hasCurrentWeatherCoords = weatherData && isFiniteNumber(weatherData.latitude) && isFiniteNumber(weatherData.longitude);
   if (hasCurrentWeatherCoords) {
     await fetchWeatherFromResult({
@@ -880,6 +892,19 @@ async function forceRefreshWeather() {
   await fetchWeather();
 }
 window.forceRefreshWeather = forceRefreshWeather;
+
+async function backToRouteStart() {
+  if (!routeState?.points?.length) return;
+  activeRoutePointForecast = null;
+  await fetchWeatherFromResult({
+    latitude: routeState.points[0].lat,
+    longitude: routeState.points[0].lon,
+    name: 'Route start',
+    admin1: '',
+    country: '',
+    country_code: ''
+  });
+}
 
 function toggleLocationCardCollapse() {
   if (!(weatherData || routeState?.points?.length)) return;
@@ -2803,7 +2828,13 @@ function getRoutePointSelectedTime(pointIndex) {
 
 async function refreshWeatherForRoutePointSelection({ latitude, longitude, label, timeValue }) {
   if (!isFiniteNumber(latitude) || !isFiniteNumber(longitude)) return;
-  pendingChartSelectedStartTime = timeValue || null;
+  activeRoutePointForecast = {
+    isRoutePoint: true,
+    latitude,
+    longitude,
+    label: label || 'Route point',
+    timeValue: timeValue || null,
+  };
   await fetchWeatherFromResult({
     latitude,
     longitude,
@@ -4996,6 +5027,7 @@ function selectStartMode(btn) {
 
 async function fetchWeather() {
   hideSuggestions();
+  activeRoutePointForecast = null;
   const loc = input.value.trim();
   if (!loc && routeState?.points?.length) {
     return fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: 'Route start', admin1: '', country: '', country_code: '' });
@@ -5027,6 +5059,17 @@ async function fetchWeatherFromResult(place) {
   setLoading(true);
   showResultLoading();
   try {
+    const placeLat = Number(place?.latitude);
+    const placeLon = Number(place?.longitude);
+    const isSameActiveRoutePoint =
+      activeRoutePointForecast?.isRoutePoint &&
+      isFiniteNumber(activeRoutePointForecast.latitude) &&
+      isFiniteNumber(activeRoutePointForecast.longitude) &&
+      isFiniteNumber(placeLat) &&
+      isFiniteNumber(placeLon) &&
+      Math.abs(activeRoutePointForecast.latitude - placeLat) < 0.000001 &&
+      Math.abs(activeRoutePointForecast.longitude - placeLon) < 0.000001;
+    if (!isSameActiveRoutePoint) activeRoutePointForecast = null;
     weatherData = await fetchWeatherCore(place);
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
@@ -7470,10 +7513,14 @@ function refreshIndoorAdviceIfNeeded() {
 }
 
 function renderResultLocationHeader(locationName) {
+  const showBackToStart = !!(activeRoutePointForecast?.isRoutePoint && routeState?.points?.length);
   return `
     <div class="location-name-row">
       <div class="location-name">📍 <span>${escapeHtml(locationName)}</span></div>
-      <button class="mode-toggle-btn result-refresh-btn" type="button" data-action="forceRefreshWeather">Refresh weather</button>
+      <div class="location-name-actions">
+        ${showBackToStart ? `<button class="mode-toggle-btn result-refresh-btn" type="button" data-action="backToRouteStart">Back to start</button>` : ''}
+        <button class="mode-toggle-btn result-refresh-btn" type="button" data-action="forceRefreshWeather">Refresh weather</button>
+      </div>
     </div>
   `;
 }
@@ -9218,6 +9265,9 @@ function bindDomActions() {
         break;
       case 'forceRefreshWeather':
         forceRefreshWeather();
+        break;
+      case 'backToRouteStart':
+        backToRouteStart();
         break;
       case 'resetLocationSection':
         resetLocationSection();

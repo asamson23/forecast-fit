@@ -1304,6 +1304,12 @@
   margin-top: 12px;
   color: var(--accent);
 }
+.location-name-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
 .route-elevation-svg {
   display: block;
   width: 100%;
