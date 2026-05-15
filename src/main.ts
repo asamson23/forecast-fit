@@ -920,6 +920,12 @@ function togglePlannerSubsection(section: Element | null) {
   updatePlannerSubsectionCollapseUi();
 }
 
+function collapsePlannerSubsection(key: keyof typeof plannerSubsectionCollapsed) {
+  if (plannerSubsectionCollapsed[key]) return;
+  plannerSubsectionCollapsed[key] = true;
+  updatePlannerSubsectionCollapseUi();
+}
+
 function setupPlannerSubsectionToggles() {
   document.querySelectorAll('[data-planner-subsection-toggle]').forEach(toggle => {
     toggle.setAttribute('role', 'button');
@@ -2872,6 +2878,7 @@ async function handleRouteFileChange(event) {
     routeState = buildRouteState(points, file.name);
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
+    collapsePlannerSubsection('duration');
     routeStatus.textContent = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model.`;
     clearRouteBtn.style.display = 'inline-block';
     renderPlannerState();
@@ -4686,6 +4693,7 @@ function selectDurationKey(key) {
   if (routeHasDurationOverride()) return;
   clearPlannerCustomFields();
   selectedDuration = key;
+  if (selectedActivity) collapsePlannerSubsection('duration');
   renderPlannerState();
   if (!weatherData) refreshIndoorAdviceIfNeeded();
   if (weatherData) configureLaterInput(weatherData);
@@ -8379,6 +8387,7 @@ function applyStravaPlannerAutofill(details) {
   }
 
   syncDurationFromEvent(getSelectedEvent());
+  if (activityKey || details?.shouldSetDuration) collapsePlannerSubsection('duration');
   renderPlannerState();
 }
 
@@ -8407,6 +8416,7 @@ async function importStravaFirstRoute() {
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
+  collapsePlannerSubsection('duration');
   clearRouteBtn.style.display = 'inline-block';
   renderPlannerState();
   clearRouteMapLayers();
@@ -8454,6 +8464,7 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
   routeState = buildRouteState(importedRoute.geometry, importedRoute.name || 'Strava route');
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
+  collapsePlannerSubsection('duration');
   clearRouteBtn.style.display = 'inline-block';
   renderPlannerState();
   clearRouteMapLayers();

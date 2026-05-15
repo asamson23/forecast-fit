@@ -867,3 +867,8 @@
 - Added route elevation profile styling and kept it inside valid stylesheet module boundaries for Vercel builds.
 - Added daily forecast chart styling while preserving valid CSS import chunks.
 - Fixed the split CSS files so each imported stylesheet parses independently during production builds.
+
+## v11.5.1
+
+- Auto-collapse the Planned duration pane when a route loads, when a Strava activity/route autofill loads duration context, or when a planned-duration preset is clicked after an activity is already selected.
+- Kept manual activity-button clicks from collapsing the Planned duration pane by themselves.
