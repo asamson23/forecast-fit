@@ -83,6 +83,12 @@ Planning and follow-up notes for future work.
   - uploaded routes only if there is a clear, privacy-safe, storage-safe local strategy
 - Decide how uploaded GPX or manually imported routes should be cached locally, if at all, without creating storage bloat or unclear stale-state behavior.
 
+## Offline And Resilience
+
+- Define an explicit offline or degraded-mode plan for the PWA.
+- Decide which parts of the app should still work with cached route, cached planner state, or stale weather when fresh network data is unavailable.
+- Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
+
 ## Provider Browser UX
 
 - In the `Strava` and future `RideWithGPS` route or activity browser, evaluate showing a lightweight `SVG`-style miniature route trace preview for each item.
@@ -96,3 +102,33 @@ Planning and follow-up notes for future work.
 - For route sharing, define a graceful caching or storage strategy that avoids excessive bandwidth or host storage usage.
 - For shared routes, prefer deduplication, compact geometry storage, or expiring share records if backend persistence is introduced.
 - Define privacy and permission expectations for shared state, especially for imported provider routes or location-derived plans.
+
+## State And Provenance
+
+- Add a data provenance layer in the UI so key values can be labeled as live, cached, estimated, imported, or manually derived.
+- Define state persistence rules for reloads and repeat visits, including whether selected activity, presets, imported route, forecast mode, location, and dismissed warnings should persist.
+- Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
+
+## Provider Architecture
+
+- Review whether the current `Strava` implementation already exposes the right provider-agnostic seams before `RideWithGPS` support expands the integration surface.
+- Identify shared provider interfaces, normalization helpers, and import-state handling that should be standardized before multiple providers are fully supported.
+
+## UX Validation
+
+- Add mobile-layout validation tasks specifically for forecast-only mode so width and layout adjustments do not regress the phone experience.
+- Add accessibility review items for keyboard flow, warning dialogs, forecast cells, color dependence, and touch-target sizing.
+
+## Export And Diagnostics
+
+- Review export and share parity so a shared plan can also be evaluated for export as a printable view or `PDF`.
+- Add support for exporting a readable diagnostics file such as `JSON` or `XML` covering cache status, last weather fetch, route source, and provider auth or import state.
+
+## Testing
+
+- Add test coverage targets for:
+  - forecast mode toggling
+  - route import refresh behavior
+  - cache invalidation
+  - deep-link and launch-intent behavior
+  - provider import normalization
