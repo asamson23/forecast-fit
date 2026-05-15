@@ -30,18 +30,12 @@ function buildChartCheckpointMarkerHtml(cp: any, x: number, y: number): string {
   return `
     <foreignObject x="${(x - 11).toFixed(1)}" y="${(y - 11).toFixed(1)}" width="22" height="22" class="chart-checkpoint-fo">
       <div xmlns="http://www.w3.org/1999/xhtml" class="chart-checkpoint-fo-box">
-        <button
-          type="button"
+        <span
           class="chart-checkpoint-button"
-          data-chart-jump="checkpoint"
-          data-chart-time-value="${escapeHtml(String(cp?.eta || ''))}"
-          data-chart-lat="${escapeHtml(String(cp?.lat ?? ''))}"
-          data-chart-lon="${escapeHtml(String(cp?.lon ?? ''))}"
-          data-chart-label="${escapeHtml(String(cp?.label || 'Route checkpoint'))}"
           title="${title}"
           aria-label="${title}">
           <span class="checkpoint-marker ${escapeHtml(kind)}${toneClass}">${markerInner}</span>
-        </button>
+        </span>
       </div>
     </foreignObject>`;
 }
@@ -127,7 +121,6 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
     const nextMid = i === points.length - 1 ? width - pad.right : (xForIndex(i) + xForIndex(i + 1)) / 2;
     const aqiInfo = isFiniteNumber(p.aqi) ? getAqiInfo(p.aqi as number) : null;
     return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit` +
-      ` data-chart-jump="forecast"` +
       ` data-chart-time-value="${escapeHtml(String(p.time || ''))}"` +
       ` data-chart-lat="${escapeHtml(String(sel?.chartLatitude ?? ''))}"` +
       ` data-chart-lon="${escapeHtml(String(sel?.chartLongitude ?? ''))}"` +
@@ -260,7 +253,6 @@ function buildDailyForecastChart(rawPoints: Record<string, unknown>[], selection
     const nextMid = i === points.length - 1 ? width - pad.right : (xForIndex(i) + xForIndex(i + 1)) / 2;
     const aqiInfo = isFiniteNumber(p.aqiMax) ? getAqiInfo(p.aqiMax as number) : null;
     return `<rect x="${prevMid.toFixed(1)}" y="${pad.top}" width="${Math.max(8, nextMid - prevMid).toFixed(1)}" height="${innerH}" class="chart-hit" data-chart-hit` +
-      ` data-chart-jump="forecast"` +
       ` data-chart-time-value="${escapeHtml(String(p.date ? `${p.date}T12:00` : ''))}"` +
       ` data-chart-lat="${escapeHtml(String(selection?.chartLatitude ?? ''))}"` +
       ` data-chart-lon="${escapeHtml(String(selection?.chartLongitude ?? ''))}"` +

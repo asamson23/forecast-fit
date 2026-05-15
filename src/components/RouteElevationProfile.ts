@@ -1,12 +1,26 @@
 import type { EnrichedRoutePoint } from '../features/route/routeMetrics';
 import type { RoutePoint } from '../types/route';
+import { formatShortTime } from '../utils/dateTime';
+import { escapeHtml, renderSymbolIconHtml } from '../utils/format';
 
 export type RouteElevationProfilePoint = Pick<RoutePoint, 'ele'> & Partial<Pick<EnrichedRoutePoint, 'kmFromStart'>>;
 export interface RouteElevationRenderablePoint {
+  index: number;
   lat: number | undefined;
   lon: number | undefined;
   km: number;
   ele: number;
+}
+export interface RouteElevationCheckpoint {
+  pointIndex?: number;
+  kmFromStart?: number;
+  eta?: string;
+  lat?: number;
+  lon?: number;
+  label?: string;
+  markerKind?: string;
+  markerTone?: string;
+  markerShort?: string;
 }
 
 const CHART_WIDTH = 720;
@@ -49,6 +63,7 @@ function getPointKm(point: RouteElevationProfilePoint, fallbackIndex: number, to
 export function getRouteElevationRenderablePoints(points: Array<RouteElevationProfilePoint & Partial<RoutePoint>>): RouteElevationRenderablePoint[] {
   return points
     .map((point, index) => ({
+      index,
       km: getPointKm(point, index, points.length),
       ele: isFiniteRouteNumber(point.ele) ? point.ele : null,
       lat: typeof point.lat === 'number' ? point.lat : undefined,
@@ -57,7 +72,35 @@ export function getRouteElevationRenderablePoints(points: Array<RouteElevationPr
     .filter((point): point is RouteElevationRenderablePoint => isFiniteRouteNumber(point.km) && isFiniteRouteNumber(point.ele));
 }
 
-export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]): string {
+function buildElevationCheckpointMarkerHtml(cp: RouteElevationCheckpoint, x: number, y: number): string {
+  const kind = cp?.markerKind || (cp?.label === 'Start' ? 'start' : (cp?.label === 'Finish' ? 'finish' : 'mid'));
+  const toneClass = cp?.markerTone ? ` ${escapeHtml(cp.markerTone)}` : '';
+  const shortLabel = cp?.markerShort || (kind === 'start' ? 'S' : (kind === 'finish' ? 'F' : '*'));
+  const markerInner = kind === 'event'
+    ? renderSymbolIconHtml(shortLabel, 'checkpoint-marker-icon', cp?.label || shortLabel, true)
+    : escapeHtml(shortLabel);
+  const title = escapeHtml(`${cp?.label || 'Route checkpoint'} - ${formatShortTime(cp?.eta)}`);
+
+  return `
+    <foreignObject x="${(x - 11).toFixed(1)}" y="${(y - 11).toFixed(1)}" width="22" height="22" class="route-elevation-checkpoint-fo">
+      <div xmlns="http://www.w3.org/1999/xhtml" class="route-elevation-checkpoint-fo-box">
+        <button
+          type="button"
+          class="route-elevation-checkpoint-button"
+          data-route-elevation-jump="checkpoint"
+          data-route-elevation-time-value="${escapeHtml(String(cp?.eta || ''))}"
+          data-route-elevation-lat="${escapeHtml(String(cp?.lat ?? ''))}"
+          data-route-elevation-lon="${escapeHtml(String(cp?.lon ?? ''))}"
+          data-route-elevation-label="${escapeHtml(String(cp?.label || 'Route checkpoint'))}"
+          title="${title}"
+          aria-label="${title}">
+          <span class="checkpoint-marker ${escapeHtml(kind)}${toneClass}">${markerInner}</span>
+        </button>
+      </div>
+    </foreignObject>`;
+}
+
+export function renderRouteElevationProfile(points: RouteElevationProfilePoint[], routeSamples: RouteElevationCheckpoint[] = []): string {
   const elevationPoints = getRouteElevationRenderablePoints(points);
 
   if (elevationPoints.length < 2) return '';
@@ -83,6 +126,19 @@ export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]
   const distanceMarkers = buildDistanceMarkers(totalKm);
   const minLabel = `${Math.round(minEle)} m min`;
   const maxLabel = `${Math.round(maxEle)} m max`;
+  const checkpointMarkers = (routeSamples || [])
+    .map((cp) => {
+      const markerKm = isFiniteRouteNumber(cp?.kmFromStart) ? Number(cp.kmFromStart) : null;
+      if (!isFiniteRouteNumber(markerKm) || markerKm < 0 || markerKm > totalKm) return '';
+      const sampleIndex = elevationPoints.reduce((bestIndex, point, index, list) => {
+        const bestPoint = list[bestIndex];
+        return Math.abs(point.km - markerKm) < Math.abs(bestPoint.km - markerKm) ? index : bestIndex;
+      }, 0);
+      const samplePoint = elevationPoints[sampleIndex];
+      return buildElevationCheckpointMarkerHtml(cp, xForKm(markerKm), yForEle(samplePoint.ele));
+    })
+    .filter(Boolean)
+    .join('');
 
   return `
     <svg class="route-elevation-svg" data-route-elevation-chart viewBox="0 0 ${CHART_WIDTH} ${CHART_HEIGHT}" role="img" aria-label="Route elevation profile from 0 to ${formatKm(totalKm)}, ${minLabel}, ${maxLabel}" preserveAspectRatio="none">
@@ -101,6 +157,7 @@ export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]
       }).join('')}
       <path class="route-elevation-area" d="${areaPath}" />
       <path class="route-elevation-line" d="${linePath}" />
+      <g class="route-elevation-checkpoints">${checkpointMarkers}</g>
       <g class="route-elevation-extreme route-elevation-max">
         <circle cx="${xForKm(maxPoint.km).toFixed(1)}" cy="${yForEle(maxPoint.ele).toFixed(1)}" r="3.8" />
         <text x="${Math.min(CHART_WIDTH - 72, Math.max(PAD_LEFT + 42, xForKm(maxPoint.km))).toFixed(1)}" y="${Math.max(PAD_TOP + 12, yForEle(maxPoint.ele) - 8).toFixed(1)}" text-anchor="middle">${maxLabel}</text>

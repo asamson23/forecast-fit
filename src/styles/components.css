@@ -1339,6 +1339,33 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.route-elevation-checkpoint-fo {
+  overflow: visible;
+}
+.route-elevation-checkpoint-fo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+.route-elevation-checkpoint-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.route-elevation-checkpoint-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 78%, white 22%);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
 .route-elevation-extreme circle {
   fill: var(--surface);
   stroke: currentColor;

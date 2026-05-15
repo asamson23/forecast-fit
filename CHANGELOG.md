@@ -892,3 +892,9 @@
 - Added clickable forecast-chart interactions: hourly and daily chart points can now promote their time into the planner, and route checkpoint markers on the chart can jump the forecast to that checkpoint's time and location.
 - Replaced the chart's generic route-checkpoint glyphs with the same checkpoint marker vocabulary used on the route map, including the shared marker tones and event icons.
 - Restored the AQI helper request horizon to 14 forecast days so air-quality data stays aligned with the main forecast window.
+
+## v11.5.5
+
+- Moved route-point weather selection onto the elevation profile so clicking the profile now refreshes weather for the nearest route location and, when route timing is available, carries that point's ETA into the planner.
+- Added route checkpoint markers directly onto the elevation profile using the same marker vocabulary as the map, and made those checkpoint markers clickable for location-and-time weather refreshes.
+- Made the forecast chart display-only again so chart clicks no longer advance the selected forecast time.

@@ -2789,6 +2789,31 @@ function formatRouteCoordinate(value) {
   return isFiniteNumber(value) ? Number(value).toFixed(5) : '—';
 }
 
+function getRoutePointSelectedTime(pointIndex) {
+  const fallbackStartTime = weatherData ? getSelectedStartTime(weatherData) : null;
+  const totalMinutes = getRouteTimingMinutes();
+  if (!isFiniteNumber(pointIndex) || pointIndex < 0 || !fallbackStartTime || !isFiniteNumber(totalMinutes) || totalMinutes <= 0) {
+    return fallbackStartTime;
+  }
+  const timingModel = buildRouteTimingModel(totalMinutes);
+  const offsetMinutes = timingModel?.cumulativeMinutes?.[pointIndex];
+  if (!isFiniteNumber(offsetMinutes)) return fallbackStartTime;
+  return addMinutesToLocalString(fallbackStartTime, Math.round(offsetMinutes));
+}
+
+async function refreshWeatherForRoutePointSelection({ latitude, longitude, label, timeValue }) {
+  if (!isFiniteNumber(latitude) || !isFiniteNumber(longitude)) return;
+  pendingChartSelectedStartTime = timeValue || null;
+  await fetchWeatherFromResult({
+    latitude,
+    longitude,
+    name: label || 'Route point',
+    admin1: '',
+    country: '',
+    country_code: '',
+  });
+}
+
 function getRouteElevationExtremes(points) {
   if (!Array.isArray(points) || !points.length) return { highPoint: null, lowPoint: null };
   const highPoint = points.reduce((best, point) => (!best || point.ele > best.ele ? point : best), null);
@@ -2832,6 +2857,7 @@ function bindRouteElevationProfileInteractions() {
   const showPoint = (point, event) => {
     const x = xForKm(point.km);
     const y = yForEle(point.ele);
+    const pointEta = getRoutePointSelectedTime(point.index);
     if (hoverGroup instanceof SVGGElement) hoverGroup.hidden = false;
     if (hoverLine instanceof SVGLineElement) {
       hoverLine.setAttribute('x1', x.toFixed(1));
@@ -2846,6 +2872,7 @@ function bindRouteElevationProfileInteractions() {
       <div class="tt-time">${escapeHtml(formatKm(point.km))} from start</div>
       <div class="tt-row"><span>Point type</span><strong>Current point</strong></div>
       <div class="tt-row"><span>Elevation</span><strong>${escapeHtml(`${Math.round(point.ele)} m`)}</strong></div>
+      ${pointEta ? `<div class="tt-row"><span>Selected time</span><strong>${escapeHtml(formatShortDateTime(pointEta))}</strong></div>` : ''}
       <div class="tt-row"><span>Current position</span><strong>${escapeHtml(`${formatRouteCoordinate(point.lat)}°, ${formatRouteCoordinate(point.lon)}°`)}</strong></div>
     `;
     tooltip.classList.add('visible');
@@ -2864,10 +2891,10 @@ function bindRouteElevationProfileInteractions() {
     }
   };
 
-  const handlePointerMove = (event) => {
+  const getNearestPointFromClientX = (clientX) => {
     const rect = svg.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    if (!rect.width || !rect.height) return elevationPoints[0];
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const svgX = ratio * chartWidth;
     let nearestPoint = elevationPoints[0];
     let nearestDistance = Math.abs(xForKm(nearestPoint.km) - svgX);
@@ -2879,12 +2906,26 @@ function bindRouteElevationProfileInteractions() {
         nearestDistance = distance;
       }
     }
+    return nearestPoint;
+  };
+
+  const handlePointerMove = (event) => {
+    const nearestPoint = getNearestPointFromClientX(event.clientX);
     showPoint(nearestPoint, event);
   };
 
   svg.onmouseenter = handlePointerMove;
   svg.onmousemove = handlePointerMove;
   svg.onmouseleave = hideRouteElevationHoverState;
+  svg.onclick = (event) => {
+    const nearestPoint = getNearestPointFromClientX(event.clientX);
+    void refreshWeatherForRoutePointSelection({
+      latitude: nearestPoint.lat,
+      longitude: nearestPoint.lon,
+      label: `Route point ${formatKm(nearestPoint.km)}`,
+      timeValue: getRoutePointSelectedTime(nearestPoint.index),
+    });
+  };
   svg.ontouchstart = (event) => {
     const touch = event.touches?.[0];
     if (!touch) return;
@@ -2897,6 +2938,21 @@ function bindRouteElevationProfileInteractions() {
   };
   svg.ontouchend = hideRouteElevationHoverState;
   svg.ontouchcancel = hideRouteElevationHoverState;
+  routeElevationProfile.querySelectorAll('[data-route-elevation-jump="checkpoint"]').forEach((el) => {
+    const trigger = el;
+    if (!(trigger instanceof HTMLButtonElement) || trigger.dataset.routeElevationJumpBound === '1') return;
+    trigger.dataset.routeElevationJumpBound = '1';
+    trigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      void refreshWeatherForRoutePointSelection({
+        latitude: Number(trigger.dataset.routeElevationLat),
+        longitude: Number(trigger.dataset.routeElevationLon),
+        label: trigger.dataset.routeElevationLabel || 'Route checkpoint',
+        timeValue: trigger.dataset.routeElevationTimeValue || null,
+      });
+    });
+  });
 }
 
 function renderRouteElevationProfilePanel() {
@@ -2914,7 +2970,8 @@ function renderRouteElevationProfilePanel() {
     hideRouteElevationHoverState();
     return;
   }
-  const profileHtml = renderRouteElevationProfile(routeState.points);
+  const elevationCheckpoints = routeState.samples?.length ? routeState.samples : sampleRouteCheckpoints();
+  const profileHtml = renderRouteElevationProfile(routeState.points, elevationCheckpoints);
   routeElevationProfile.innerHTML = profileHtml || '<p class="route-elevation-empty">No elevation data in this route.</p>';
   bindRouteElevationProfileInteractions();
 }
@@ -5390,46 +5447,7 @@ function applyLaterStartTimeSelection(timeValue, data = weatherData) {
 }
 
 function bindForecastChartInteractions(root = resultInner) {
-  root.querySelectorAll('[data-chart-jump]').forEach((el) => {
-    const trigger = el as HTMLElement;
-    if (trigger.dataset.chartJumpBound === '1') return;
-    trigger.dataset.chartJumpBound = '1';
-    trigger.addEventListener('click', async (event) => {
-      event.preventDefault();
-      const timeValue = trigger.dataset.chartTimeValue || '';
-      const latValue = Number(trigger.dataset.chartLat);
-      const lonValue = Number(trigger.dataset.chartLon);
-      const label = trigger.dataset.chartLabel || weatherData?.locationName || 'Selected forecast point';
-      if (!timeValue) return;
-
-      const hasPointLocation = isFiniteNumber(latValue) && isFiniteNumber(lonValue);
-      const currentMatches = hasPointLocation
-        && weatherData
-        && isFiniteNumber(weatherData.latitude)
-        && isFiniteNumber(weatherData.longitude)
-        && Math.abs(Number(weatherData.latitude) - latValue) < 0.0001
-        && Math.abs(Number(weatherData.longitude) - lonValue) < 0.0001;
-
-      if (!hasPointLocation || currentMatches) {
-        applyLaterStartTimeSelection(timeValue, weatherData);
-        if (weatherData) {
-          renderAdvice(weatherData, selectedActivity);
-          void refreshRouteWeatherIfPossible();
-        }
-        return;
-      }
-
-      pendingChartSelectedStartTime = timeValue;
-      await fetchWeatherFromResult({
-        latitude: latValue,
-        longitude: lonValue,
-        name: label,
-        admin1: '',
-        country: '',
-        country_code: '',
-      });
-    });
-  });
+  return root;
 }
 
 function getSelectedStartTime(data) {
