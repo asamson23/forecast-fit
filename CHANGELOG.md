@@ -909,3 +909,9 @@
 
 - Changed multi-day forecast charts to render a denser hourly-style timeline across the planned trip window instead of only plotting sparse daily aggregate points.
 - Kept the existing daily forecast cards for multi-day activities, so the chart adds more detail without changing the surrounding summary layout.
+
+## v11.5.8
+
+- Added explicit midnight separator lines to hourly forecast charts so cross-day timelines are easier to scan.
+- Made the route elevation profile scale with a fixed aspect ratio instead of stretching at a hardcoded height.
+- Changed forecast-chart touch tooltips to dismiss on outside taps, scrolling, resize, or touch cancellation rather than vanishing immediately on touch end.

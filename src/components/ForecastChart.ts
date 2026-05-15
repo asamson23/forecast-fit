@@ -18,6 +18,26 @@ type ForecastChartSelection = {
   chartLocationName?: unknown;
 };
 
+function buildMidnightSeparatorLines(startMs: number, endMs: number, padLeft: number, innerWidth: number, top: number, bottom: number): string {
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return '';
+
+  const midnight = new Date(startMs);
+  midnight.setHours(24, 0, 0, 0);
+  const lines: string[] = [];
+
+  while (midnight.getTime() < endMs) {
+    const ms = midnight.getTime();
+    if (ms > startMs) {
+      const ratio = (ms - startMs) / Math.max(1, endMs - startMs);
+      const x = padLeft + ratio * innerWidth;
+      lines.push(`<line x1="${x.toFixed(1)}" y1="${top}" x2="${x.toFixed(1)}" y2="${bottom}" class="chart-midnight-line"></line>`);
+    }
+    midnight.setDate(midnight.getDate() + 1);
+  }
+
+  return lines.join('');
+}
+
 function buildChartCheckpointMarkerHtml(cp: any, x: number, y: number): string {
   const kind = cp?.markerKind || (cp?.label === 'Start' ? 'start' : (cp?.label === 'Finish' ? 'finish' : 'mid'));
   const toneClass = cp?.markerTone ? ` ${escapeHtml(cp.markerTone)}` : '';
@@ -71,6 +91,7 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
   const markerLines: string[] = [];
   const highlightStartMs = parseAnyTime(sel?.highlightStartTime);
   const highlightEndMs = parseAnyTime(sel?.highlightEndTime);
+  const midnightSeparatorLines = buildMidnightSeparatorLines(startMs, endMs, pad.left, innerW, pad.top, height - pad.bottom);
   const hasEventHighlight = Number.isFinite(highlightStartMs) && Number.isFinite(highlightEndMs) && highlightEndMs > highlightStartMs;
   const eventHighlight = hasEventHighlight
     ? (() => {
@@ -148,6 +169,7 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
         <g class="chart-grid">
           ${tempGrid.map(v => `<line x1="${pad.left}" y1="${yForTemp(v).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(v).toFixed(1)}"></line>`).join('')}
           ${minTemp <= 0 && maxTemp >= 0 ? `<line x1="${pad.left}" y1="${yForTemp(0).toFixed(1)}" x2="${width - pad.right}" y2="${yForTemp(0).toFixed(1)}" class="chart-zero-line"></line>` : ''}
+          ${midnightSeparatorLines}
         </g>
         <g>${eventHighlight}</g>
         <g>${markerLines.join('')}</g>
@@ -388,7 +410,6 @@ export function bindForecastChartTooltips(root: Element = document.body): void {
       const touch = (event as TouchEvent).touches[0];
       if (touch) positionTooltip(touch);
     }, { passive: true });
-    hit.addEventListener('touchend', hide, { passive: true });
     hit.addEventListener('touchcancel', hide, { passive: true });
   });
 
@@ -401,7 +422,25 @@ export function bindForecastChartTooltips(root: Element = document.body): void {
 
   if (!chartTooltipGlobalDismissBound) {
     chartTooltipGlobalDismissBound = true;
-    window.addEventListener('scroll', hide, { passive: true });
+    document.addEventListener('pointerdown', event => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        hide();
+        return;
+      }
+      if (target.closest('[data-chart-wrap]') || target.closest('#chart-tooltip-portal')) return;
+      hide();
+    }, true);
+    document.addEventListener('touchstart', event => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        hide();
+        return;
+      }
+      if (target.closest('[data-chart-wrap]') || target.closest('#chart-tooltip-portal')) return;
+      hide();
+    }, { passive: true, capture: true });
+    document.addEventListener('scroll', hide, { passive: true, capture: true });
     window.addEventListener('resize', hide, { passive: true });
   }
 }

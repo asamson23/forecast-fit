@@ -141,7 +141,7 @@ export function renderRouteElevationProfile(points: RouteElevationProfilePoint[]
     .join('');
 
   return `
-    <svg class="route-elevation-svg" data-route-elevation-chart viewBox="0 0 ${CHART_WIDTH} ${CHART_HEIGHT}" role="img" aria-label="Route elevation profile from 0 to ${formatKm(totalKm)}, ${minLabel}, ${maxLabel}" preserveAspectRatio="none">
+    <svg class="route-elevation-svg" data-route-elevation-chart viewBox="0 0 ${CHART_WIDTH} ${CHART_HEIGHT}" role="img" aria-label="Route elevation profile from 0 to ${formatKm(totalKm)}, ${minLabel}, ${maxLabel}" preserveAspectRatio="xMidYMid meet">
       <defs>
         <linearGradient id="route-elevation-fill" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stop-color="currentColor" stop-opacity="0.24" />

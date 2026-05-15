@@ -282,6 +282,11 @@
     stroke: color-mix(in srgb, var(--border) 80%, transparent);
     stroke-width: 1;
   }
+  .chart-midnight-line {
+    stroke: color-mix(in srgb, var(--text) 28%, white 12%);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+  }
   .chart-axis text {
     font-size: 11px;
     fill: var(--text-soft);
@@ -1313,7 +1318,10 @@
 .route-elevation-svg {
   display: block;
   width: 100%;
-  height: 190px;
+  height: auto;
+  min-height: 160px;
+  max-height: 220px;
+  aspect-ratio: 4 / 1;
   color: var(--accent);
   overflow: visible;
   touch-action: none;
