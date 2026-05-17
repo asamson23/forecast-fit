@@ -5925,6 +5925,12 @@ function getSelectedStartTime(data) {
   return formatDateTimeLocal(chosen).slice(0,16);
 }
 
+function getDisplayStartTime(data) {
+  const routePointTime = activeRoutePointForecast?.isRoutePoint ? activeRoutePointForecast.timeValue : null;
+  if (routePointTime) return routePointTime;
+  return getSelectedStartTime(data);
+}
+
 function getHourlyPointForStart(data, startTime) {
   if (!data.hourly.length) return data.current;
   if (startTime === data.currentTime) return data.current;
@@ -7033,11 +7039,12 @@ function buildWizard(data, activity) {
   const distanceState = getDistanceState(eventPreset);
   const averageState = getAverageMetric();
   const profile = getDurationProfile();
-  const startTime = getSelectedStartTime(data);
+  const startTime = getDisplayStartTime(data);
   const selection = getForecastSelection(data, startTime);
   const raceDayWindow = getRaceDayPlanningWindow(data, startTime);
   const raceDaySupportItems = getRaceDaySupportItems(data, raceDayWindow);
-  const basePoint = startMode === 'now' ? { ...data.current, time: data.current.time } : getHourlyPointForStart(data, startTime);
+  const shouldUseCurrentPoint = !activeRoutePointForecast?.isRoutePoint && startMode === 'now';
+  const basePoint = shouldUseCurrentPoint ? { ...data.current, time: data.current.time } : getHourlyPointForStart(data, startTime);
   const point = applyCustomWeatherOverrides(basePoint, data);
   const light = describeLight(data, startTime, selection);
   const planned = summarizePlannedConditions(selection, point);
@@ -7052,7 +7059,7 @@ function buildWizard(data, activity) {
   const effortOffset = getPlannedEffortTempOffset(activity);
   const feels = isFiniteNumber(point.feels) ? point.feels : point.temp;
   const t = firstFinite(planned.minFeels, feels, point.temp) - bias + tempPreferenceOffset + effortOffset;
-  const startLabel = startMode === 'now' ? 'now' : formatShortDateTime(startTime);
+  const startLabel = shouldUseCurrentPoint ? 'now' : formatShortDateTime(startTime);
   const distanceText = distanceState.label;
   const eventLabel = eventPreset?.label || activityLabels[activity];
   const isRaceDay = raceDayMode;
@@ -7979,8 +7986,9 @@ function renderResultLocationHeader(locationName) {
 function renderAdvice(data, activity) {
   resultCard.style.display = 'block';
   if (forecastOnlyMode) updateForecastOnlyModeUi();
-  const startTime = getSelectedStartTime(data);
-  const pointBase = startMode === 'now' ? { ...data.current, time: data.current.time } : getHourlyPointForStart(data, startTime);
+  const startTime = getDisplayStartTime(data);
+  const shouldUseCurrentPoint = !activeRoutePointForecast?.isRoutePoint && startMode === 'now';
+  const pointBase = shouldUseCurrentPoint ? { ...data.current, time: data.current.time } : getHourlyPointForStart(data, startTime);
   const point = applyCustomWeatherOverrides(pointBase, data);
   const [, desc] = wCodeToEmoji(point.code);
   const windSummary = formatWindTooltip(point.wind || data.current.wind, point.gusts || data.current.gusts, point.windDir || data.current.windDir);
