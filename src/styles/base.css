@@ -342,8 +342,22 @@
   text-decoration: underline;
   text-underline-offset: 0.14em;
 }
+.footer-link-btn {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
 .version-link:hover,
-.version-link:focus-visible {
+.version-link:focus-visible,
+.footer-link-btn:hover,
+.footer-link-btn:focus-visible {
   color: color-mix(in srgb, var(--accent) 82%, white 18%);
 }
   #race-day-mode-btn {

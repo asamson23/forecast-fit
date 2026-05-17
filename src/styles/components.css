@@ -1199,6 +1199,25 @@
   .weather-refresh-status.error {
     color: var(--accent);
   }
+  .provenance-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: -4px 0 14px;
+  }
+  .provenance-chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--accent2) 18%, var(--border));
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: color-mix(in srgb, var(--surface) 82%, var(--surface2));
+    color: var(--text-soft);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+  }
   #error-msg {
     display: none;
     text-align: center;

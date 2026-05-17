@@ -571,6 +571,39 @@
     cursor: pointer;
     transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
   }
+  .strava-picker-preview {
+    margin-bottom: 10px;
+  }
+  .strava-picker-preview-empty {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface2) 88%, transparent);
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .strava-picker-preview-svg {
+    display: block;
+    width: 100%;
+    height: 48px;
+  }
+  .strava-picker-preview-bg {
+    fill: color-mix(in srgb, var(--surface2) 92%, var(--surface));
+    stroke: color-mix(in srgb, var(--accent2) 16%, var(--border));
+  }
+  .strava-picker-preview-path {
+    fill: none;
+    stroke: color-mix(in srgb, var(--accent) 72%, #ffffff 8%);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
   .strava-picker-item:hover,
   .strava-picker-item:focus-visible {
     border-color: color-mix(in srgb, var(--accent) 32%, var(--border));

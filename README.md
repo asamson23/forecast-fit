@@ -2,7 +2,7 @@
 
 [![Deploy Forecast Fit to GitHub Pages](https://github.com/asamson23/forecast-fit/actions/workflows/deploy.yml/badge.svg)](https://github.com/asamson23/forecast-fit/actions/workflows/deploy.yml) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white) ![Frontend](https://img.shields.io/badge/Frontend-Static%20GitHub%20Pages-222222)
 
-Forecast Fit is a weather-aware planner for activities, routes, clothing, UV exposure, air quality, water conditions, and official or forecast-derived warnings. It is built as a static Vite + TypeScript frontend with vanilla DOM rendering, with an optional backend layer for provider integrations such as Strava.
+Forecast Fit is a weather-aware planner for activities, routes, clothing, UV exposure, air quality, water conditions, and official or forecast-derived warnings. It is built as a static Vite + TypeScript frontend with vanilla DOM rendering, with an optional backend layer for provider integrations such as Strava, plus local persistence for planner state, cached weather snapshots, diagnostics export, a resume-or-start-fresh session prompt, and restorable GPX/GeoJSON route documents when browser storage allows.
 
 ## Screenshots
 
@@ -30,6 +30,8 @@ Forecast Fit is a weather-aware planner for activities, routes, clothing, UV exp
 - Location lookup with Open-Meteo geocoding plus current-location support
 - GPX and GeoJSON route import with Leaflet route rendering
 - Strava route and activity import through backend endpoints only
+- Local route-document caching for uploaded GPX/GeoJSON files and imported Strava GPX when the payload fits browser storage
+- Startup session prompt that lets the user resume the previous local session or begin from a blank planner
 - Hourly and daily forecast rendering with route checkpoint sampling
 - UV index, AQI, marine conditions, and water-temperature context where relevant
 - Environment and Climate Change Canada alert support for Canadian locations, with fallback hazard generation when official lookup fails

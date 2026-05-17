@@ -944,3 +944,15 @@
 - Added a shared startup `entry intent` layer so URL launches and PWA shortcuts can open directly into `Forecast only`, the `Strava` importer flow, or `Current location`.
 - Added installable PWA shortcuts for direct `Forecast only` and `Strava` launches instead of only offering the generic planner entry.
 - Resumed pending `Strava` launch intents after OAuth returns and added stable fallback messaging when the importer launch cannot complete because auth is missing or failed.
+
+## v12
+
+- Added a lightweight provenance layer across the planner and result views so key values can now be labeled as live, cached, imported, manual, or derived instead of silently switching sources.
+- Added persisted local app-state restore for planner settings, forecast-only mode, location input, cached weather snapshots, and restorable route state, including original `GPX` / `GeoJSON` route-document caching when the saved payload fits browser storage limits.
+- Added a readable diagnostics JSON export covering persistence status, weather refresh/cache state, route source and checkpoint cache details, persisted route-document details, planner-source selection state, and Strava auth/import status.
+- Added miniature SVG route previews in the Strava browser so saved routes and any activity items with map polylines show route shape before import.
+- Reused cached `Strava` route `GPX` exports for local restore and `Download GPX`, which reduces unnecessary re-fetching after a route has already been imported once.
+- Added a startup session-choice prompt so normal relaunches can either resume the previous local planner state or start from a blank slate instead of restoring silently.
+- Kept explicit launch intents such as `Forecast only`, `Strava`, and `Current location` direct by bypassing the session-choice prompt when a startup target was requested.
+- Collapsed the planned-duration subsection automatically after entering a custom duration or average so the manual override path gets out of the way once it has been filled in.
+- Invalidated persisted app-state restores when the app moves to a new `Major` or `Major.Minor` version family, while still allowing `Major.Minor.Revision` updates to keep the saved session.

@@ -29,6 +29,10 @@ export interface StravaActivitySummary {
   start_date?: string;
   start_date_local?: string;
   trainer?: boolean;
+  map?: {
+    summary_polyline?: string;
+    polyline?: string;
+  };
 }
 
 export interface StravaStreamSeries<T> {

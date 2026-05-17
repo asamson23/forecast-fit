@@ -138,6 +138,8 @@ import { STRAVA_BACKEND_URL } from './data/constants';
 import { clearStravaSession, consumeStravaOAuthCallback, getStravaAuthError, getStravaSession } from './features/strava/stravaAuth';
 import { fetchStravaActivities, fetchStravaActivity, fetchStravaActivityStreams, fetchStravaRoute, fetchStravaRouteGpx, fetchStravaRoutes } from './features/strava/stravaClient';
 import { stravaActivityStreamsToImportedRoute, stravaRouteGpxToImportedRoute, stravaRouteSummaryToImportedRoute } from './features/strava/stravaRouteAdapter';
+import { buildStravaPreviewSvg } from './features/strava/preview';
+import type { RoutePoint } from './types/route';
 
 Object.assign(window, { L, flatpickr, JSZip });
 registerServiceWorker();
@@ -179,10 +181,15 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
+const APP_VERSION = '12';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
 const ENTRY_INTENT_STORAGE_KEY = 'forecast_fit_pending_entry_intent';
+const APP_STATE_STORAGE_KEY = 'forecast_fit_app_state_v1';
+const APP_STATE_SCHEMA_VERSION = 1;
+const APP_STATE_MAX_WEATHER_AGE_MS = 6 * 60 * 60 * 1000;
+const APP_STATE_MAX_ROUTE_POINTS = 2500;
 
 type EntryIntentKind = 'forecast-only' | 'strava' | 'current-location';
 type EntryIntentSource = 'url' | 'resume';
@@ -191,6 +198,81 @@ interface EntryIntent {
   kind: EntryIntentKind;
   source: EntryIntentSource;
 }
+
+type PersistedRouteSnapshot = {
+  fileName: string;
+  routeSource: any;
+  points: RoutePoint[] | null;
+  routeDocument: PersistedRouteDocumentSnapshot | null;
+};
+
+type PersistedRouteDocumentSnapshot = {
+  format: 'gpx' | 'geojson';
+  text: string;
+  source: 'upload' | 'strava_gpx';
+};
+
+type PersistedWeatherSnapshot = {
+  data: any;
+  savedAt: string;
+};
+
+type PersistedAppState = {
+  schemaVersion: number;
+  appVersion: string;
+  savedAt: string;
+  inputValue: string;
+  selectedActivity: string | null;
+  selectedEventKey: string | null;
+  selectedDuration: string;
+  checkpointModel: string;
+  startMode: string;
+  raceDayMode: boolean;
+  manualWeatherPanelOpen: boolean;
+  temperaturePreference: number;
+  plannedEffort: string;
+  forecastOnlyMode: boolean;
+  plannerCardCollapsed: boolean;
+  locationCardCollapsed: boolean;
+  customDistance: string;
+  distanceUnit: string;
+  customDuration: string;
+  durationUnit: string;
+  average: string;
+  averageUnit: string;
+  manualWaterTemp: string;
+  waterBodyType: string;
+  windExposure: string;
+  poolType: string;
+  laterInputValue: string;
+  raceDayStart: string;
+  raceDayEnd: string;
+  bestWindowStart: string;
+  bestWindowEnd: string;
+  bestWindowPriority: string;
+  bestWindowStep: string;
+  bestWindowMaxPrecip: string;
+  bestWindowMaxGust: string;
+  bestWindowMinTemp: string;
+  bestWindowMaxTemp: string;
+  bestWindowMinWater: string;
+  bestWindowFinishDaylight: boolean;
+  customMultisportSelections: typeof customMultisportSelections;
+  weatherRefreshStatus: typeof weatherRefreshStatus;
+  weather: PersistedWeatherSnapshot | null;
+  route: PersistedRouteSnapshot | null;
+};
+
+type PersistenceMeta = {
+  lastSavedAt: string;
+  restoredAt: string;
+  routePersisted: boolean;
+  weatherPersisted: boolean;
+  restoredWeatherFromCache: boolean;
+  restoredRouteFromCache: boolean;
+  warningDismissalsSupported: boolean;
+  lastSaveError: string;
+};
 
 let selectedActivity = null;
 let selectedEventKey = null;
@@ -205,6 +287,17 @@ let weatherData = null;
 let suggestionsData = [];
 let focusedIndex = -1;
 let debounceTimer = null;
+let appStateSaveTimer = null;
+let persistenceMeta: PersistenceMeta = {
+  lastSavedAt: '',
+  restoredAt: '',
+  routePersisted: false,
+  weatherPersisted: false,
+  restoredWeatherFromCache: false,
+  restoredRouteFromCache: false,
+  warningDismissalsSupported: false,
+  lastSaveError: ''
+};
 
 const input = document.getElementById('location-input');
 const fetchBtn = document.getElementById('fetch-btn');
@@ -302,6 +395,9 @@ const forecastOnlyConfirmOverlay = document.getElementById('forecast-only-confir
 const confirmForecastOnlyBtn = document.getElementById('confirm-forecast-only-btn');
 const clearAllOverlay = document.getElementById('clear-all-overlay');
 const confirmClearAllBtn = document.getElementById('confirm-clear-all-btn');
+const startupSessionOverlay = document.getElementById('startup-session-overlay');
+const startupSessionSummary = document.getElementById('startup-session-summary');
+const resumeSessionBtn = document.getElementById('resume-session-btn');
 const customMultisportSection = document.getElementById('custom-multisport-section');
 const customMultisportSummary = document.getElementById('custom-multisport-summary');
 const customMultisportStatus = document.getElementById('custom-multisport-status');
@@ -371,6 +467,7 @@ let routeTileLayer = null;
 let routeHoverLayer = null;
 let routeMapBounds = null;
 let routeFitControlButton = null;
+let pendingStartupSnapshot: PersistedAppState | null = null;
 let pendingChartSelectedStartTime = null;
 let activeRoutePointForecast = null;
 let laterPicker = null;
@@ -907,7 +1004,11 @@ function getLocationCardSummaryText() {
   const bits = [];
   if (weatherData?.locationName) bits.push(weatherData.locationName);
   else if (input?.value?.trim()) bits.push(input.value.trim());
-  if (routeState?.points?.length) bits.push(`${routeState.fileName} · ${formatKm(routeState.totalKm)}`);
+  if (getWeatherDataProvenance(weatherData)?.kind === 'cached') bits.push('cached forecast');
+  if (routeState?.points?.length) {
+    const routeLabel = routeState?.routeSource?.provider === 'strava' ? 'imported route' : 'local route';
+    bits.push(`${routeState.fileName} · ${formatKm(routeState.totalKm)} · ${routeLabel}`);
+  }
   return bits.join(' · ') || 'No location / route loaded';
 }
 
@@ -929,6 +1030,7 @@ function updateLocationCardCollapseUi() {
     locationCardSummary.classList.toggle('empty', !loaded);
   }
   updateRefreshWeatherButtonUi();
+  schedulePersistedAppStateSave();
 }
 
 function updateRefreshWeatherButtonUi(isLoading = false) {
@@ -1958,6 +2060,23 @@ function updateCustomInputLocks() {
   durationUnitSelect.disabled = durationLocked;
 }
 
+function getValueProvenanceLabel(source) {
+  switch (source) {
+    case 'route':
+      return 'imported route';
+    case 'custom':
+      return 'manual';
+    case 'derived':
+      return 'derived';
+    case 'preset':
+      return 'preset';
+    case 'none':
+      return 'none';
+    default:
+      return source ? String(source) : 'unknown';
+  }
+}
+
 // Keep the status copy below custom distance/duration/average inputs in sync.
 // Any two of distance, duration, and average can derive the third for activities
 // where that calculation makes sense.
@@ -1975,12 +2094,12 @@ function updateCustomStatusTexts() {
   const hasCustomAverage = !!String(averageInput?.value || '').trim();
 
   distanceStatus.textContent = routeState?.points?.length
-    ? `Route distance is active: ${distanceState.label}.`
+    ? `Route distance is active: ${distanceState.label}. Provenance: ${getValueProvenanceLabel(distanceState.source)}.`
     : distanceState.source === 'custom'
-      ? `Using custom distance: ${distanceState.label}.`
+      ? `Using custom distance: ${distanceState.label}. Provenance: manual.`
       : distanceState.source === 'derived'
-        ? `Calculated distance from custom duration + average: ${distanceState.label}.`
-        : 'Preset distance is used.';
+        ? `Calculated distance from custom duration + average: ${distanceState.label}. Provenance: derived.`
+        : 'Preset distance is used. Provenance: preset.';
 
   if (durationSummary) {
     durationSummary.textContent = durationState.source === 'route'
@@ -1993,22 +2112,22 @@ function updateCustomStatusTexts() {
   }
 
   durationStatus.textContent = durationState.source === 'route'
-    ? `Planned preset is ${presetDuration?.label || 'none'}. Route timing is active: ${durationState.label}.`
+    ? `Planned preset is ${presetDuration?.label || 'none'}. Route timing is active: ${durationState.label}. Provenance: imported route.`
     : durationState.source === 'custom'
-      ? `Planned preset is ${presetDuration?.label || 'none'}. Custom duration is active: ${durationState.label}.`
+      ? `Planned preset is ${presetDuration?.label || 'none'}. Custom duration is active: ${durationState.label}. Provenance: manual.`
       : durationState.source === 'derived'
-        ? `Planned preset is ${presetDuration?.label || 'none'}. ${hasCustomDistance && hasCustomAverage ? 'Calculated' : 'Estimated'} duration from ${hasCustomDistance && hasCustomAverage ? 'custom distance + average' : 'distance + average'}: ${durationState.label}.`
-        : `Using planned preset: ${presetDuration?.label || 'none'}.`;
+        ? `Planned preset is ${presetDuration?.label || 'none'}. ${hasCustomDistance && hasCustomAverage ? 'Calculated' : 'Estimated'} duration from ${hasCustomDistance && hasCustomAverage ? 'custom distance + average' : 'distance + average'}: ${durationState.label}. Provenance: derived.`
+        : `Using planned preset: ${presetDuration?.label || 'none'}. Provenance: preset.`;
 
   averageStatus.textContent = !hasCustomAverage
     ? (derivedAvg?.label
-        ? `Calculated average from ${derivedAvg.source}: ${derivedAvg.label}.`
+        ? `Calculated average from ${derivedAvg.source}: ${derivedAvg.label}. Provenance: derived.`
         : 'Optional. Any two custom fields can calculate the third when it makes sense.')
     : !avg?.valid
       ? 'Try a valid value for the selected unit.'
       : avg.canDerive
-        ? `Using ${avg.label}${durationState.source === 'derived' || distanceState.source === 'derived' ? ' to calculate the missing side.' : ' as an optional planning aid.'}`
-        : `${avg.label} is shown as an info tag only for this activity.`;
+        ? `Using ${avg.label}${durationState.source === 'derived' || distanceState.source === 'derived' ? ' to calculate the missing side.' : ' as an optional planning aid.'} Provenance: manual.`
+        : `${avg.label} is shown as an info tag only for this activity. Provenance: manual.`;
 }
 
 function renderPlannerState() {
@@ -2028,6 +2147,7 @@ function renderPlannerState() {
   updateActivityGroupVisibility();
   updatePlannerSubsectionCollapseUi();
   updateForecastOnlyModeUi();
+  schedulePersistedAppStateSave();
 }
 
 function formatKm(value) {
@@ -2190,9 +2310,64 @@ function buildImportedRouteSourceMeta(importedRoute, sourceLabel) {
   };
 }
 
-function buildRouteStateWithSource(points, fileName, routeSource = null) {
+function detectPersistedRouteDocumentFormat(name, text) {
+  const lower = String(name || '').toLowerCase();
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return null;
+  const looksLikeXml = trimmed.startsWith('<?xml') || trimmed.startsWith('<');
+  const looksLikeJson = trimmed.startsWith('{') || trimmed.startsWith('[');
+  if (lower.endsWith('.gpx') || (looksLikeXml && !lower.endsWith('.geojson'))) return 'gpx';
+  if (lower.endsWith('.geojson') || looksLikeJson) return 'geojson';
+  return null;
+}
+
+function buildPersistedRouteDocumentSnapshot(name, text, source = 'upload') {
+  const format = detectPersistedRouteDocumentFormat(name, text);
+  const trimmed = String(text || '').trim();
+  if (!format || !trimmed) return null;
+  return {
+    format,
+    text: trimmed,
+    source
+  };
+}
+
+function normalizePersistedRouteDocument(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return null;
+  const format = snapshot.format === 'gpx' || snapshot.format === 'geojson' ? snapshot.format : null;
+  const source = snapshot.source === 'strava_gpx' ? 'strava_gpx' : 'upload';
+  const text = typeof snapshot.text === 'string' ? snapshot.text.trim() : '';
+  if (!format || !text) return null;
+  return {
+    format,
+    text,
+    source
+  };
+}
+
+function parseVersionSegments(value) {
+  const match = String(value || '').trim().match(/\d+(?:\.\d+)*/);
+  if (!match) return [];
+  return match[0].split('.').map((part) => Number(part)).filter((part) => Number.isFinite(part));
+}
+
+function getAppStateVersionFamily(value = APP_VERSION) {
+  const segments = parseVersionSegments(value);
+  if (!segments.length) return '';
+  const major = segments[0];
+  const minor = segments.length >= 2 ? segments[1] : 0;
+  return `${major}.${minor}`;
+}
+
+function isPersistedAppStateVersionCompatible(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') return false;
+  return getAppStateVersionFamily(snapshot.appVersion) === getAppStateVersionFamily(APP_VERSION);
+}
+
+function buildRouteStateWithSource(points, fileName, routeSource = null, routeDocument = null) {
   const nextState = buildRouteState(points, fileName);
   nextState.routeSource = routeSource;
+  nextState.routeDocument = routeDocument;
   if ((!nextState.hasElevation || nextState.totalGain <= 0) && Number(routeSource?.elevationGainMeters) > 0) {
     nextState.totalGain = Number(routeSource.elevationGainMeters);
   }
@@ -2905,6 +3080,7 @@ function positionFloatingTooltip(tooltip, event) {
 
 function updateRouteHeaderActions() {
   const source = routeState?.routeSource || null;
+  const cachedRouteDocument = normalizePersistedRouteDocument(routeState?.routeDocument);
   if (routeOpenSourceBtn instanceof HTMLButtonElement) {
     const canOpen = !!source?.sourceUrl;
     routeOpenSourceBtn.hidden = !canOpen;
@@ -2912,7 +3088,7 @@ function updateRouteHeaderActions() {
     routeOpenSourceBtn.textContent = source?.provider === 'strava' ? 'Open in Strava' : 'Open source';
   }
   if (routeDownloadGpxBtn instanceof HTMLButtonElement) {
-    const canDownload = !!source?.canDownloadGpx;
+    const canDownload = cachedRouteDocument?.format === 'gpx' || !!source?.canDownloadGpx;
     routeDownloadGpxBtn.hidden = !canDownload;
     routeDownloadGpxBtn.disabled = !canDownload;
     routeDownloadGpxBtn.textContent = 'Download GPX';
@@ -3365,14 +3541,20 @@ async function handleRouteFileChange(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    const points = await parseRouteFile(file);
+    const routeText = await file.text();
+    const points = parseRouteText(file.name, routeText);
     if (!points.length) throw new Error('No route points found in that file.');
     captureRouteDistanceInputSnapshot();
-    routeState = buildRouteState(points, file.name);
+    routeState = buildRouteStateWithSource(
+      points,
+      file.name,
+      { provider: 'manual', kind: 'route' },
+      buildPersistedRouteDocumentSnapshot(file.name, routeText, 'upload')
+    );
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
     collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
-    const routeLoadedMessage = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model.`;
+    const routeLoadedMessage = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model · provenance: local route file.`;
     routeStatus.textContent = routeLoadedMessage;
     clearRouteBtn.style.display = 'inline-block';
     renderPlannerState();
@@ -3414,6 +3596,7 @@ function clearRoute() {
   renderPlannerState();
   if (weatherData) configureLaterInput(weatherData);
   if (weatherData) renderAdvice(weatherData, selectedActivity);
+  schedulePersistedAppStateSave();
 }
 window.clearRoute = clearRoute;
 
@@ -3429,6 +3612,7 @@ function resetLocationSection() {
   locationCardCollapsed = false;
   updateLocationCardCollapseUi();
   if (forecastOnlyMode) updateForecastOnlyModeUi();
+  schedulePersistedAppStateSave();
 }
 window.resetLocationSection = resetLocationSection;
 
@@ -3468,6 +3652,7 @@ function performClearAllTool() {
   updateCheckpointModelUi();
   updateForecastOnlyModeUi();
   renderPlannerState();
+  clearPersistedAppState();
 }
 
 function clearAllTool() {
@@ -3976,6 +4161,485 @@ function setWeatherRefreshStatus(patch) {
     ...patch
   };
   updateWeatherRefreshStatusUi();
+  schedulePersistedAppStateSave();
+}
+
+function getWeatherDataProvenance(data = weatherData) {
+  return data && typeof data === 'object' ? data.provenance || null : null;
+}
+
+function setWeatherDataProvenance(data, patch = {}) {
+  if (!data || typeof data !== 'object') return data;
+  data.provenance = {
+    ...(getWeatherDataProvenance(data) || {}),
+    ...patch
+  };
+  return data;
+}
+
+function buildPlannerSourceDiagnostics() {
+  const eventPreset = getSelectedEvent();
+  const distanceState = getDistanceState(eventPreset);
+  const durationState = getDurationState(eventPreset);
+  const averageState = getAverageMetric();
+  const derivedAverage = getDerivedAverageMetric(eventPreset);
+  return {
+    distance: {
+      source: distanceState?.source || 'none',
+      label: distanceState?.label || '',
+      valueKm: distanceState?.km ?? null
+    },
+    duration: {
+      source: durationState?.source || 'none',
+      label: durationState?.label || '',
+      valueMinutes: durationState?.minutes ?? null
+    },
+    average: {
+      source: averageState?.valid ? 'manual' : (derivedAverage?.label ? 'derived' : 'none'),
+      label: averageState?.label || derivedAverage?.label || '',
+      unit: averageUnitSelect?.value || '',
+      canDerive: !!averageState?.canDerive
+    }
+  };
+}
+
+function normalizePersistedRoutePoints(points: unknown): RoutePoint[] {
+  if (!Array.isArray(points)) return [];
+  return points
+    .map((point) => {
+      if (!point || typeof point !== 'object') return null;
+      const record = point as Record<string, unknown>;
+      const lat = Number(record.lat);
+      const lon = Number(record.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+      return {
+        lat,
+        lon,
+        ele: Number.isFinite(Number(record.ele)) ? Number(record.ele) : null,
+        time: typeof record.time === 'string' && record.time ? record.time : null
+      };
+    })
+    .filter(Boolean);
+}
+
+function capturePersistedRouteSnapshot(): PersistedRouteSnapshot | null {
+  if (!routeState?.points?.length) return null;
+  const routeDocument = normalizePersistedRouteDocument(routeState.routeDocument);
+  const points = routeDocument ? null : (() => {
+    if (routeState.points.length > APP_STATE_MAX_ROUTE_POINTS) return null;
+    return routeState.points.map((point) => ({
+      lat: point.lat,
+      lon: point.lon,
+      ele: Number.isFinite(Number(point.ele)) ? Number(point.ele) : null,
+      time: point.time || null
+    }));
+  })();
+  if (!routeDocument && !points?.length) return null;
+  return {
+    fileName: routeState.fileName || 'Route',
+    routeSource: routeState.routeSource || null,
+    points,
+    routeDocument
+  };
+}
+
+function capturePersistedWeatherSnapshot(): PersistedWeatherSnapshot | null {
+  if (!weatherData) return null;
+  const provenance = getWeatherDataProvenance(weatherData);
+  return {
+    data: {
+      ...weatherData,
+      provenance: {
+        ...(provenance || {}),
+        kind: provenance?.kind || 'live',
+        savedAt: new Date().toISOString()
+      }
+    },
+    savedAt: new Date().toISOString()
+  };
+}
+
+function capturePersistedAppState(options: { includeRoute?: boolean; includeWeather?: boolean } = {}): PersistedAppState {
+  const includeRoute = options.includeRoute !== false;
+  const includeWeather = options.includeWeather !== false;
+  return {
+    schemaVersion: APP_STATE_SCHEMA_VERSION,
+    appVersion: APP_VERSION,
+    savedAt: new Date().toISOString(),
+    inputValue: String(input?.value || ''),
+    selectedActivity,
+    selectedEventKey,
+    selectedDuration,
+    checkpointModel,
+    startMode,
+    raceDayMode,
+    manualWeatherPanelOpen,
+    temperaturePreference,
+    plannedEffort,
+    forecastOnlyMode,
+    plannerCardCollapsed,
+    locationCardCollapsed,
+    customDistance: String(customDistanceInput?.value || ''),
+    distanceUnit: String(distanceUnitSelect?.value || 'km'),
+    customDuration: String(customDurationInput?.value || ''),
+    durationUnit: String(durationUnitSelect?.value || 'h'),
+    average: String(averageInput?.value || ''),
+    averageUnit: String(averageUnitSelect?.value || ''),
+    manualWaterTemp: String(manualWaterTempInput?.value || ''),
+    waterBodyType: String(waterBodyTypeSelect?.value || 'auto'),
+    windExposure: String(windExposureSelect?.value || 'auto'),
+    poolType: String(poolTypeSelect?.value || 'indoor_heated'),
+    laterInputValue: String(laterInput?.value || ''),
+    raceDayStart: String(raceDayStartInput?.value || ''),
+    raceDayEnd: String(raceDayEndInput?.value || ''),
+    bestWindowStart: String(bestWindowStartInput?.value || ''),
+    bestWindowEnd: String(bestWindowEndInput?.value || ''),
+    bestWindowPriority: String(bestWindowPrioritySelect?.value || 'best_overall'),
+    bestWindowStep: String(bestWindowStepSelect?.value || 'auto'),
+    bestWindowMaxPrecip: String(bestWindowMaxPrecipInput?.value || ''),
+    bestWindowMaxGust: String(bestWindowMaxGustInput?.value || ''),
+    bestWindowMinTemp: String(bestWindowMinTempInput?.value || ''),
+    bestWindowMaxTemp: String(bestWindowMaxTempInput?.value || ''),
+    bestWindowMinWater: String(bestWindowMinWaterInput?.value || ''),
+    bestWindowFinishDaylight: !!bestWindowFinishDaylightInput?.checked,
+    customMultisportSelections: {
+      triathlon: [...(customMultisportSelections?.triathlon || [])],
+      indoor_multisport: [...(customMultisportSelections?.indoor_multisport || [])]
+    },
+    weatherRefreshStatus: { ...weatherRefreshStatus },
+    weather: includeWeather ? capturePersistedWeatherSnapshot() : null,
+    route: includeRoute ? capturePersistedRouteSnapshot() : null
+  };
+}
+
+function clearPersistedAppState() {
+  if (appStateSaveTimer) {
+    window.clearTimeout(appStateSaveTimer);
+    appStateSaveTimer = null;
+  }
+  try {
+    localStorage.removeItem(APP_STATE_STORAGE_KEY);
+  } catch {
+    // Ignore storage cleanup failures.
+  }
+}
+
+function savePersistedAppStateNow() {
+  const attempts = [
+    { includeRoute: true, includeWeather: true },
+    { includeRoute: false, includeWeather: true },
+    { includeRoute: false, includeWeather: false }
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      const snapshot = capturePersistedAppState(attempt);
+      localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(snapshot));
+      persistenceMeta = {
+        ...persistenceMeta,
+        lastSavedAt: snapshot.savedAt,
+        routePersisted: !!snapshot.route,
+        weatherPersisted: !!snapshot.weather,
+        lastSaveError: ''
+      };
+      return;
+    } catch (error) {
+      persistenceMeta = {
+        ...persistenceMeta,
+        lastSaveError: error instanceof Error ? error.message : 'Unable to save app state'
+      };
+    }
+  }
+}
+
+function schedulePersistedAppStateSave() {
+  if (appStateSaveTimer) window.clearTimeout(appStateSaveTimer);
+  appStateSaveTimer = window.setTimeout(() => {
+    appStateSaveTimer = null;
+    savePersistedAppStateNow();
+  }, 180);
+}
+
+function readPersistedAppState(): PersistedAppState | null {
+  try {
+    const raw = localStorage.getItem(APP_STATE_STORAGE_KEY);
+    if (!raw) return null;
+    const snapshot = JSON.parse(raw) as PersistedAppState;
+    if (!snapshot || snapshot.schemaVersion !== APP_STATE_SCHEMA_VERSION) return null;
+    if (isPersistedAppStateVersionCompatible(snapshot)) return snapshot;
+    clearPersistedAppState();
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function restorePersistedAppState(snapshot: PersistedAppState | null = null) {
+  const resolvedSnapshot = snapshot || readPersistedAppState();
+  if (!resolvedSnapshot) return false;
+  snapshot = resolvedSnapshot;
+  input.value = String(snapshot.inputValue || '');
+  selectedActivity = snapshot.selectedActivity || null;
+  selectedEventKey = snapshot.selectedEventKey || null;
+  selectedDuration = snapshot.selectedDuration || 'h1';
+  checkpointModel = snapshot.checkpointModel === 'old' ? 'old' : 'smart';
+  startMode = ['now', 'later', 'best'].includes(snapshot.startMode) ? snapshot.startMode : 'now';
+  raceDayMode = !!snapshot.raceDayMode;
+  manualWeatherPanelOpen = !!snapshot.manualWeatherPanelOpen;
+  temperaturePreference = Number.isFinite(Number(snapshot.temperaturePreference)) ? Number(snapshot.temperaturePreference) : 0;
+  plannedEffort = snapshot.plannedEffort || 'steady';
+  forecastOnlyMode = !!snapshot.forecastOnlyMode;
+  plannerCardCollapsed = !!snapshot.plannerCardCollapsed;
+  locationCardCollapsed = !!snapshot.locationCardCollapsed;
+
+  if (customDistanceInput) customDistanceInput.value = String(snapshot.customDistance || '');
+  if (distanceUnitSelect) distanceUnitSelect.value = String(snapshot.distanceUnit || 'km');
+  if (customDurationInput) customDurationInput.value = String(snapshot.customDuration || '');
+  if (durationUnitSelect) durationUnitSelect.value = String(snapshot.durationUnit || 'h');
+  if (averageInput) averageInput.value = String(snapshot.average || '');
+  if (averageUnitSelect) averageUnitSelect.value = String(snapshot.averageUnit || averageUnitSelect.value || '');
+  if (manualWaterTempInput) manualWaterTempInput.value = String(snapshot.manualWaterTemp || '');
+  if (waterBodyTypeSelect) waterBodyTypeSelect.value = String(snapshot.waterBodyType || 'auto');
+  if (windExposureSelect) windExposureSelect.value = String(snapshot.windExposure || 'auto');
+  if (poolTypeSelect) poolTypeSelect.value = String(snapshot.poolType || 'indoor_heated');
+  if (laterInput) laterInput.value = String(snapshot.laterInputValue || '');
+  if (raceDayStartInput) raceDayStartInput.value = String(snapshot.raceDayStart || '');
+  if (raceDayEndInput) raceDayEndInput.value = String(snapshot.raceDayEnd || '');
+  if (bestWindowStartInput) bestWindowStartInput.value = String(snapshot.bestWindowStart || '');
+  if (bestWindowEndInput) bestWindowEndInput.value = String(snapshot.bestWindowEnd || '');
+  if (bestWindowPrioritySelect) bestWindowPrioritySelect.value = String(snapshot.bestWindowPriority || 'best_overall');
+  if (bestWindowStepSelect) bestWindowStepSelect.value = String(snapshot.bestWindowStep || 'auto');
+  if (bestWindowMaxPrecipInput) bestWindowMaxPrecipInput.value = String(snapshot.bestWindowMaxPrecip || '');
+  if (bestWindowMaxGustInput) bestWindowMaxGustInput.value = String(snapshot.bestWindowMaxGust || '');
+  if (bestWindowMinTempInput) bestWindowMinTempInput.value = String(snapshot.bestWindowMinTemp || '');
+  if (bestWindowMaxTempInput) bestWindowMaxTempInput.value = String(snapshot.bestWindowMaxTemp || '');
+  if (bestWindowMinWaterInput) bestWindowMinWaterInput.value = String(snapshot.bestWindowMinWater || '');
+  if (bestWindowFinishDaylightInput) bestWindowFinishDaylightInput.checked = !!snapshot.bestWindowFinishDaylight;
+  customMultisportSelections = {
+    triathlon: Array.isArray(snapshot.customMultisportSelections?.triathlon) ? [...snapshot.customMultisportSelections.triathlon] : [...defaultMultisportSelections.triathlon],
+    indoor_multisport: Array.isArray(snapshot.customMultisportSelections?.indoor_multisport) ? [...snapshot.customMultisportSelections.indoor_multisport] : [...defaultMultisportSelections.indoor_multisport]
+  };
+  weatherRefreshStatus = {
+    ...weatherRefreshStatus,
+    ...(snapshot.weatherRefreshStatus || {})
+  };
+
+  const restoredRouteDocument = normalizePersistedRouteDocument(snapshot.route?.routeDocument);
+  let restoredRoutePoints = [];
+  if (restoredRouteDocument) {
+    try {
+      restoredRoutePoints = parseRouteText(snapshot.route?.fileName || `restored-route.${restoredRouteDocument.format}`, restoredRouteDocument.text);
+    } catch {
+      restoredRoutePoints = [];
+    }
+  }
+  if (!restoredRoutePoints.length) restoredRoutePoints = normalizePersistedRoutePoints(snapshot.route?.points);
+  if (restoredRoutePoints.length >= 2) {
+    routeState = buildRouteStateWithSource(
+      restoredRoutePoints,
+      snapshot.route?.fileName || 'Restored route',
+      snapshot.route?.routeSource || null,
+      restoredRouteDocument
+    );
+    clearRouteBtn.style.display = 'inline-block';
+    const restoredRouteKind = restoredRouteDocument ? `${restoredRouteDocument.format.toUpperCase()} cache` : 'local app state';
+    routeStatus.textContent = `Restored ${routeState.fileName} from ${restoredRouteKind}.`;
+    persistenceMeta.restoredRouteFromCache = true;
+  }
+
+  const savedAtMs = Date.parse(String(snapshot.weather?.savedAt || ''));
+  if (snapshot.weather?.data && Number.isFinite(savedAtMs) && (Date.now() - savedAtMs) <= APP_STATE_MAX_WEATHER_AGE_MS) {
+    weatherData = setWeatherDataProvenance(snapshot.weather.data, {
+      kind: 'cached',
+      savedAt: snapshot.weather.savedAt,
+      restoredAt: new Date().toISOString()
+    });
+    setWeatherRefreshStatus({
+      state: 'success',
+      detail: '',
+      error: '',
+      lastSuccessAt: snapshot.weather.savedAt
+    });
+    persistenceMeta.restoredWeatherFromCache = true;
+  }
+
+  persistenceMeta = {
+    ...persistenceMeta,
+    restoredAt: new Date().toISOString()
+  };
+
+  setSelectedActivityButton(selectedActivity);
+  renderCustomControlOptions(true);
+  updateRaceDayModeUi();
+  updatePlannerCardCollapseUi();
+  renderPlannerState();
+  updateLocationCardCollapseUi();
+  updateWeatherRefreshStatusUi();
+
+  if (routeState?.points?.length) renderRouteMap();
+  if (weatherData) {
+    configureLaterInput(weatherData);
+    renderAdvice(weatherData, selectedActivity);
+  }
+  return true;
+}
+
+function formatSavedSessionSummary(snapshot: PersistedAppState | null) {
+  if (!snapshot) return 'A saved planner session is available on this device.';
+  const bits = [];
+  const savedAt = formatRefreshStatusDateTime(snapshot.savedAt);
+  if (savedAt) bits.push(`Saved ${savedAt}`);
+  if (snapshot.inputValue) bits.push(`location: ${snapshot.inputValue}`);
+  if (snapshot.route?.fileName) bits.push(`route: ${snapshot.route.fileName}`);
+  if (snapshot.forecastOnlyMode) bits.push('Forecast only');
+  if (snapshot.weather?.savedAt) bits.push('cached weather');
+  return bits.length
+    ? `${bits.join(' · ')}. Resume it or start with a blank planner.`
+    : 'A saved planner session is available on this device. Resume it or start with a blank planner.';
+}
+
+function openStartupSessionPrompt(snapshot: PersistedAppState) {
+  pendingStartupSnapshot = snapshot;
+  if (startupSessionSummary) startupSessionSummary.textContent = formatSavedSessionSummary(snapshot);
+  if (!startupSessionOverlay) return;
+  startupSessionOverlay.hidden = false;
+  document.body.classList.add('helper-open');
+  resumeSessionBtn?.focus({ preventScroll: true });
+}
+
+function closeStartupSessionPrompt() {
+  if (!startupSessionOverlay) return;
+  startupSessionOverlay.hidden = true;
+  document.body.classList.remove('helper-open');
+}
+
+function resumePreviousSession() {
+  const snapshot = pendingStartupSnapshot;
+  pendingStartupSnapshot = null;
+  closeStartupSessionPrompt();
+  restorePersistedAppState(snapshot);
+  renderStravaConnectionStateEnhanced();
+  updateRouteHeaderActions();
+}
+
+function startFreshSession() {
+  pendingStartupSnapshot = null;
+  closeStartupSessionPrompt();
+  clearPersistedAppState();
+  persistenceMeta = {
+    ...persistenceMeta,
+    lastSavedAt: '',
+    restoredAt: '',
+    routePersisted: false,
+    weatherPersisted: false,
+    restoredWeatherFromCache: false,
+    restoredRouteFromCache: false,
+    lastSaveError: ''
+  };
+}
+
+function initializeStartupState() {
+  const snapshot = readPersistedAppState();
+  const startupIntent = getStartupEntryIntent();
+  if (snapshot && !startupIntent) {
+    openStartupSessionPrompt(snapshot);
+    return;
+  }
+  if (snapshot && startupIntent) {
+    persistenceMeta = {
+      ...persistenceMeta,
+      lastSavedAt: snapshot.savedAt || '',
+      routePersisted: !!snapshot.route,
+      weatherPersisted: !!snapshot.weather
+    };
+  }
+}
+
+function triggerDiagnosticsExport() {
+  const session = getStravaSession();
+  const plannerDiagnostics = buildPlannerSourceDiagnostics();
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    appVersion: APP_VERSION,
+    persistence: {
+      ...persistenceMeta,
+      activeEntryIntent: getStartupEntryIntent(),
+    },
+    weather: weatherData ? {
+      locationName: weatherData.locationName,
+      latitude: weatherData.latitude,
+      longitude: weatherData.longitude,
+      timezone: weatherData.timezone,
+      currentTime: weatherData.currentTime,
+      countryCode: weatherData.countryCode,
+      marineSource: weatherData.marineSource,
+      ecccAlertStatus: weatherData.ecccAlertStatus,
+      alertCount: Array.isArray(weatherData.ecccAlerts) ? weatherData.ecccAlerts.length : 0,
+      hourlyPoints: Array.isArray(weatherData.hourly) ? weatherData.hourly.length : 0,
+      dailyPoints: Array.isArray(weatherData.daily) ? weatherData.daily.length : 0,
+      provenance: getWeatherDataProvenance(weatherData),
+      refreshStatus: weatherRefreshStatus
+    } : null,
+    route: routeState ? {
+      cacheDocument: normalizePersistedRouteDocument(routeState.routeDocument) ? {
+        format: routeState.routeDocument.format,
+        source: routeState.routeDocument.source,
+        length: routeState.routeDocument.text.length
+      } : null,
+      fileName: routeState.fileName,
+      pointCount: routeState.points?.length || 0,
+      totalKm: round1(routeState.totalKm || 0),
+      totalGainMeters: Math.round(routeState.totalGain || 0),
+      elapsedMinutes: routeState.elapsedMinutes,
+      timedPointCount: routeState.timedPointCount,
+      checkpointModel,
+      checkpointCount: routeState.samples?.length || 0,
+      weatherCacheEntries: Object.keys(routeState.weatherCache || {}).length,
+      source: routeState.routeSource || { provider: 'manual', kind: 'route' }
+    } : null,
+    planner: {
+      selectedActivity,
+      selectedEventKey,
+      selectedDuration,
+      checkpointModel,
+      startMode,
+      raceDayMode,
+      manualWeatherPanelOpen,
+      temperaturePreference,
+      plannedEffort,
+      forecastOnlyMode,
+      plannerCardCollapsed,
+      locationCardCollapsed,
+      customDistance: String(customDistanceInput?.value || ''),
+      customDuration: String(customDurationInput?.value || ''),
+      average: String(averageInput?.value || ''),
+      manualWaterTemp: String(manualWaterTempInput?.value || ''),
+      plannerSources: plannerDiagnostics
+    },
+    strava: {
+      connected: !!session,
+      athleteName: session?.athleteName || '',
+      expiresAt: session?.expiresAt || null,
+      authError: getStravaAuthError(),
+      pickerTab: stravaPickerTab,
+      cachedRoutes: stravaPickerRoutes.length,
+      cachedActivities: stravaPickerActivities.length
+    },
+    warnings: {
+      dismissedWarningStateSupported: false,
+      dismissedWarningCount: 0
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `forecast-fit-diagnostics-${new Date().toISOString().replace(/[:]/g, '-').slice(0, 19)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function showResultLoading() {
@@ -5135,11 +5799,13 @@ function handleBestWindowInputChange() {
 routeFileInput.addEventListener('change', handleRouteFileChange);
 
 function handlePlannerOverrideChange() {
+  const shouldCollapseDuration = !!String(customDurationInput?.value || '').trim() || !!String(averageInput?.value || '').trim();
   if (temperaturePreferenceInput) temperaturePreference = Number(temperaturePreferenceInput.value) || 0;
   if (weatherData) applyPseudoWaterEstimateToData(weatherData);
   bestWindowAnalysis = null;
   bestWindowAnalysisKey = '';
   bestWindowSelectedStart = null;
+  if (shouldCollapseDuration) collapsePlannerSubsection('duration');
   renderPlannerState();
   updateManualWeatherStatus();
   if (!weatherData) refreshIndoorAdviceIfNeeded();
@@ -5583,7 +6249,10 @@ async function fetchWeatherFromResult(place, options = {}) {
       Math.abs(activeRoutePointForecast.latitude - placeLat) < 0.000001 &&
       Math.abs(activeRoutePointForecast.longitude - placeLon) < 0.000001;
     if (!isSameActiveRoutePoint) activeRoutePointForecast = null;
-    weatherData = await fetchWeatherCore(place);
+    weatherData = setWeatherDataProvenance(await fetchWeatherCore(place), {
+      kind: 'live',
+      savedAt: new Date().toISOString()
+    });
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
     configureLaterInput(weatherData);
@@ -5600,6 +6269,7 @@ async function fetchWeatherFromResult(place, options = {}) {
       lastAttemptAt: new Date().toISOString(),
       lastSuccessAt: new Date().toISOString()
     });
+    schedulePersistedAppStateSave();
     return weatherData;
   } catch (e) {
     showError(e.message || 'Something went wrong.');
@@ -5610,6 +6280,7 @@ async function fetchWeatherFromResult(place, options = {}) {
       error: e instanceof Error ? e.message : 'Something went wrong.',
       lastAttemptAt: new Date().toISOString()
     });
+    schedulePersistedAppStateSave();
     if (options?.propagateError) throw e;
     return null;
   } finally {
@@ -8074,7 +8745,46 @@ function refreshIndoorAdviceIfNeeded() {
   return false;
 }
 
-function renderResultLocationHeader(locationName) {
+function getWeatherProvenanceSummary(data = weatherData) {
+  const provenance = getWeatherDataProvenance(data);
+  const stamp = provenance?.savedAt || weatherRefreshStatus.lastSuccessAt || '';
+  const formatted = formatRefreshStatusDateTime(stamp);
+  if (provenance?.kind === 'cached') return formatted ? `cached forecast · ${formatted}` : 'cached forecast';
+  return formatted ? `live forecast · ${formatted}` : 'live forecast';
+}
+
+function getAlertsProvenanceSummary(data = weatherData) {
+  if (!data) return '';
+  if (data.ecccAlertStatus === 'ok') return 'official alerts';
+  if (shouldUseEcccAlertsForWeatherData(data)) return 'forecast-derived alerts';
+  return 'forecast-derived warnings';
+}
+
+function getRouteProvenanceSummary() {
+  if (!routeState?.points?.length) return '';
+  if (routeState?.routeSource?.provider === 'strava') {
+    return routeState?.routeSource?.kind === 'activity' ? 'imported Strava activity' : 'imported Strava route';
+  }
+  return 'local route file';
+}
+
+function renderProvenanceChips(data, point) {
+  const chips = [
+    `<span class="provenance-chip">${escapeHtml(getWeatherProvenanceSummary(data))}</span>`,
+    `<span class="provenance-chip">${escapeHtml(getAlertsProvenanceSummary(data))}</span>`
+  ];
+  const routeProvenance = getRouteProvenanceSummary();
+  if (routeProvenance) chips.push(`<span class="provenance-chip">${escapeHtml(routeProvenance)}</span>`);
+
+  const plannerSources = buildPlannerSourceDiagnostics();
+  if (plannerSources.distance?.source && plannerSources.distance.source !== 'none') chips.push(`<span class="provenance-chip">distance: ${escapeHtml(getValueProvenanceLabel(plannerSources.distance.source))}</span>`);
+  if (plannerSources.duration?.source && plannerSources.duration.source !== 'none') chips.push(`<span class="provenance-chip">duration: ${escapeHtml(getValueProvenanceLabel(plannerSources.duration.source))}</span>`);
+  if (point?.waterTempSource && point.waterTempSource !== 'unknown') chips.push(`<span class="provenance-chip">water: ${escapeHtml(String(point.waterTempSource))}</span>`);
+
+  return `<div class="provenance-strip">${chips.join('')}</div>`;
+}
+
+function renderResultLocationHeader(locationName, point = null) {
   const showBackToStart = !!(activeRoutePointForecast?.isRoutePoint && routeState?.points?.length);
   return `
     <div class="location-name-row">
@@ -8085,6 +8795,7 @@ function renderResultLocationHeader(locationName) {
       </div>
     </div>
     ${renderWeatherRefreshStatus()}
+    ${renderProvenanceChips(weatherData, point)}
   `;
 }
 
@@ -8132,7 +8843,7 @@ function renderAdvice(data, activity) {
       resultInner.innerHTML = upgradeEmojiMarkup(`
         <div class="result-sections">
           <section class="result-panel">
-          ${renderResultLocationHeader(data.locationName)}
+          ${renderResultLocationHeader(data.locationName, point)}
           <div class="weather-strip">
             ${weatherIconHtml(point.code, 'weather-icon')}
             <div class="weather-main">
@@ -8168,7 +8879,7 @@ function renderAdvice(data, activity) {
     resultInner.innerHTML = upgradeEmojiMarkup(`
       <div class="result-sections">
         <section class="result-panel">
-          ${renderResultLocationHeader(data.locationName)}
+          ${renderResultLocationHeader(data.locationName, point)}
           <div class="weather-strip">
             ${weatherIconHtml(point.code, 'weather-icon')}
             <div class="weather-main">
@@ -8205,7 +8916,7 @@ function renderAdvice(data, activity) {
   resultInner.innerHTML = upgradeEmojiMarkup(`
     <div class="result-sections">
       <section class="result-panel">
-        ${renderResultLocationHeader(data.locationName)}
+        ${renderResultLocationHeader(data.locationName, point)}
         <div class="weather-strip">
           ${weatherIconHtml(point.code, 'weather-icon')}
           <div class="weather-main">
@@ -8746,6 +9457,7 @@ quickStartCloseBtn?.addEventListener('click', closeQuickStartGuide);
 
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
+  if (startupSessionOverlay && !startupSessionOverlay.hidden) return;
   if (forecastOnlyConfirmOverlay && !forecastOnlyConfirmOverlay.hidden) {
     closeForecastOnlyConfirm();
     return;
@@ -9300,9 +10012,11 @@ async function importStravaFirstRoute() {
   if (!Array.isArray(routes) || !routes.length) throw new Error('No saved Strava routes found');
   const route = routes[0];
   let importedRoute;
+  let routeDocument = null;
   try {
     const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, route.id);
     importedRoute = stravaRouteGpxToImportedRoute(route, gpxText);
+    routeDocument = buildPersistedRouteDocumentSnapshot(`${route?.name || 'strava-route'}.gpx`, gpxText, 'strava_gpx');
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     const isMissingExport = /resource not found|strava request failed \(404\)/i.test(message);
@@ -9318,6 +10032,7 @@ async function importStravaFirstRoute() {
     shouldSetDuration: !importedRoute?.hasRealTimestamps,
   });
   routeState = buildRouteStateWithSource(importedRoute.geometry, importedRoute.name || 'Strava route', buildImportedRouteSourceMeta(importedRoute, 'Strava route'));
+  routeState.routeDocument = routeDocument;
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
   collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
@@ -9375,10 +10090,15 @@ async function handleOpenStravaPicker() {
   }
 }
 
-async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutofill = null) {
+async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutofill = null, routeDocument = null) {
   applyStravaPlannerAutofill(plannerAutofill);
   captureRouteDistanceInputSnapshot();
-  routeState = buildRouteStateWithSource(importedRoute.geometry, importedRoute.name || 'Strava route', buildImportedRouteSourceMeta(importedRoute, sourceLabel));
+  routeState = buildRouteStateWithSource(
+    importedRoute.geometry,
+    importedRoute.name || 'Strava route',
+    buildImportedRouteSourceMeta(importedRoute, sourceLabel),
+    routeDocument
+  );
   locationCardCollapsed = true;
   updateLocationCardCollapseUi();
   collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
@@ -9386,7 +10106,7 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
   renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  const routeLoadedMessage = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points`;
+  const routeLoadedMessage = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points · provenance: imported route`;
   routeStatus.textContent = routeLoadedMessage;
   if (routeState?.points?.[0]) {
     routeStatus.textContent = `${routeLoadedMessage} · refreshing weather…`;
@@ -9469,6 +10189,13 @@ function describeStravaActivity(activity) {
   return bits.join(' · ');
 }
 
+function getStravaPreviewMarkup(item) {
+  const polyline = item?.map?.summary_polyline || item?.map?.polyline || '';
+  const svg = buildStravaPreviewSvg(polyline);
+  if (svg) return `<div class="strava-picker-preview">${svg}</div>`;
+  return `<div class="strava-picker-preview strava-picker-preview-empty"><span>No map preview</span></div>`;
+}
+
 function renderStravaPicker() {
   if (!stravaPickerTabs || !stravaPickerList || !stravaPickerStatus) return;
 
@@ -9512,6 +10239,7 @@ function renderStravaPicker() {
       const dateLabel = formatStravaDate(item?.start_date_local || item?.start_date);
       return `
         <button class="strava-picker-item" type="button" data-action="importStravaActivity" data-strava-activity-id="${escapeHtml(String(item.id))}">
+          ${getStravaPreviewMarkup(item)}
           <div class="strava-picker-item-head">
             <strong>${escapeHtml(item?.name || 'Strava activity')}</strong>
             <span class="strava-picker-item-kicker">${escapeHtml(item?.sport_type || item?.type || 'Activity')}</span>
@@ -9528,6 +10256,7 @@ function renderStravaPicker() {
     const dateLabel = formatStravaDate(item?.updated_at);
     return `
       <button class="strava-picker-item" type="button" data-action="importStravaRoute" data-strava-route-id="${escapeHtml(String(item.id))}">
+        ${getStravaPreviewMarkup(item)}
         <div class="strava-picker-item-head">
           <strong>${escapeHtml(item?.name || 'Strava route')}</strong>
           <span class="strava-picker-item-kicker">Route</span>
@@ -9645,9 +10374,11 @@ async function importStravaRouteById(routeId) {
   };
   if (route) stravaPickerRoutes = addUniqueStravaItem(stravaPickerRoutes, route);
   let importedRoute;
+  let routeDocument = null;
   try {
     const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, fallbackRoute.id);
     importedRoute = stravaRouteGpxToImportedRoute(fallbackRoute, gpxText);
+    routeDocument = buildPersistedRouteDocumentSnapshot(`${fallbackRoute?.name || 'strava-route'}.gpx`, gpxText, 'strava_gpx');
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     const isMissingExport = /resource not found|strava request failed \(404\)/i.test(message);
@@ -9662,7 +10393,7 @@ async function importStravaRouteById(routeId) {
       : null,
     durationMinutes: Number(fallbackRoute?.estimated_moving_time) > 0 ? Number(fallbackRoute.estimated_moving_time) / 60 : null,
     shouldSetDuration: !importedRoute?.hasRealTimestamps,
-  });
+  }, routeDocument);
 }
 
 async function importStravaActivityById(activityId) {
@@ -9696,15 +10427,18 @@ function sanitizeRouteDownloadFileName(name) {
 
 async function handleDownloadRouteGpx() {
   const source = routeState?.routeSource;
-  if (!source?.canDownloadGpx || !source.providerRouteId) return;
   if (!(routeDownloadGpxBtn instanceof HTMLButtonElement)) return;
+  const cachedRouteDocument = normalizePersistedRouteDocument(routeState?.routeDocument);
+  if (cachedRouteDocument?.format !== 'gpx' && (!source?.canDownloadGpx || !source.providerRouteId)) return;
 
   const originalLabel = routeDownloadGpxBtn.textContent || 'Download GPX';
   routeDownloadGpxBtn.disabled = true;
   routeDownloadGpxBtn.textContent = 'Preparing GPX...';
 
   try {
-    const gpxText = await fetchStravaRouteGpx(STRAVA_BACKEND_URL, source.providerRouteId);
+    const gpxText = cachedRouteDocument?.format === 'gpx'
+      ? cachedRouteDocument.text
+      : await fetchStravaRouteGpx(STRAVA_BACKEND_URL, source.providerRouteId);
     const blob = new Blob([gpxText], { type: 'application/gpx+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const downloadLink = document.createElement('a');
@@ -9717,7 +10451,7 @@ async function handleDownloadRouteGpx() {
   } catch (error) {
     routeStatus.textContent = error instanceof Error ? error.message : 'Unable to download GPX for this Strava route.';
   } finally {
-    routeDownloadGpxBtn.disabled = !source?.canDownloadGpx;
+    routeDownloadGpxBtn.disabled = !(cachedRouteDocument?.format === 'gpx' || source?.canDownloadGpx);
     routeDownloadGpxBtn.textContent = originalLabel;
   }
 }
@@ -9882,6 +10616,15 @@ function bindDomActions() {
       case 'confirmClearAll':
         confirmClearAll();
         break;
+      case 'resumePreviousSession':
+        resumePreviousSession();
+        break;
+      case 'startFreshSession':
+        startFreshSession();
+        break;
+      case 'exportDiagnostics':
+        triggerDiagnosticsExport();
+        break;
       case 'useCurrentLocation':
         useCurrentLocation();
         break;
@@ -9969,6 +10712,7 @@ stravaPickerUrlInput?.addEventListener('keydown', (event) => {
   void handleImportStravaUrl();
 });
 
+initializeStartupState();
 renderStravaConnectionStateEnhanced();
 updateRouteHeaderActions();
 bindDomActions();
