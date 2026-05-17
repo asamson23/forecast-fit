@@ -960,3 +960,8 @@
 
 - Fixed package semver metadata to use `12.0.x` formatting so installs and deployments that validate npm version format succeed.
 - Reworked the Strava importer cards into a two-column layout with the route/activity preview on the right so names, metrics, and import actions read more cleanly.
+
+## v12.0.2
+
+- Updated the route elevation profile hover tooltip to show the hovered checkpoint or point type instead of always calling it the current point.
+- Suppressed synthetic post-touch hover re-entry on the route elevation chart so the hover marker and tooltip clear more reliably on mobile and touch devices.

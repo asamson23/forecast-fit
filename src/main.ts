@@ -181,7 +181,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.0.1';
+const APP_VERSION = '12.0.2';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -190,6 +190,7 @@ const APP_STATE_STORAGE_KEY = 'forecast_fit_app_state_v1';
 const APP_STATE_SCHEMA_VERSION = 1;
 const APP_STATE_MAX_WEATHER_AGE_MS = 6 * 60 * 60 * 1000;
 const APP_STATE_MAX_ROUTE_POINTS = 2500;
+const ROUTE_ELEVATION_TOUCH_HOVER_SUPPRESSION_MS = 900;
 
 type EntryIntentKind = 'forecast-only' | 'strava' | 'current-location';
 type EntryIntentSource = 'url' | 'resume';
@@ -3137,6 +3138,36 @@ function getRouteElevationExtremes(points) {
   return { highPoint, lowPoint };
 }
 
+function getRouteElevationHoveredCheckpoint(point) {
+  if (!point || !Array.isArray(routeState?.samples) || !routeState.samples.length) return null;
+  const checkpointToleranceKm = Math.min(0.35, Math.max(0.08, firstFinite(routeState?.totalKm, 0) * 0.015));
+  let nearestCheckpoint = null;
+  let nearestDistance = Infinity;
+  routeState.samples.forEach((checkpoint) => {
+    if (!checkpoint) return;
+    let distance = Infinity;
+    if (isFiniteNumber(checkpoint.pointIndex) && checkpoint.pointIndex === point.index) {
+      distance = 0;
+    } else if (isFiniteNumber(checkpoint.kmFromStart)) {
+      distance = Math.abs(Number(checkpoint.kmFromStart) - point.km);
+    }
+    if (distance < nearestDistance) {
+      nearestCheckpoint = checkpoint;
+      nearestDistance = distance;
+    }
+  });
+  return nearestDistance <= checkpointToleranceKm ? nearestCheckpoint : null;
+}
+
+function getRouteElevationPointTypeLabel(point) {
+  const checkpoint = getRouteElevationHoveredCheckpoint(point);
+  if (checkpoint?.label) return checkpoint.label;
+  const { highPoint, lowPoint } = getRouteElevationExtremes(routeState?.points || []);
+  if (highPoint === routeState?.points?.[point.index]) return 'High point';
+  if (lowPoint === routeState?.points?.[point.index]) return 'Low point';
+  return 'Route point';
+}
+
 function bindRouteElevationProfileInteractions() {
   if (!routeElevationProfile) return;
   const svg = routeElevationProfile.querySelector('[data-route-elevation-chart]');
@@ -3169,11 +3200,19 @@ function bindRouteElevationProfileInteractions() {
   const hoverLine = svg.querySelector('[data-route-elevation-hover-line]');
   const hoverDot = svg.querySelector('[data-route-elevation-hover-dot]');
   const tooltip = getRouteElevationTooltipPortal();
+  let lastTouchHoverAt = 0;
+
+  const markTouchHover = () => {
+    lastTouchHoverAt = Date.now();
+  };
+
+  const shouldSuppressMouseHover = () => (Date.now() - lastTouchHoverAt) < ROUTE_ELEVATION_TOUCH_HOVER_SUPPRESSION_MS;
 
   const showPoint = (point, event) => {
     const x = xForKm(point.km);
     const y = yForEle(point.ele);
     const pointEta = getRoutePointSelectedTime(point.index);
+    const pointTypeLabel = getRouteElevationPointTypeLabel(point);
     if (hoverGroup instanceof Element) hoverGroup.removeAttribute('hidden');
     if (hoverLine instanceof SVGLineElement) {
       hoverLine.setAttribute('x1', x.toFixed(1));
@@ -3186,7 +3225,7 @@ function bindRouteElevationProfileInteractions() {
 
     tooltip.innerHTML = `
       <div class="tt-time">${escapeHtml(formatKm(point.km))} from start</div>
-      <div class="tt-row"><span>Point type</span><strong>Current point</strong></div>
+      <div class="tt-row"><span>Point type</span><strong>${escapeHtml(pointTypeLabel)}</strong></div>
       <div class="tt-row"><span>Elevation</span><strong>${escapeHtml(`${Math.round(point.ele)} m`)}</strong></div>
       ${pointEta ? `<div class="tt-row"><span>Selected time</span><strong>${escapeHtml(formatShortDateTime(pointEta))}</strong></div>` : ''}
       <div class="tt-row"><span>Current position</span><strong>${escapeHtml(`${formatRouteCoordinate(point.lat)}°, ${formatRouteCoordinate(point.lon)}°`)}</strong></div>
@@ -3226,6 +3265,7 @@ function bindRouteElevationProfileInteractions() {
   };
 
   const handlePointerMove = (event) => {
+    if (event instanceof MouseEvent && shouldSuppressMouseHover()) return;
     const nearestPoint = getNearestPointFromClientX(event.clientX);
     showPoint(nearestPoint, event);
   };
@@ -3243,17 +3283,25 @@ function bindRouteElevationProfileInteractions() {
     });
   };
   svg.ontouchstart = (event) => {
+    markTouchHover();
     const touch = event.touches?.[0];
     if (!touch) return;
     handlePointerMove(touch);
   };
   svg.ontouchmove = (event) => {
+    markTouchHover();
     const touch = event.touches?.[0];
     if (!touch) return;
     handlePointerMove(touch);
   };
-  svg.ontouchend = hideRouteElevationHoverState;
-  svg.ontouchcancel = hideRouteElevationHoverState;
+  svg.ontouchend = () => {
+    markTouchHover();
+    hideRouteElevationHoverState();
+  };
+  svg.ontouchcancel = () => {
+    markTouchHover();
+    hideRouteElevationHoverState();
+  };
   routeElevationProfile.querySelectorAll('[data-route-elevation-jump="checkpoint"]').forEach((el) => {
     const trigger = el;
     if (!(trigger instanceof HTMLButtonElement) || trigger.dataset.routeElevationJumpBound === '1') return;
