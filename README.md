@@ -1,5 +1,7 @@
 # Forecast Fit
 
+[![Deploy Forecast Fit to GitHub Pages](https://github.com/asamson23/forecast-fit/actions/workflows/deploy.yml/badge.svg)](https://github.com/asamson23/forecast-fit/actions/workflows/deploy.yml) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white) ![Frontend](https://img.shields.io/badge/Frontend-Static%20GitHub%20Pages-222222)
+
 Forecast Fit is a weather-aware planner for activities, routes, clothing, UV exposure, air quality, water conditions, and official or forecast-derived warnings. It is built as a static Vite + TypeScript frontend with vanilla DOM rendering, with an optional backend layer for provider integrations such as Strava.
 
 ## Screenshots

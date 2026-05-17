@@ -34,6 +34,7 @@ Planning and follow-up notes for future work.
 - Validate that loading a route from GPX triggers a forced weather refresh.
 - Validate that loading a route from a service import triggers a forced weather refresh.
 - Apply the same forced refresh behavior when switching the forecast to a later date.
+- Update the active forecast time/selection when clicking a point on the route elevation chart so the forecast view follows the chosen route position and timing context.
 - Add a visible `weather last refreshed` timestamp or status near the forecast panel.
 - Add a lightweight loading state when route or date changes trigger a weather refresh so the UI does not feel stale or ambiguous.
 - Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
