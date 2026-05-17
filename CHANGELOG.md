@@ -955,3 +955,8 @@
 - Kept explicit launch intents such as `Forecast only`, `Strava`, and `Current location` direct by bypassing the session-choice prompt when a startup target was requested.
 - Collapsed the planned-duration subsection automatically after entering a custom duration or average so the manual override path gets out of the way once it has been filled in.
 - Invalidated persisted app-state restores when the app moves to a new `Major` or `Major.Minor` version family, while still allowing `Major.Minor.Revision` updates to keep the saved session.
+
+## v12.0.1
+
+- Fixed package semver metadata to use `12.0.x` formatting so installs and deployments that validate npm version format succeed.
+- Reworked the Strava importer cards into a two-column layout with the route/activity preview on the right so names, metrics, and import actions read more cleanly.

@@ -569,13 +569,22 @@
     padding: 14px 16px;
     text-align: left;
     cursor: pointer;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 140px;
+    align-items: stretch;
+    gap: 14px;
     transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
   }
+  .strava-picker-item-main {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+  }
   .strava-picker-preview {
-    margin-bottom: 10px;
+    min-height: 100%;
   }
   .strava-picker-preview-empty {
-    min-height: 48px;
+    min-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -591,7 +600,8 @@
   .strava-picker-preview-svg {
     display: block;
     width: 100%;
-    height: 48px;
+    height: 100%;
+    min-height: 92px;
   }
   .strava-picker-preview-bg {
     fill: color-mix(in srgb, var(--surface2) 92%, var(--surface));
@@ -635,9 +645,21 @@
     line-height: 1.45;
   }
   .strava-picker-item-meta {
-    margin-top: 10px;
+    margin-top: 12px;
     color: var(--text-muted);
     font-size: 0.88rem;
+  }
+  @media (max-width: 640px) {
+    .strava-picker-item {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .strava-picker-preview {
+      order: -1;
+    }
+    .strava-picker-preview-empty,
+    .strava-picker-preview-svg {
+      min-height: 56px;
+    }
   }
   .helper-step-state {
     font-size: 0.65rem;

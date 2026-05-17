@@ -181,7 +181,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.0.0';
+const APP_VERSION = '12.0.1';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -10239,16 +10239,18 @@ function renderStravaPicker() {
       const dateLabel = formatStravaDate(item?.start_date_local || item?.start_date);
       return `
         <button class="strava-picker-item" type="button" data-action="importStravaActivity" data-strava-activity-id="${escapeHtml(String(item.id))}">
+          <div class="strava-picker-item-main">
+            <div class="strava-picker-item-head">
+              <strong>${escapeHtml(item?.name || 'Strava activity')}</strong>
+              <span class="strava-picker-item-kicker">${escapeHtml(item?.sport_type || item?.type || 'Activity')}</span>
+            </div>
+            <div class="strava-picker-item-sub">${escapeHtml(subtitle || 'Recorded activity')}</div>
+            <div class="strava-picker-item-meta">
+              <span>${escapeHtml(dateLabel || 'Recent activity')}</span>
+              <span>Import activity</span>
+            </div>
+          </div>
           ${getStravaPreviewMarkup(item)}
-          <div class="strava-picker-item-head">
-            <strong>${escapeHtml(item?.name || 'Strava activity')}</strong>
-            <span class="strava-picker-item-kicker">${escapeHtml(item?.sport_type || item?.type || 'Activity')}</span>
-          </div>
-          <div class="strava-picker-item-sub">${escapeHtml(subtitle || 'Recorded activity')}</div>
-          <div class="strava-picker-item-meta">
-            <span>${escapeHtml(dateLabel || 'Recent activity')}</span>
-            <span>Import activity</span>
-          </div>
         </button>`;
     }
 
@@ -10256,16 +10258,18 @@ function renderStravaPicker() {
     const dateLabel = formatStravaDate(item?.updated_at);
     return `
       <button class="strava-picker-item" type="button" data-action="importStravaRoute" data-strava-route-id="${escapeHtml(String(item.id))}">
+        <div class="strava-picker-item-main">
+          <div class="strava-picker-item-head">
+            <strong>${escapeHtml(item?.name || 'Strava route')}</strong>
+            <span class="strava-picker-item-kicker">Route</span>
+          </div>
+          <div class="strava-picker-item-sub">${escapeHtml(subtitle || 'Saved route')}</div>
+          <div class="strava-picker-item-meta">
+            <span>${escapeHtml(dateLabel ? `Updated ${dateLabel}` : 'Saved route')}</span>
+            <span>Import route</span>
+          </div>
+        </div>
         ${getStravaPreviewMarkup(item)}
-        <div class="strava-picker-item-head">
-          <strong>${escapeHtml(item?.name || 'Strava route')}</strong>
-          <span class="strava-picker-item-kicker">Route</span>
-        </div>
-        <div class="strava-picker-item-sub">${escapeHtml(subtitle || 'Saved route')}</div>
-        <div class="strava-picker-item-meta">
-          <span>${escapeHtml(dateLabel ? `Updated ${dateLabel}` : 'Saved route')}</span>
-          <span>Import route</span>
-        </div>
       </button>`;
   }).join('');
 
