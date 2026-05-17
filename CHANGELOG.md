@@ -947,6 +947,7 @@
 
 ## v12
 
+- Fixed package semver metadata to use `12.0.0` so installs and deployments that validate npm version format succeed.
 - Added a lightweight provenance layer across the planner and result views so key values can now be labeled as live, cached, imported, manual, or derived instead of silently switching sources.
 - Added persisted local app-state restore for planner settings, forecast-only mode, location input, cached weather snapshots, and restorable route state, including original `GPX` / `GeoJSON` route-document caching when the saved payload fits browser storage limits.
 - Added a readable diagnostics JSON export covering persistence status, weather refresh/cache state, route source and checkpoint cache details, persisted route-document details, planner-source selection state, and Strava auth/import status.
