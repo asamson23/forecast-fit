@@ -15,11 +15,6 @@ Planning and follow-up notes for future work.
 
 ### Launch And Entry Behavior
 
-- [x] Added PWA shortcuts to launch directly into `Forecast-only mode` and the `Strava` importer flow.
-- [x] Added a general URL/deep-link startup routing model for `forecast-only`, `Strava`, and `current location` entry intents.
-- [x] Added an `entry intent` state layer so launches into forecast-only mode, provider import, current location, and future flows can be handled consistently.
-- [x] Defined initial fallback behavior for launch targets that cannot complete immediately, including failed or missing `Strava` auth and geolocation failure surfacing through the existing error path.
-- [x] Added a startup session prompt so normal browser relaunches can resume a previous local session or start from a blank planner.
 - Evaluate adding a PWA shortcut to launch directly into `Current location`.
 - Evaluate whether PWA shortcuts should support more launch targets beyond the initial shortlist, based on the most common user entry flows.
 - Review whether URL params and deep links can be used more effectively for launch behavior, preselected modes, import entry points, and shareable app state.
@@ -37,21 +32,15 @@ Planning and follow-up notes for future work.
 
 ### State And Provenance
 
-- [x] Added a UI provenance layer so key planner, route, and forecast values can now be labeled as live, cached, imported, manual, or derived.
-- [x] Added persisted local app-state restore for planner settings, forecast mode, location input, cached weather snapshots, and route state when the saved payload fits browser storage limits.
-- [x] Added original `GPX` / `GeoJSON` route-document caching for restorable local uploads and reusable imported `Strava` `GPX` payloads when the saved route fits browser storage.
 - Review whether warning-dismissal state should persist once warnings become individually dismissible in the UI.
 - Review whether route persistence should keep the current storage-size guardrails or move to a more explicit user-controlled cache model.
 
 ### Provider Browser UX
 
-- [x] Added lightweight `SVG`-style miniature route previews for `Strava` browser items when polyline data is available.
 - Keep provider-browser preview traces focused on route shape only unless there is a strong reason to add more detail later.
 - Revisit whether future provider browsers such as `RideWithGPS` should use the same preview component and fallback behavior.
 
-### Diagnostics
 
-- [x] Added readable diagnostics export as `JSON`, covering persistence status, last weather fetch/cache state, route source, planner source state, and provider auth/import state.
 
 ### Route Timing And Refresh Follow-Up
 
@@ -81,7 +70,6 @@ Planning and follow-up notes for future work.
 - Evaluate caching forecast, route-derived, and computed planner data in browser storage where it is safe and worthwhile.
 - Identify which expensive calculations or fetch results can be reused to reduce recomputing and improve repeat-load responsiveness.
 - Define cache invalidation rules so saved weather, route, and derived planning state do not become stale or misleading.
-- Keep persisted app-state invalidation tied to `Major` / `Major.Minor` app-version families, while letting `Major.Minor.Revision` updates keep compatible saved sessions.
 - Use different cache lifetimes by data type, for example:
   - weather data on a short time window such as a few hours
   - imported service routes on a longer-lived window
