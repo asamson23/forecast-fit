@@ -422,6 +422,14 @@ let bestWindowSelectedStart = null;
 let bestWindowDebounceTimer = null;
 let bestWindowAnalysisToken = 0;
 let forecastOnlyPlannerState: ForecastOnlyPlannerState | null = null;
+let weatherRefreshStatus = {
+  state: 'idle',
+  source: '',
+  detail: '',
+  error: '',
+  lastAttemptAt: '',
+  lastSuccessAt: ''
+};
 
 // Duration presets drive both clothing bias and the forecast window.
 const durationProfiles = SHARED_DURATION_PROFILES;
@@ -922,31 +930,9 @@ function updateRefreshWeatherButtonUi(isLoading = false) {
 
 async function forceRefreshWeather() {
   hideSuggestions();
-  if (activeRoutePointForecast?.isRoutePoint && isFiniteNumber(activeRoutePointForecast.latitude) && isFiniteNumber(activeRoutePointForecast.longitude)) {
-    await fetchWeatherFromResult({
-      latitude: activeRoutePointForecast.latitude,
-      longitude: activeRoutePointForecast.longitude,
-      name: activeRoutePointForecast.label || 'Route point',
-      admin1: '',
-      country: '',
-      country_code: ''
-    });
-    return;
-  }
-  const hasCurrentWeatherCoords = weatherData && isFiniteNumber(weatherData.latitude) && isFiniteNumber(weatherData.longitude);
-  if (hasCurrentWeatherCoords) {
-    await fetchWeatherFromResult({
-      latitude: weatherData.latitude,
-      longitude: weatherData.longitude,
-      name: weatherData.locationName || 'Current location',
-      admin1: '',
-      country: '',
-      country_code: ''
-    });
-    return;
-  }
-  if (routeState?.points?.length) {
-    await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: 'Route start', admin1: '', country: '', country_code: '' });
+  try {
+    if (await refreshWeatherForActiveTarget({ source: 'manual', detail: 'Refreshing weather…', clearRouteCheckpointCache: true })) return;
+  } catch (_) {
     return;
   }
   await fetchWeather();
@@ -2947,6 +2933,7 @@ async function refreshWeatherForRoutePointSelection({ latitude, longitude, label
     label: label || 'Route point',
     timeValue: timeValue || null,
   };
+  if (timeValue) pendingChartSelectedStartTime = timeValue;
   await fetchWeatherFromResult({
     latitude,
     longitude,
@@ -3284,6 +3271,86 @@ async function refreshRouteWeatherIfPossible() {
   if (slot) slot.innerHTML = buildRouteWeatherHtml();
 }
 
+function clearRouteCheckpointWeatherCache() {
+  if (!routeState) return;
+  routeState.weatherCache = {};
+  if (Array.isArray(routeState.samples)) {
+    routeState.samples.forEach(cp => {
+      cp.weather = null;
+      cp.windowWeather = null;
+      cp.relativeWind = null;
+      cp.ecccAlerts = [];
+      cp.ecccAlertStatus = '';
+    });
+  }
+}
+
+function getActiveWeatherRefreshPlace() {
+  if (activeRoutePointForecast?.isRoutePoint && isFiniteNumber(activeRoutePointForecast.latitude) && isFiniteNumber(activeRoutePointForecast.longitude)) {
+    return {
+      latitude: activeRoutePointForecast.latitude,
+      longitude: activeRoutePointForecast.longitude,
+      name: activeRoutePointForecast.label || 'Route point',
+      admin1: '',
+      country: '',
+      country_code: ''
+    };
+  }
+  if (weatherData && isFiniteNumber(weatherData.latitude) && isFiniteNumber(weatherData.longitude)) {
+    return {
+      latitude: weatherData.latitude,
+      longitude: weatherData.longitude,
+      name: weatherData.locationName || 'Current location',
+      admin1: '',
+      country: '',
+      country_code: ''
+    };
+  }
+  if (routeState?.points?.length) {
+    return {
+      latitude: routeState.points[0].lat,
+      longitude: routeState.points[0].lon,
+      name: routeState.fileName || 'Route start',
+      admin1: '',
+      country: '',
+      country_code: ''
+    };
+  }
+  return null;
+}
+
+async function refreshWeatherForActiveTarget({ source = 'manual', detail = 'Refreshing weather…', clearRouteCheckpointCache: shouldClearRouteCheckpointCache = false, placeOverride = null } = {}) {
+  const place = placeOverride || getActiveWeatherRefreshPlace();
+  if (!place) return false;
+  if (shouldClearRouteCheckpointCache) clearRouteCheckpointWeatherCache();
+  setWeatherRefreshStatus({
+    state: 'loading',
+    source,
+    detail,
+    error: '',
+    lastAttemptAt: new Date().toISOString()
+  });
+  try {
+    await fetchWeatherFromResult(place, { propagateError: true });
+    setWeatherRefreshStatus({
+      state: 'success',
+      source,
+      detail: '',
+      error: '',
+      lastSuccessAt: new Date().toISOString()
+    });
+    return true;
+  } catch (error) {
+    setWeatherRefreshStatus({
+      state: 'error',
+      source,
+      detail: '',
+      error: error instanceof Error ? error.message : 'Unable to refresh weather.'
+    });
+    throw error;
+  }
+}
+
 async function handleRouteFileChange(event) {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -3295,15 +3362,24 @@ async function handleRouteFileChange(event) {
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
     collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
-    routeStatus.textContent = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model.`;
+    const routeLoadedMessage = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model.`;
+    routeStatus.textContent = routeLoadedMessage;
     clearRouteBtn.style.display = 'inline-block';
     renderPlannerState();
     if (weatherData) configureLaterInput(weatherData);
     renderRouteMap();
-    if (weatherData) {
-      await refreshRouteWeatherIfPossible();
-    } else {
-      await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: 'Route start', admin1: '', country: '', country_code: '' });
+    routeStatus.textContent = `${routeLoadedMessage} · refreshing weather…`;
+    try {
+      await refreshWeatherForActiveTarget({
+        source: 'route_load',
+        detail: `Refreshing weather for ${file.name}…`,
+        clearRouteCheckpointCache: true,
+        placeOverride: { latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: 'Route start', admin1: '', country: '', country_code: '' }
+      });
+      routeStatus.textContent = routeLoadedMessage;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to refresh weather.';
+      routeStatus.textContent = `${routeLoadedMessage} · weather refresh failed: ${message}`;
     }
   } catch (err) {
     routeStatus.textContent = err.message || 'Could not read that route file.';
@@ -3333,6 +3409,7 @@ window.clearRoute = clearRoute;
 
 function resetLocationSection() {
   weatherData = null;
+  setWeatherRefreshStatus({ state: 'idle', source: '', detail: '', error: '', lastAttemptAt: '', lastSuccessAt: '' });
   hideSuggestions();
   hideError();
   input.value = '';
@@ -3738,6 +3815,55 @@ function showError(msg) {
 
 function hideError() {
   document.getElementById('error-msg').style.display = 'none';
+}
+
+function formatRefreshStatusDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function getWeatherRefreshStatusText() {
+  if (weatherRefreshStatus.state === 'loading') {
+    return weatherRefreshStatus.detail || 'Refreshing weather…';
+  }
+  if (weatherRefreshStatus.state === 'error') {
+    const attemptedAt = formatRefreshStatusDateTime(weatherRefreshStatus.lastAttemptAt);
+    const prefix = attemptedAt ? `Weather refresh failed ${attemptedAt}` : 'Weather refresh failed';
+    return weatherRefreshStatus.error ? `${prefix}: ${weatherRefreshStatus.error}` : prefix;
+  }
+  if (weatherRefreshStatus.lastSuccessAt) {
+    const refreshedAt = formatRefreshStatusDateTime(weatherRefreshStatus.lastSuccessAt);
+    if (refreshedAt) return `Weather last refreshed ${refreshedAt}.`;
+  }
+  return 'Weather refresh status will appear here after the first forecast fetch.';
+}
+
+function renderWeatherRefreshStatus() {
+  const tone = weatherRefreshStatus.state === 'error'
+    ? 'error'
+    : weatherRefreshStatus.state === 'loading'
+      ? 'loading'
+      : '';
+  return `<div class="weather-refresh-status ${tone}" data-weather-refresh-status>${escapeHtml(getWeatherRefreshStatusText())}</div>`;
+}
+
+function updateWeatherRefreshStatusUi() {
+  const nextText = getWeatherRefreshStatusText();
+  document.querySelectorAll('[data-weather-refresh-status]').forEach(node => {
+    node.textContent = nextText;
+    node.classList.toggle('loading', weatherRefreshStatus.state === 'loading');
+    node.classList.toggle('error', weatherRefreshStatus.state === 'error');
+  });
+}
+
+function setWeatherRefreshStatus(patch) {
+  weatherRefreshStatus = {
+    ...weatherRefreshStatus,
+    ...patch
+  };
+  updateWeatherRefreshStatusUi();
 }
 
 function showResultLoading() {
@@ -4860,8 +4986,12 @@ document.addEventListener('click', e => {
 
 laterInput.addEventListener('change', () => {
   if (weatherData) syncRaceDayTimingInputs(weatherData, 'event-start');
-  if (weatherData) renderAdvice(weatherData, selectedActivity);
-  if (weatherData) refreshRouteWeatherIfPossible();
+  if (!weatherData) return;
+  void refreshWeatherForActiveTarget({
+    source: 'later_date',
+    detail: 'Refreshing weather for the selected forecast date…',
+    clearRouteCheckpointCache: true
+  }).catch(() => {});
 });
 
 function handleBestWindowInputChange() {
@@ -5325,7 +5455,7 @@ async function fetchWeather() {
   }
 }
 
-async function fetchWeatherFromResult(place) {
+async function fetchWeatherFromResult(place, options = {}) {
   hideError();
   setLoading(true);
   showResultLoading();
@@ -5351,9 +5481,25 @@ async function fetchWeatherFromResult(place) {
     }
     renderAdvice(weatherData, selectedActivity);
     await refreshRouteWeatherIfPossible();
+    setWeatherRefreshStatus({
+      state: 'success',
+      detail: '',
+      error: '',
+      lastAttemptAt: new Date().toISOString(),
+      lastSuccessAt: new Date().toISOString()
+    });
+    return weatherData;
   } catch (e) {
     showError(e.message || 'Something went wrong.');
     resultCard.style.display = 'none';
+    setWeatherRefreshStatus({
+      state: 'error',
+      detail: '',
+      error: e instanceof Error ? e.message : 'Something went wrong.',
+      lastAttemptAt: new Date().toISOString()
+    });
+    if (options?.propagateError) throw e;
+    return null;
   } finally {
     setLoading(false);
   }
@@ -7819,6 +7965,7 @@ function renderResultLocationHeader(locationName) {
         <button class="mode-toggle-btn result-refresh-btn" type="button" data-action="forceRefreshWeather">Refresh weather</button>
       </div>
     </div>
+    ${renderWeatherRefreshStatus()}
   `;
 }
 
@@ -9058,9 +9205,22 @@ async function importStravaFirstRoute() {
   renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  routeStatus.textContent = `${importedRoute.name} imported from Strava · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points`;
+  const routeLoadedMessage = `${importedRoute.name} imported from Strava · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points`;
+  routeStatus.textContent = routeLoadedMessage;
   if (routeState?.points?.[0]) {
-    await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
+    routeStatus.textContent = `${routeLoadedMessage} · refreshing weather…`;
+    try {
+      await refreshWeatherForActiveTarget({
+        source: 'service_import',
+        detail: `Refreshing weather for ${importedRoute.name || 'Strava route'}…`,
+        clearRouteCheckpointCache: true,
+        placeOverride: { latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' }
+      });
+      routeStatus.textContent = routeLoadedMessage;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to refresh weather.';
+      routeStatus.textContent = `${routeLoadedMessage} · weather refresh failed: ${message}`;
+    }
   }
 }
 
@@ -9106,9 +9266,22 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
   renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  routeStatus.textContent = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points`;
+  const routeLoadedMessage = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points`;
+  routeStatus.textContent = routeLoadedMessage;
   if (routeState?.points?.[0]) {
-    await fetchWeatherFromResult({ latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' });
+    routeStatus.textContent = `${routeLoadedMessage} · refreshing weather…`;
+    try {
+      await refreshWeatherForActiveTarget({
+        source: 'service_import',
+        detail: `Refreshing weather for ${importedRoute.name || 'imported route'}…`,
+        clearRouteCheckpointCache: true,
+        placeOverride: { latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' }
+      });
+      routeStatus.textContent = routeLoadedMessage;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to refresh weather.';
+      routeStatus.textContent = `${routeLoadedMessage} · weather refresh failed: ${message}`;
+    }
   }
 }
 

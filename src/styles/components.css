@@ -1186,6 +1186,19 @@
   .result-panel .location-name {
     margin-bottom: 14px;
   }
+  .weather-refresh-status {
+    margin: -6px 0 14px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-soft);
+    font-family: 'DM Mono', monospace;
+  }
+  .weather-refresh-status.loading {
+    color: var(--accent-strong);
+  }
+  .weather-refresh-status.error {
+    color: var(--accent);
+  }
   #error-msg {
     display: none;
     text-align: center;

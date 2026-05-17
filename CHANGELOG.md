@@ -931,3 +931,10 @@
 - Collapsed the planner to a true single-column forecast-only layout by hiding the activity and event column, custom duration and average inputs, comfort adjustments, and water override controls while letting the remaining planner controls use the full width.
 - Reworked the forecast-only duration presets into a compact single-row desktop layout and removed their sub-labels so the simplified mode fits more cleanly.
 - Changed forecast-only mode to preserve hidden planner settings and restore them on exit instead of clearing them permanently.
+
+## v11.6.2
+
+- Forced a fresh weather fetch after GPX route loads, Strava/service route imports, and later-date forecast changes so route and forecast views stop relying on stale weather snapshots.
+- Added an inline `weather last refreshed` status line in the result header and reused it for lightweight loading and refresh-failure feedback during route/date-triggered updates.
+- Carried route elevation chart point clicks into the active later-time selection so route-point weather refreshes now follow both the chosen location and its timing context.
+- Added baseline validation notes to the repo documentation covering accessibility checks, forecast-only mobile breakpoints, and coverage targets for forecast-mode toggling and route-import refresh behavior.

@@ -220,3 +220,21 @@ Manual smoke checks are also expected for:
 - best-window panel rendering
 - forecast cell rendering
 - route map rendering
+
+Baseline manual review should also cover:
+
+- keyboard flow through location search, dialogs, route controls, and forecast interactions
+- warning dialog readability and dismissal behavior
+- forecast cells and warnings without relying on color alone
+- touch-target sizing for header, planner, and route actions
+
+Forecast-only mobile validation targets:
+
+- `699px` width: duration preset row stays readable without horizontal overflow
+- `560px` width: summary banner, empty state, and start-time controls stack cleanly
+- `380px` width: planner and result cards stay inside the viewport
+
+Coverage targets to keep tracking:
+
+- forecast mode toggling
+- route import refresh behavior

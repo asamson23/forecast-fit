@@ -31,23 +31,23 @@ Planning and follow-up notes for future work.
 
 ### Route And Weather Refresh
 
-- Validate that loading a route from GPX triggers a forced weather refresh.
-- Validate that loading a route from a service import triggers a forced weather refresh.
-- Apply the same forced refresh behavior when switching the forecast to a later date.
-- Update the active forecast time/selection when clicking a point on the route elevation chart so the forecast view follows the chosen route position and timing context.
-- Add a visible `weather last refreshed` timestamp or status near the forecast panel.
-- Add a lightweight loading state when route or date changes trigger a weather refresh so the UI does not feel stale or ambiguous.
+- [x] Validate that loading a route from GPX triggers a forced weather refresh.
+- [x] Validate that loading a route from a service import triggers a forced weather refresh.
+- [x] Apply the same forced refresh behavior when switching the forecast to a later date.
+- [x] Update the active forecast time/selection when clicking a point on the route elevation chart so the forecast view follows the chosen route position and timing context.
+- [x] Add a visible `weather last refreshed` timestamp or status near the forecast panel.
+- [x] Add a lightweight loading state when route or date changes trigger a weather refresh so the UI does not feel stale or ambiguous.
 - Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
 - Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
 
 ### Baseline Validation
 
-- Add accessibility review items for keyboard flow, warning dialogs, forecast cells, color dependence, and touch-target sizing.
-- Forecast-only mobile validation:
+- [x] Add accessibility review items for keyboard flow, warning dialogs, forecast cells, color dependence, and touch-target sizing.
+- [x] Forecast-only mobile validation:
   - Check `699px` width so the single-row preset layout stays readable without horizontal overflow.
   - Check `560px` width so the summary banner, empty state, and start-time controls stack cleanly.
   - Check `380px` width so the planner and result cards stay inside the viewport.
-- Add test coverage targets for:
+- [x] Add test coverage targets for:
   - forecast mode toggling
   - route import refresh behavior
 
