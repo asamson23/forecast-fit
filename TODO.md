@@ -13,46 +13,6 @@ Planning and follow-up notes for future work.
 
 ## Now
 
-### Forecast Mode UX Cleanup
-
-- [x] Show a confirmation or warning when switching to `Forecast mode` if the current setup has unsaved or customized state, similar to the existing `Clear all` warning flow.
-- [x] Add a dedicated `Forecast mode` summary banner so users can immediately see which controls are intentionally disabled in that mode.
-- [x] In forecast mode, remove the `Activity parameters` column.
-- [x] In forecast mode, let the planner parameters section expand to use the freed width.
-- [x] Rework the duration preset grid in forecast mode so all presets fit on a single line.
-- [x] In forecast-only mode, remove the sub-labels from the duration preset buttons.
-- [x] In forecast mode, remove:
-  - custom duration
-  - average speed parameters
-  - comfort adjustments
-- [x] Preserve and restore hidden custom settings when leaving forecast mode instead of clearing them silently.
-- [x] Add an empty-state message for forecast mode when required inputs are missing so the simplified layout still explains why results are absent.
-- [x] Add mobile-layout validation tasks specifically for forecast-only mode so width and layout adjustments do not regress the phone experience.
-
-### Route And Weather Refresh
-
-- [x] Validate that loading a route from GPX triggers a forced weather refresh.
-- [x] Validate that loading a route from a service import triggers a forced weather refresh.
-- [x] Apply the same forced refresh behavior when switching the forecast to a later date.
-- [x] Update the active forecast time/selection when clicking a point on the route elevation chart so the forecast view follows the chosen route position and timing context.
-- [x] Add a visible `weather last refreshed` timestamp or status near the forecast panel.
-- [x] Add a lightweight loading state when route or date changes trigger a weather refresh so the UI does not feel stale or ambiguous.
-- Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
-- Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
-
-### Baseline Validation
-
-- [x] Add accessibility review items for keyboard flow, warning dialogs, forecast cells, color dependence, and touch-target sizing.
-- [x] Forecast-only mobile validation:
-  - Check `699px` width so the single-row preset layout stays readable without horizontal overflow.
-  - Check `560px` width so the summary banner, empty state, and start-time controls stack cleanly.
-  - Check `380px` width so the planner and result cards stay inside the viewport.
-- [x] Add test coverage targets for:
-  - forecast mode toggling
-  - route import refresh behavior
-
-## Next
-
 ### Launch And Entry Behavior
 
 - Add a PWA shortcut to launch directly into `Forecast-only mode`.
@@ -88,6 +48,27 @@ Planning and follow-up notes for future work.
 ### Diagnostics
 
 - Add support for exporting a readable diagnostics file such as `JSON` or `XML` covering cache status, last weather fetch, route source, and provider auth or import state.
+
+### Route Timing And Refresh Follow-Up
+
+- Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
+- Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
+
+### Manual Validation
+
+- Manually re-check route elevation profile interactions:
+  - hover point / hover line visibility
+  - click-to-load route-point forecast in the weather strip
+  - `Back to start` restoring the route-start weather context cleanly
+- Run the baseline manual review pass after the recent forecast-only and route-refresh changes:
+  - keyboard flow through location search, dialogs, route controls, and forecast interactions
+  - warning dialog readability and dismissal behavior
+  - forecast cells and warnings without relying on color alone
+  - touch-target sizing for header, planner, and route actions
+- Re-check forecast-only mobile layout at:
+  - `699px`
+  - `560px`
+  - `380px`
 
 ## Later
 
@@ -161,11 +142,3 @@ Planning and follow-up notes for future work.
 - Add test coverage targets for:
   - cache invalidation
   - deep-link and launch-intent behavior
-
-## First Execution Batch
-
-- Forced weather refresh validation and fixes.
-- Forecast mode warning flow.
-- Forecast-only layout cleanup.
-- Duration preset simplification in forecast-only mode.
-- Refresh status and loading feedback.
