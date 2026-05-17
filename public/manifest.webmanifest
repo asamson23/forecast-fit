@@ -29,6 +29,18 @@
       "short_name": "Plan",
       "url": ".",
       "description": "Open Forecast Fit to plan with weather-aware guidance."
+    },
+    {
+      "name": "Forecast Only",
+      "short_name": "Forecast",
+      "url": "./?launch=forecast-only",
+      "description": "Open directly into the simplified forecast-only mode."
+    },
+    {
+      "name": "Strava Import",
+      "short_name": "Strava",
+      "url": "./?launch=strava",
+      "description": "Open directly into the Strava route and activity import flow."
     }
   ]
 }

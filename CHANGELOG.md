@@ -938,3 +938,9 @@
 - Added an inline `weather last refreshed` status line in the result header and reused it for lightweight loading and refresh-failure feedback during route/date-triggered updates.
 - Carried route elevation chart point clicks into the active later-time selection so route-point weather refreshes now follow both the chosen location and its timing context.
 - Added baseline validation notes to the repo documentation covering accessibility checks, forecast-only mobile breakpoints, and coverage targets for forecast-mode toggling and route-import refresh behavior.
+
+## v11.6.3
+
+- Added a shared startup `entry intent` layer so URL launches and PWA shortcuts can open directly into `Forecast only`, the `Strava` importer flow, or `Current location`.
+- Added installable PWA shortcuts for direct `Forecast only` and `Strava` launches instead of only offering the generic planner entry.
+- Resumed pending `Strava` launch intents after OAuth returns and added stable fallback messaging when the importer launch cannot complete because auth is missing or failed.

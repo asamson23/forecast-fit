@@ -182,6 +182,15 @@ const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
+const ENTRY_INTENT_STORAGE_KEY = 'forecast_fit_pending_entry_intent';
+
+type EntryIntentKind = 'forecast-only' | 'strava' | 'current-location';
+type EntryIntentSource = 'url' | 'resume';
+
+interface EntryIntent {
+  kind: EntryIntentKind;
+  source: EntryIntentSource;
+}
 
 let selectedActivity = null;
 let selectedEventKey = null;
@@ -372,6 +381,7 @@ let bestWindowEndPicker = null;
 let locationCardCollapsed = false;
 let plannerCardCollapsed = false;
 let forecastOnlyMode = false;
+let startupEntryIntentApplied = false;
 const plannerSubsectionCollapsed: Record<string, boolean> = {
   duration: false,
   eventDistance: false,
@@ -3801,6 +3811,108 @@ function decorateFooterVersionLink() {
 
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value);
+}
+
+function normalizeEntryIntentKind(value: unknown): EntryIntentKind | null {
+  const normalized = String(value || '').trim().toLowerCase();
+  switch (normalized) {
+    case 'forecast-only':
+    case 'forecast':
+      return 'forecast-only';
+    case 'strava':
+    case 'strava-import':
+    case 'import-strava':
+      return 'strava';
+    case 'current-location':
+    case 'current':
+    case 'locate':
+    case 'location':
+      return 'current-location';
+    default:
+      return null;
+  }
+}
+
+function parseEntryIntentFromUrl(): EntryIntent | null {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('launch') || params.get('entry') || '';
+  const kind = normalizeEntryIntentKind(raw);
+  return kind ? { kind, source: 'url' } : null;
+}
+
+function readStoredEntryIntent(): EntryIntent | null {
+  try {
+    const raw = sessionStorage.getItem(ENTRY_INTENT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { kind?: unknown };
+    const kind = normalizeEntryIntentKind(parsed?.kind);
+    return kind ? { kind, source: 'resume' } : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeEntryIntentForResume(intent: EntryIntent) {
+  try {
+    sessionStorage.setItem(ENTRY_INTENT_STORAGE_KEY, JSON.stringify({ kind: intent.kind }));
+  } catch {
+    // Ignore storage failures so startup keeps working in restricted contexts.
+  }
+}
+
+function clearStoredEntryIntent() {
+  try {
+    sessionStorage.removeItem(ENTRY_INTENT_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures so startup keeps working in restricted contexts.
+  }
+}
+
+function getStartupEntryIntent(): EntryIntent | null {
+  return parseEntryIntentFromUrl() || readStoredEntryIntent();
+}
+
+async function applyStartupEntryIntent() {
+  if (startupEntryIntentApplied) return;
+  startupEntryIntentApplied = true;
+
+  const intent = getStartupEntryIntent();
+  if (!intent) return;
+
+  if (intent.kind !== 'strava') clearStoredEntryIntent();
+
+  if (intent.kind === 'forecast-only') {
+    if (!forecastOnlyMode) activateForecastOnlyMode();
+    return;
+  }
+
+  if (intent.kind === 'current-location') {
+    await useCurrentLocation();
+    return;
+  }
+
+  const session = getStravaSession();
+  const authError = getStravaAuthError();
+  if (session) {
+    clearStoredEntryIntent();
+    openStravaPicker();
+    return;
+  }
+
+  if (authError) {
+    clearStoredEntryIntent();
+    if (stravaStatus) stravaStatus.textContent = `${authError} Reconnect to continue the Strava launch.`;
+    return;
+  }
+
+  if (intent.source === 'url') {
+    storeEntryIntentForResume(intent);
+    handleConnectStravaEnhanced();
+    return;
+  }
+
+  clearStoredEntryIntent();
+  if (stravaStatus) stravaStatus.textContent = 'Strava launch could not continue because the connection is no longer available.';
 }
 
 function round1(value) {
@@ -9860,4 +9972,5 @@ stravaPickerUrlInput?.addEventListener('keydown', (event) => {
 renderStravaConnectionStateEnhanced();
 updateRouteHeaderActions();
 bindDomActions();
+void applyStartupEntryIntent();
 
