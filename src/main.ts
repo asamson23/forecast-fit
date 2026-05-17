@@ -942,6 +942,7 @@ window.forceRefreshWeather = forceRefreshWeather;
 async function backToRouteStart() {
   if (!routeState?.points?.length) return;
   activeRoutePointForecast = null;
+  pendingChartSelectedStartTime = null;
   await fetchWeatherFromResult({
     latitude: routeState.points[0].lat,
     longitude: routeState.points[0].lon,
@@ -2870,7 +2871,7 @@ function hideRouteElevationHoverState() {
   if (tooltip) tooltip.classList.remove('visible');
   if (routeElevationProfile) {
     const hoverGroup = routeElevationProfile.querySelector('[data-route-elevation-hover]');
-    if (hoverGroup instanceof SVGGElement) hoverGroup.hidden = true;
+    if (hoverGroup instanceof Element) hoverGroup.setAttribute('hidden', '');
   }
   if (routeHoverLayer) routeHoverLayer.clearLayers();
 }
@@ -2933,7 +2934,6 @@ async function refreshWeatherForRoutePointSelection({ latitude, longitude, label
     label: label || 'Route point',
     timeValue: timeValue || null,
   };
-  if (timeValue) pendingChartSelectedStartTime = timeValue;
   await fetchWeatherFromResult({
     latitude,
     longitude,
@@ -2988,7 +2988,7 @@ function bindRouteElevationProfileInteractions() {
     const x = xForKm(point.km);
     const y = yForEle(point.ele);
     const pointEta = getRoutePointSelectedTime(point.index);
-    if (hoverGroup instanceof SVGGElement) hoverGroup.hidden = false;
+    if (hoverGroup instanceof Element) hoverGroup.removeAttribute('hidden');
     if (hoverLine instanceof SVGLineElement) {
       hoverLine.setAttribute('x1', x.toFixed(1));
       hoverLine.setAttribute('x2', x.toFixed(1));
