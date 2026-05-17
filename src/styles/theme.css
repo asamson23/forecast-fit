@@ -186,10 +186,40 @@ span.flatpickr-weekday,
     gap: 18px;
     align-items: start;
   }
+  .setup-grid.forecast-only-active {
+    grid-template-columns: minmax(0, 1fr);
+  }
   #planner-parameters-column {
     display: grid;
     gap: 18px;
     align-content: start;
+  }
+  #planner-card.forecast-only-active #planner-parameters-column {
+    grid-column: 1 / -1;
+  }
+  .forecast-only-summary-banner {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--accent2) 26%, var(--border));
+    border-radius: 12px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, var(--surface)), color-mix(in srgb, var(--accent2) 6%, var(--surface2)));
+    color: var(--text);
+  }
+  .forecast-only-summary-banner strong {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .forecast-only-summary-banner span {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-soft);
+  }
+  .forecast-only-empty-state {
+    margin-top: 16px;
   }
 
   .activity-grid, .duration-grid, .event-grid {
@@ -219,6 +249,7 @@ span.flatpickr-weekday,
   }
   .event-grid { grid-template-columns: repeat(4, 1fr); }
   .duration-grid { grid-template-columns: repeat(5, 1fr); }
+  .duration-grid.forecast-only-active { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 
   .activity-btn, .event-btn, .duration-btn, .toggle-btn {
     background: var(--surface2);
@@ -278,6 +309,17 @@ span.flatpickr-weekday,
   }
   .duration-btn .sublabel {
     margin-top: 6px;
+  }
+  .duration-btn.forecast-only-compact {
+    min-height: 64px;
+    justify-content: center;
+  }
+  .duration-btn.forecast-only-compact .label {
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
   }
 
   .toggle-row {

@@ -922,3 +922,12 @@
 - Added mobile-only auto-advance scrolling for app-driven planner section collapses so the next section header comes into view during guided flows.
 - Stopped the Strava import picker from auto-focusing its URL field on mobile, preventing the OS keyboard from opening until the field is tapped.
 - Added brief header legends under the `Forecast only` and `Quick start` buttons so their purpose is visible at a glance.
+
+## v11.6.1
+
+- Added a confirmation dialog before entering `Forecast only` whenever the current planner setup would be reset, matching the existing helper-overlay warning pattern instead of switching modes silently.
+- Kept the existing quick-switch behavior for clean default planner state, so `Forecast only` still opens immediately when there is nothing meaningful to discard.
+- Added a dedicated `Forecast only` planner banner plus an in-mode empty state so the simplified layout explains what is hidden and why results are absent before weather is loaded.
+- Collapsed the planner to a true single-column forecast-only layout by hiding the activity and event column, custom duration and average inputs, comfort adjustments, and water override controls while letting the remaining planner controls use the full width.
+- Reworked the forecast-only duration presets into a compact single-row desktop layout and removed their sub-labels so the simplified mode fits more cleanly.
+- Changed forecast-only mode to preserve hidden planner settings and restore them on exit instead of clearing them permanently.

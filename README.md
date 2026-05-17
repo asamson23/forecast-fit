@@ -2,6 +2,18 @@
 
 Forecast Fit is a weather-aware planner for activities, routes, clothing, UV exposure, air quality, water conditions, and official or forecast-derived warnings. It is built as a static Vite + TypeScript frontend with vanilla DOM rendering, with an optional backend layer for provider integrations such as Strava.
 
+## Screenshots
+
+### Main Planner
+
+![Forecast Fit main planner overview](docs/screenshots/overview-home.png)
+
+### Forecast-only Mode
+
+![Forecast Fit forecast-only desktop layout](docs/screenshots/forecast-only-desktop.png)
+
+![Forecast Fit forecast-only mobile layout](docs/screenshots/forecast-only-mobile.png)
+
 ## Current Scope
 
 - Outdoor, indoor, water, trail, travel, fishing, and hunting planning

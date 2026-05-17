@@ -268,6 +268,7 @@ const locationCardSummary = document.getElementById('location-card-summary');
 const locationRouteChoiceGrid = document.querySelector('.location-route-choice-grid');
 const plannerCardToggleBtn = document.getElementById('planner-card-toggle-btn');
 const plannerCardBody = document.getElementById('planner-card-body');
+const plannerCard = document.getElementById('planner-card');
 const forecastOnlyBtn = document.getElementById('forecast-only-btn');
 const routeFilePanel = document.getElementById('route-file-panel');
 const routeChoiceDivider = document.getElementById('route-choice-divider');
@@ -288,6 +289,8 @@ const stravaPickerTabs = document.getElementById('strava-picker-tabs');
 const stravaPickerStatus = document.getElementById('strava-picker-status');
 const stravaPickerList = document.getElementById('strava-picker-list');
 const stravaPickerCloseBtn = document.getElementById('strava-picker-close-btn');
+const forecastOnlyConfirmOverlay = document.getElementById('forecast-only-confirm-overlay');
+const confirmForecastOnlyBtn = document.getElementById('confirm-forecast-only-btn');
 const clearAllOverlay = document.getElementById('clear-all-overlay');
 const confirmClearAllBtn = document.getElementById('confirm-clear-all-btn');
 const customMultisportSection = document.getElementById('custom-multisport-section');
@@ -298,6 +301,13 @@ const activitySetupColumn = document.getElementById('activity-setup-column');
 const plannerParametersColumn = document.getElementById('planner-parameters-column');
 const eventDistanceSection = document.getElementById('event-distance-section');
 const durationSection = document.getElementById('duration-section');
+const plannerSetupGrid = plannerCardBody?.querySelector('.setup-grid') || null;
+const plannerDurationCustomGrid = durationSection?.querySelector('.custom-grid') || null;
+const comfortAdjustmentsSection = document.getElementById('comfort-adjustments-section');
+const plannerWaterSection = document.getElementById('water-temp-section');
+const forecastOnlySummaryBanner = document.getElementById('forecast-only-summary-banner');
+const forecastOnlySummaryText = document.getElementById('forecast-only-summary-text');
+const forecastOnlyEmptyState = document.getElementById('forecast-only-empty-state');
 
 // Custom multisport builder state.
 // Triathlon and indoor multisport still keep their fast presets, but these
@@ -372,11 +382,46 @@ const plannerSubsectionCollapsed: Record<string, boolean> = {
 const STRAVA_ROUTE_PAGE_SIZE = 50;
 const STRAVA_ACTIVITY_PAGE_SIZE = 25;
 let routeDistanceInputSnapshot: null | { value: string; unit: string } = null;
+type ForecastOnlyPlannerState = {
+  selectedActivity: string | null;
+  selectedEventKey: string | null;
+  selectedDuration: string;
+  startMode: string;
+  raceDayMode: boolean;
+  plannerCardCollapsed: boolean;
+  manualWeatherPanelOpen: boolean;
+  temperaturePreference: number;
+  plannedEffort: string;
+  customDistance: string;
+  distanceUnit: string;
+  customDuration: string;
+  durationUnit: string;
+  average: string;
+  averageUnit: string;
+  raceDayStart: string;
+  raceDayEnd: string;
+  laterInputValue: string;
+  bestWindowStart: string;
+  bestWindowEnd: string;
+  bestWindowPriority: string;
+  bestWindowStep: string;
+  bestWindowMaxPrecip: string;
+  bestWindowMaxGust: string;
+  bestWindowMinTemp: string;
+  bestWindowMaxTemp: string;
+  bestWindowMinWater: string;
+  bestWindowFinishDaylight: boolean;
+  bestWindowAnalysis: any;
+  bestWindowAnalysisKey: string;
+  bestWindowSelectedStart: string | null;
+  customMultisportSelections: typeof customMultisportSelections;
+};
 let bestWindowAnalysis = null;
 let bestWindowAnalysisKey = '';
 let bestWindowSelectedStart = null;
 let bestWindowDebounceTimer = null;
 let bestWindowAnalysisToken = 0;
+let forecastOnlyPlannerState: ForecastOnlyPlannerState | null = null;
 
 // Duration presets drive both clothing bias and the forecast window.
 const durationProfiles = SHARED_DURATION_PROFILES;
@@ -754,16 +799,29 @@ function updateForecastOnlyModeUi() {
     forecastOnlyBtn.textContent = forecastOnlyMode ? 'Exit forecast only' : 'Forecast only';
   }
   const startTimeSection = document.getElementById('start-time-section');
+  if (plannerCard) plannerCard.classList.toggle('forecast-only-active', !!forecastOnlyMode);
+  if (plannerCardBody) plannerCardBody.classList.toggle('forecast-only-active', !!forecastOnlyMode);
+  if (plannerSetupGrid instanceof HTMLElement) plannerSetupGrid.classList.toggle('forecast-only-active', !!forecastOnlyMode);
+  if (durationSection) durationSection.classList.toggle('forecast-only-active', !!forecastOnlyMode);
   if (startTimeSection) startTimeSection.classList.toggle('forecast-only-active', !!forecastOnlyMode);
   if (locationRouteChoiceGrid) locationRouteChoiceGrid.classList.toggle('forecast-only-active', !!forecastOnlyMode);
   if (routeFilePanel) routeFilePanel.hidden = !!forecastOnlyMode;
   if (routeChoiceDivider) routeChoiceDivider.hidden = !!forecastOnlyMode;
   if (stravaPanel) stravaPanel.hidden = !!forecastOnlyMode;
   if (stravaChoiceDivider) stravaChoiceDivider.hidden = !!forecastOnlyMode;
-  const plannerWaterSection = document.getElementById('water-temp-section');
+  if (activitySetupColumn instanceof HTMLElement) activitySetupColumn.hidden = !!forecastOnlyMode;
+  if (eventDistanceSection instanceof HTMLElement) eventDistanceSection.hidden = !!forecastOnlyMode;
+  if (plannerDurationCustomGrid instanceof HTMLElement) plannerDurationCustomGrid.hidden = !!forecastOnlyMode;
+  if (comfortAdjustmentsSection instanceof HTMLElement) comfortAdjustmentsSection.hidden = !!forecastOnlyMode;
   if (plannerWaterSection) plannerWaterSection.hidden = !!forecastOnlyMode;
   const bestModeBtn = document.querySelector('[data-start-mode="best"]');
   if (bestModeBtn instanceof HTMLElement) bestModeBtn.hidden = !!forecastOnlyMode;
+  if (forecastOnlySummaryBanner instanceof HTMLElement) forecastOnlySummaryBanner.hidden = !forecastOnlyMode;
+  if (forecastOnlySummaryText) forecastOnlySummaryText.textContent = getForecastOnlySummaryText();
+  if (forecastOnlyEmptyState instanceof HTMLElement) {
+    forecastOnlyEmptyState.hidden = !(forecastOnlyMode && !weatherData);
+    forecastOnlyEmptyState.textContent = getForecastOnlyEmptyStateText();
+  }
   document.querySelectorAll('.toggle-btn[data-start-mode]').forEach(btn => {
     const active = btn.dataset.startMode === startMode;
     btn.classList.toggle('active', active);
@@ -1832,6 +1890,14 @@ function renderDurationButtons() {
   const locked = routeHasDurationOverride();
   const activeKey = locked ? (routeState.derivedDurationKey || selectedDuration) : (selectedDuration || null);
   const durationKeys = forecastOnlyMode ? FORECAST_ONLY_DURATION_KEYS : durationOrder;
+  el.classList.toggle('forecast-only-active', !!forecastOnlyMode);
+  if (forecastOnlyMode) {
+    el.innerHTML = durationKeys.map(key => {
+      const p = durationProfiles[key];
+      return `<button class="duration-btn forecast-only-compact ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} data-action="selectDurationKey" data-duration-key="${escapeHtml(key)}"><div class="label">${escapeHtml(p.label)}</div></button>`;
+    }).join('');
+    return;
+  }
   el.innerHTML = durationKeys.map(key => {
     const p = durationProfiles[key];
     return `<button class="duration-btn ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} data-action="selectDurationKey" data-duration-key="${escapeHtml(key)}"><div class="label">${escapeHtml(p.label)}</div><div class="sublabel">${escapeHtml(locked && activeKey === key ? `${p.sublabel} · route` : p.sublabel)}</div></button>`;
@@ -3275,11 +3341,13 @@ function resetLocationSection() {
   mapCard.style.display = 'none';
   locationCardCollapsed = false;
   updateLocationCardCollapseUi();
+  if (forecastOnlyMode) updateForecastOnlyModeUi();
 }
 window.resetLocationSection = resetLocationSection;
 
 function performClearAllTool() {
   forecastOnlyMode = false;
+  clearForecastOnlyPlannerState();
   raceDayMode = false;
   manualWeatherPanelOpen = false;
   startMode = 'now';
@@ -4856,6 +4924,143 @@ function clearRaceDayTimingFields() {
   if (raceDayEndInput) raceDayEndInput.value = '';
 }
 
+function hasPlannerStateThatForecastOnlyWillReset() {
+  if (selectedActivity || selectedEventKey) return true;
+  if (selectedDuration !== 'h1') return true;
+  if (raceDayMode) return true;
+  if ((raceDayStartInput?.value || '').trim() || (raceDayEndInput?.value || '').trim()) return true;
+  if ((customDistanceInput?.value || '').trim()) return true;
+  if ((customDurationInput?.value || '').trim()) return true;
+  if ((averageInput?.value || '').trim()) return true;
+  if (temperaturePreference !== 0) return true;
+  if (plannedEffort !== 'steady') return true;
+  return false;
+}
+
+function cloneMultisportSelections(source = customMultisportSelections) {
+  return {
+    triathlon: [...(source?.triathlon || [])],
+    indoor_multisport: [...(source?.indoor_multisport || [])]
+  };
+}
+
+function captureForecastOnlyPlannerState(): ForecastOnlyPlannerState {
+  return {
+    selectedActivity,
+    selectedEventKey,
+    selectedDuration,
+    startMode,
+    raceDayMode,
+    plannerCardCollapsed,
+    manualWeatherPanelOpen,
+    temperaturePreference,
+    plannedEffort,
+    customDistance: customDistanceInput?.value || '',
+    distanceUnit: distanceUnitSelect?.value || 'km',
+    customDuration: customDurationInput?.value || '',
+    durationUnit: durationUnitSelect?.value || 'h',
+    average: averageInput?.value || '',
+    averageUnit: averageUnitSelect?.value || getPreferredAverageUnit(selectedActivity),
+    raceDayStart: raceDayStartInput?.value || '',
+    raceDayEnd: raceDayEndInput?.value || '',
+    laterInputValue: laterInput?.value || '',
+    bestWindowStart: bestWindowStartInput?.value || '',
+    bestWindowEnd: bestWindowEndInput?.value || '',
+    bestWindowPriority: bestWindowPrioritySelect?.value || 'best_overall',
+    bestWindowStep: bestWindowStepSelect?.value || 'auto',
+    bestWindowMaxPrecip: bestWindowMaxPrecipInput?.value || '',
+    bestWindowMaxGust: bestWindowMaxGustInput?.value || '',
+    bestWindowMinTemp: bestWindowMinTempInput?.value || '',
+    bestWindowMaxTemp: bestWindowMaxTempInput?.value || '',
+    bestWindowMinWater: bestWindowMinWaterInput?.value || '',
+    bestWindowFinishDaylight: !!bestWindowFinishDaylightInput?.checked,
+    bestWindowAnalysis,
+    bestWindowAnalysisKey,
+    bestWindowSelectedStart,
+    customMultisportSelections: cloneMultisportSelections()
+  };
+}
+
+function restoreForecastOnlyPlannerState(state: ForecastOnlyPlannerState | null) {
+  if (!state) return;
+  selectedActivity = state.selectedActivity;
+  selectedEventKey = state.selectedEventKey;
+  selectedDuration = state.selectedDuration;
+  startMode = state.startMode;
+  raceDayMode = state.raceDayMode;
+  plannerCardCollapsed = state.plannerCardCollapsed;
+  manualWeatherPanelOpen = state.manualWeatherPanelOpen;
+  temperaturePreference = state.temperaturePreference;
+  plannedEffort = state.plannedEffort;
+  customMultisportSelections = cloneMultisportSelections(state.customMultisportSelections);
+  if (customDistanceInput) customDistanceInput.value = state.customDistance;
+  if (distanceUnitSelect) distanceUnitSelect.value = state.distanceUnit || 'km';
+  if (customDurationInput) customDurationInput.value = state.customDuration;
+  if (durationUnitSelect) durationUnitSelect.value = state.durationUnit || 'h';
+  if (averageInput) averageInput.value = state.average;
+  if (averageUnitSelect) averageUnitSelect.value = state.averageUnit || getPreferredAverageUnit(state.selectedActivity);
+  if (raceDayStartInput) raceDayStartInput.value = state.raceDayStart;
+  if (raceDayEndInput) raceDayEndInput.value = state.raceDayEnd;
+  if (laterInput) laterInput.value = state.laterInputValue;
+  if (bestWindowStartInput) bestWindowStartInput.value = state.bestWindowStart;
+  if (bestWindowEndInput) bestWindowEndInput.value = state.bestWindowEnd;
+  if (bestWindowPrioritySelect) bestWindowPrioritySelect.value = state.bestWindowPriority || 'best_overall';
+  if (bestWindowStepSelect) bestWindowStepSelect.value = state.bestWindowStep || 'auto';
+  if (bestWindowMaxPrecipInput) bestWindowMaxPrecipInput.value = state.bestWindowMaxPrecip;
+  if (bestWindowMaxGustInput) bestWindowMaxGustInput.value = state.bestWindowMaxGust;
+  if (bestWindowMinTempInput) bestWindowMinTempInput.value = state.bestWindowMinTemp;
+  if (bestWindowMaxTempInput) bestWindowMaxTempInput.value = state.bestWindowMaxTemp;
+  if (bestWindowMinWaterInput) bestWindowMinWaterInput.value = state.bestWindowMinWater;
+  if (bestWindowFinishDaylightInput) bestWindowFinishDaylightInput.checked = !!state.bestWindowFinishDaylight;
+  bestWindowAnalysis = state.bestWindowAnalysis;
+  bestWindowAnalysisKey = state.bestWindowAnalysisKey || '';
+  bestWindowSelectedStart = state.bestWindowSelectedStart || null;
+  setSelectedActivityButton(selectedActivity);
+}
+
+function clearForecastOnlyPlannerState() {
+  forecastOnlyPlannerState = null;
+}
+
+function getForecastOnlySummaryText() {
+  if (!forecastOnlyMode) return '';
+  return forecastOnlyPlannerState
+    ? 'Forecast only is active. Activity presets, route import, best-window search, comfort adjustments, and water override controls are hidden here. Your previous planner setup will return when you exit.'
+    : 'Forecast only is active. Activity presets, route import, best-window search, comfort adjustments, and water override controls are hidden here.';
+}
+
+function getForecastOnlyEmptyStateText() {
+  if (!forecastOnlyMode || weatherData) return '';
+  if (routeState?.points?.length) {
+    return 'Load weather to see forecast-only results. The existing route can still supply its route-start location even though route controls are hidden in this mode.';
+  }
+  if (input?.value?.trim()) {
+    return `Press Refresh to load forecast-only results for ${input.value.trim()}.`;
+  }
+  return 'Search a city or use current location to load weather. Forecast-only keeps the planner simplified, then shows the forecast summary, warnings, and timing once data is available.';
+}
+
+function openForecastOnlyConfirm() {
+  if (!forecastOnlyConfirmOverlay) {
+    performActivateForecastOnlyMode();
+    return;
+  }
+  forecastOnlyConfirmOverlay.hidden = false;
+  document.body.classList.add('helper-open');
+  confirmForecastOnlyBtn?.focus({ preventScroll: true });
+}
+
+function closeForecastOnlyConfirm() {
+  if (!forecastOnlyConfirmOverlay) return;
+  forecastOnlyConfirmOverlay.hidden = true;
+  document.body.classList.remove('helper-open');
+}
+
+function confirmForecastOnlyMode() {
+  closeForecastOnlyConfirm();
+  performActivateForecastOnlyMode();
+}
+
 // Activity-group accordion.
 // Before an activity is selected, all groups stay open for discovery. Once an
 // activity is chosen, the matching group opens and the other groups collapse as
@@ -4945,6 +5150,7 @@ function setupActivityGroupToggles() {
 
 function resetActivitySection() {
   forecastOnlyMode = false;
+  clearForecastOnlyPlannerState();
   selectedActivity = null;
   selectedEventKey = null;
   customMultisportSelections = { triathlon: [...defaultMultisportSelections.triathlon], indoor_multisport: [...defaultMultisportSelections.indoor_multisport] };
@@ -4968,10 +5174,13 @@ function resetActivitySection() {
 }
 window.resetActivitySection = resetActivitySection;
 
-function activateForecastOnlyMode() {
+function performActivateForecastOnlyMode() {
   if (forecastOnlyMode) {
     forecastOnlyMode = false;
-    plannerCardCollapsed = false;
+    restoreForecastOnlyPlannerState(forecastOnlyPlannerState);
+    clearForecastOnlyPlannerState();
+    renderCustomControlOptions(true);
+    updateRaceDayModeUi();
     updatePlannerCardCollapseUi();
     renderPlannerState();
     if (weatherData) {
@@ -4982,16 +5191,20 @@ function activateForecastOnlyMode() {
     return;
   }
 
+  forecastOnlyPlannerState = captureForecastOnlyPlannerState();
   forecastOnlyMode = true;
   selectedActivity = null;
   selectedEventKey = null;
   selectedDuration = 'h8';
   if (startMode === 'best') startMode = 'now';
   raceDayMode = false;
+  manualWeatherPanelOpen = false;
+  temperaturePreference = 0;
+  plannedEffort = 'steady';
   clearPlannerCustomFields();
   clearRaceDayTimingFields();
-  document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
-  plannerCardCollapsed = true;
+  setSelectedActivityButton(null);
+  plannerCardCollapsed = false;
   renderCustomControlOptions(true);
   updateRaceDayModeUi();
   updatePlannerCardCollapseUi();
@@ -5001,12 +5214,24 @@ function activateForecastOnlyMode() {
   renderAdvice(weatherData, selectedActivity);
   if (startMode === 'best') scheduleBestWindowAnalysis(true);
 }
+
+function activateForecastOnlyMode() {
+  if (forecastOnlyMode) {
+    performActivateForecastOnlyMode();
+    return;
+  }
+  if (hasPlannerStateThatForecastOnlyWillReset()) {
+    openForecastOnlyConfirm();
+    return;
+  }
+  performActivateForecastOnlyMode();
+}
 window.activateForecastOnlyMode = activateForecastOnlyMode;
 
 function selectActivity(btn) {
+  clearForecastOnlyPlannerState();
   forecastOnlyMode = false;
-  document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  setSelectedActivityButton(btn.dataset.activity);
   selectedActivity = btn.dataset.activity;
   selectedEventKey = null;
   if (durationUnitSelect) durationUnitSelect.value = getPreferredDurationUnit(selectedActivity);
@@ -7606,6 +7831,7 @@ function renderResultLocationHeader(locationName) {
  */
 function renderAdvice(data, activity) {
   resultCard.style.display = 'block';
+  if (forecastOnlyMode) updateForecastOnlyModeUi();
   const startTime = getSelectedStartTime(data);
   const pointBase = startMode === 'now' ? { ...data.current, time: data.current.time } : getHourlyPointForStart(data, startTime);
   const point = applyCustomWeatherOverrides(pointBase, data);
@@ -8253,6 +8479,10 @@ quickStartCloseBtn?.addEventListener('click', closeQuickStartGuide);
 
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
+  if (forecastOnlyConfirmOverlay && !forecastOnlyConfirmOverlay.hidden) {
+    closeForecastOnlyConfirm();
+    return;
+  }
   if (clearAllOverlay && !clearAllOverlay.hidden) {
     closeClearAllConfirm();
     return;
@@ -9328,6 +9558,12 @@ function bindDomActions() {
         break;
       case 'activateForecastOnlyMode':
         activateForecastOnlyMode();
+        break;
+      case 'closeForecastOnlyConfirm':
+        closeForecastOnlyConfirm();
+        break;
+      case 'confirmForecastOnlyMode':
+        confirmForecastOnlyMode();
         break;
       case 'toggleLocationCardCollapse':
         toggleLocationCardCollapse();

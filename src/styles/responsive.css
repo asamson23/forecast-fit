@@ -91,6 +91,9 @@
     body {
       padding-top: calc(32px + env(safe-area-inset-top, 0px));
     }
+    .duration-grid.forecast-only-active {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
     .location-name-row {
       flex-wrap: wrap;
       align-items: flex-start;
@@ -212,6 +215,9 @@
     .location-route-choice-grid {
       grid-template-columns: 1fr;
       gap: 10px;
+    }
+    .duration-grid.forecast-only-active {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .location-choice-or {
       width: 100%;
@@ -514,6 +520,9 @@
   .planner-heading-row {
     margin-bottom: 16px;
     align-items: center;
+  }
+  .forecast-only-summary-banner {
+    padding: 12px;
   }
   .planner-heading-row .section-actions-row {
     margin-left: auto;

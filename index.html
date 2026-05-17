@@ -98,6 +98,10 @@
     </div>
   </div>
   <div id="planner-card-body">
+    <div id="forecast-only-summary-banner" class="forecast-only-summary-banner" hidden>
+      <strong>Forecast only</strong>
+      <span id="forecast-only-summary-text">Activity presets, route import, best-window search, comfort adjustments, and water override controls are hidden here.</span>
+    </div>
     <div class="setup-grid">
     <div id="activity-setup-column">
       <div class="section-label-row" id="activity-section">
@@ -478,6 +482,7 @@
       </div>
     </div>
   </div>
+  <div id="forecast-only-empty-state" class="route-callout forecast-only-empty-state" hidden>Search a city or use current location to load weather. Forecast-only keeps the planner simplified, then shows the forecast summary, warnings, and timing once data is available.</div>
 
   <div id="water-temp-section" class="planner-subsection is-collapsed" data-planner-subsection="water" data-planner-subsection-title="Water temperature and override" style="margin-top:18px">
     <div class="activity-group-title planner-subsection-toggle" data-planner-subsection-toggle>
@@ -571,7 +576,7 @@
 <footer class="site-footer">
   <div class="attribution-card">
     <div class="block-title">Credits & attributions</div>
-    <p><strong>Forecast Fit</strong> <button class="version-link" type="button" data-action="openChangelog" aria-haspopup="dialog" aria-controls="changelog-overlay" aria-label="Open changelog for Forecast Fit version 11.6">v11.6</button> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
+    <p><strong>Forecast Fit</strong> <button class="version-link" type="button" data-action="openChangelog" aria-haspopup="dialog" aria-controls="changelog-overlay" aria-label="Open changelog for Forecast Fit version 11.6.1">v11.6.1</button> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong>.</p>
     <p>Implementation and iteration assistance: <strong>ChatGPT</strong> (including <strong>GPT-5.3-Codex</strong>) and <strong>Claude by Anthropic</strong>. This build does not use any live third-party AI integrations.</p>
     <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, <a href="https://www.npmjs.com/package/country-flag-icons" target="_blank" rel="noopener noreferrer">country-flag-icons</a> for SVG flags, <a href="https://www.npmjs.com/package/@bybas/weather-icons" target="_blank" rel="noopener noreferrer">@bybas/weather-icons</a> for weather-condition icons, <a href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noopener noreferrer">Microsoft Fluent UI Emoji</a> / <a href="https://www.npmjs.com/package/fluentui-emoji" target="_blank" rel="noopener noreferrer">fluentui-emoji</a> modern SVG assets for selected emoji-style icon surfaces, and Google Fonts for DM Sans / DM Mono.</p>
     <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>
@@ -643,6 +648,23 @@
     <p class="status-line compact strava-picker-status" id="strava-picker-status"></p>
     <div class="strava-picker-list" id="strava-picker-list"></div>
     <p class="helper-footer-note">Routes come from Strava route exports. Activities use recorded GPS streams, so indoor or trainer sessions may not be importable.</p>
+  </section>
+</div>
+<div id="forecast-only-confirm-overlay" class="helper-overlay" hidden>
+  <div class="helper-backdrop" data-action="closeForecastOnlyConfirm"></div>
+  <section class="helper-panel clear-all-panel" role="dialog" aria-modal="true" aria-labelledby="forecast-only-confirm-title">
+    <div class="helper-head">
+      <div>
+        <span class="helper-kicker">Confirm mode switch</span>
+        <h2 id="forecast-only-confirm-title">Enter Forecast only?</h2>
+      </div>
+      <button class="helper-close-btn" type="button" data-action="closeForecastOnlyConfirm" aria-label="Close Forecast only confirmation">×</button>
+    </div>
+    <p class="helper-intro">This switches to the simplified forecast-only layout. The current planner setup is hidden while this mode is active, and it returns when you exit.</p>
+    <div class="confirm-action-row">
+      <button class="mode-toggle-btn quiet-btn" type="button" data-action="closeForecastOnlyConfirm">Cancel</button>
+      <button class="mode-toggle-btn" type="button" id="confirm-forecast-only-btn" data-action="confirmForecastOnlyMode">Enter Forecast only</button>
+    </div>
   </section>
 </div>
 <div id="clear-all-overlay" class="helper-overlay" hidden>

@@ -195,6 +195,7 @@
   opacity: 0.82;
   font-style: italic;
 }
+[hidden] { display: none !important; }
 #location-card-body[hidden] { display: none !important; }
 #planner-card-body[hidden] { display: none !important; }
 .wind-dir-inline {
