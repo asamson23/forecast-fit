@@ -639,3 +639,10 @@
     background: var(--surface2);
     color: var(--text);
   }
+  #custom-multisport-summary {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-align: center;
+    max-width: 100%;
+  }
