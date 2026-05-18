@@ -61,9 +61,12 @@ export function renderForecastBlock(
   profile: DurationProfile,
   activity: string | null,
   routeSamples: unknown[] = [],
+  waterForecastRelevant?: boolean,
 ): string {
   if (!selection.points.length) return '';
-  const showWaterForecast = shouldShowWaterForecast(selection.points, activity);
+  const showWaterForecast = typeof waterForecastRelevant === 'boolean'
+    ? waterForecastRelevant
+    : shouldShowWaterForecast(selection.points, activity);
 
   if (selection.mode === 'daily') {
     const chartSelection = selection.chartPoints?.length

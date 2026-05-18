@@ -977,3 +977,9 @@
 - Hid the average pace / speed field inside `Forecast only` so the planned-duration controls stay focused on direct duration entry there.
 - Removed the derived milestone title from the footer version line in `Credits & attributions` while keeping milestone labels inside the changelog views.
 - Added a `Reset water settings` action for the water temperature section so `Water body type`, `Wind exposure`, and `Pool type` can be restored to their defaults with one click.
+
+## v12.1.1
+
+- Added hybrid triathlon leg selection so the `Triathlon` activity can mix indoor and outdoor swim, bike, and run blocks instead of assuming the whole event is outdoors.
+- Changed triathlon water-temperature relevance to follow the selected legs, so indoor-pool swim variants stop surfacing open-water temperature guidance while outdoor swim legs still do.
+- Added compatibility normalization for older saved triathlon sessions that used the legacy `swim` leg key, preserving restored planner state after upgrading.
