@@ -158,6 +158,10 @@ export function buildForecastChart(data: unknown, selection: unknown, routeSampl
       ` data-uv-value="${isFiniteNumber(p.uv) ? escapeHtml(p.uv) : ''}"` +
       ` data-aqi="${aqiInfo ? escapeHtml(String(aqiInfo.value)) : ''}"` +
       ` data-aqi-category="${aqiInfo ? escapeHtml(aqiInfo.category) : ''}"` +
+      ` data-water="${isFiniteNumber(p.waterTemp) ? escapeHtml(round1(p.waterTemp as number)) : ''}"` +
+      ` data-water-range-low="${isFiniteNumber(p.waterTempRangeLow) ? escapeHtml(round1(p.waterTempRangeLow as number)) : ''}"` +
+      ` data-water-range-high="${isFiniteNumber(p.waterTempRangeHigh) ? escapeHtml(round1(p.waterTempRangeHigh as number)) : ''}"` +
+      ` data-water-source="${escapeHtml(String(p.waterTempSource || ''))}"` +
       ` data-humidity="${isFiniteNumber(p.humidity) ? escapeHtml(Math.round(p.humidity as number)) : ''}"></rect>`;
   }).join('');
 
@@ -288,7 +292,13 @@ function buildDailyForecastChart(rawPoints: Record<string, unknown>[], selection
       ` data-precip-prob="${escapeHtml(Math.round((p.precipProbMax as number) || 0))}"` +
       ` data-uv-value="${isFiniteNumber(p.uvMax) ? escapeHtml(p.uvMax) : ''}"` +
       ` data-aqi="${aqiInfo ? escapeHtml(String(aqiInfo.value)) : ''}"` +
-      ` data-aqi-category="${aqiInfo ? escapeHtml(aqiInfo.category) : ''}"></rect>`;
+      ` data-aqi-category="${aqiInfo ? escapeHtml(aqiInfo.category) : ''}"` +
+      ` data-water="${isFiniteNumber(p.waterTemp) ? escapeHtml(round1(p.waterTemp as number)) : ''}"` +
+      ` data-water-min="${isFiniteNumber(p.waterTempMin) ? escapeHtml(round1(p.waterTempMin as number)) : ''}"` +
+      ` data-water-max="${isFiniteNumber(p.waterTempMax) ? escapeHtml(round1(p.waterTempMax as number)) : ''}"` +
+      ` data-water-range-low="${isFiniteNumber(p.waterTempRangeLow) ? escapeHtml(round1(p.waterTempRangeLow as number)) : ''}"` +
+      ` data-water-range-high="${isFiniteNumber(p.waterTempRangeHigh) ? escapeHtml(round1(p.waterTempRangeHigh as number)) : ''}"` +
+      ` data-water-source="${escapeHtml(String(p.waterTempSource || ''))}"></rect>`;
   }).join('');
 
   return `
@@ -378,6 +388,21 @@ export function bindForecastChartTooltips(root: Element = document.body): void {
             <div class="tt-row"><span>Gusts</span><strong>${gustText}</strong></div>`;
         })()
       : '';
+    const waterRow = (() => {
+      const source = hit.dataset.waterSource || '';
+      if (source === 'estimated' && hit.dataset.waterRangeLow && hit.dataset.waterRangeHigh) {
+        return `<div class="tt-row"><span>Water</span><strong>~${escapeHtml(hit.dataset.waterRangeLow)}-${escapeHtml(hit.dataset.waterRangeHigh)} C (estimated)</strong></div>`;
+      }
+      if (hit.dataset.waterMin && hit.dataset.waterMax) {
+        const suffix = source ? ` (${escapeHtml(source)})` : '';
+        return `<div class="tt-row"><span>Water</span><strong>${escapeHtml(hit.dataset.waterMin)}-${escapeHtml(hit.dataset.waterMax)} C${suffix}</strong></div>`;
+      }
+      if (hit.dataset.water) {
+        const suffix = source ? ` (${escapeHtml(source)})` : '';
+        return `<div class="tt-row"><span>Water</span><strong>${escapeHtml(hit.dataset.water)} C${suffix}</strong></div>`;
+      }
+      return '';
+    })();
     tooltip.innerHTML = `
       <div class="tt-time">${hit.dataset.time}</div>
       <div class="tt-row"><span>${escapeHtml(tempLabel)}</span><strong>${escapeHtml(tempText)}</strong></div>
@@ -386,6 +411,7 @@ export function bindForecastChartTooltips(root: Element = document.body): void {
       <div class="tt-row"><span>Precip amount</span><strong>${hit.dataset.precip} mm</strong></div>
       <div class="tt-row"><span>Precip chance</span><strong>${precipChance}</strong></div>
       ${windRows}
+      ${waterRow}
       <div class="tt-row"><span>UV</span><strong>${hit.dataset.uvValue ? `UV ${escapeHtml(formatUvValue(Number(hit.dataset.uvValue)))}` : '—'}</strong></div>
       ${hit.dataset.aqi ? `<div class="tt-row"><span>AQI</span><strong>${renderAqiBadge(Number(hit.dataset.aqi), true)}</strong></div>` : ''}`;
     tooltip.classList.add('visible');

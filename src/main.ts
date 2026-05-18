@@ -181,7 +181,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.0.2';
+const APP_VERSION = '12.1';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -339,6 +339,7 @@ const averageInput = document.getElementById('average-input');
 const averageUnitSelect = document.getElementById('average-unit-select');
 const averageStatus = document.getElementById('average-status');
 const averageLabel = document.getElementById('average-label');
+const plannerAverageField = averageInput?.closest('div') || averageLabel?.closest('div') || null;
 const raceDayModeBtn = document.getElementById('race-day-mode-btn');
 const manualWeatherToggleBtn = document.getElementById('manual-weather-toggle-btn');
 const manualWeatherPanel = document.getElementById('manual-weather-panel');
@@ -875,7 +876,7 @@ function updateRaceDayModeUi() {
 }
 
 function updateManualWeatherToggleUi() {
-  const hideManualOverrideUi = !!forecastOnlyMode;
+  const hideManualOverrideUi = false;
   if (manualWeatherPanel) manualWeatherPanel.hidden = hideManualOverrideUi || !manualWeatherPanelOpen;
   if (manualWeatherToggleBtn) {
     manualWeatherToggleBtn.hidden = hideManualOverrideUi;
@@ -927,9 +928,10 @@ function updateForecastOnlyModeUi() {
   if (stravaChoiceDivider) stravaChoiceDivider.hidden = !!forecastOnlyMode;
   if (activitySetupColumn instanceof HTMLElement) activitySetupColumn.hidden = !!forecastOnlyMode;
   if (eventDistanceSection instanceof HTMLElement) eventDistanceSection.hidden = !!forecastOnlyMode;
-  if (plannerDurationCustomGrid instanceof HTMLElement) plannerDurationCustomGrid.hidden = !!forecastOnlyMode;
+  if (plannerDurationCustomGrid instanceof HTMLElement) plannerDurationCustomGrid.hidden = false;
+  if (plannerAverageField instanceof HTMLElement) plannerAverageField.hidden = !!forecastOnlyMode;
   if (comfortAdjustmentsSection instanceof HTMLElement) comfortAdjustmentsSection.hidden = !!forecastOnlyMode;
-  if (plannerWaterSection) plannerWaterSection.hidden = !!forecastOnlyMode;
+  if (plannerWaterSection) plannerWaterSection.hidden = false;
   const bestModeBtn = document.querySelector('[data-start-mode="best"]');
   if (bestModeBtn instanceof HTMLElement) bestModeBtn.hidden = !!forecastOnlyMode;
   if (forecastOnlySummaryBanner instanceof HTMLElement) forecastOnlySummaryBanner.hidden = !forecastOnlyMode;
@@ -1215,6 +1217,14 @@ function toggleManualWeatherOverride() {
   if (weatherData && startMode === 'best') scheduleBestWindowAnalysis(true);
 }
 window.toggleManualWeatherOverride = toggleManualWeatherOverride;
+
+function resetWaterModelInputs() {
+  if (waterBodyTypeSelect) waterBodyTypeSelect.value = 'auto';
+  if (windExposureSelect) windExposureSelect.value = 'auto';
+  if (poolTypeSelect) poolTypeSelect.value = 'indoor_heated';
+  handlePlannerOverrideChange();
+}
+window.resetWaterModelInputs = resetWaterModelInputs;
 
 function getVisibleEventPresets() {
   return selectedActivity ? (eventPresetsByActivity[selectedActivity] || []).filter(p => !/_race_day$/.test(p.key)) : [];
@@ -1868,12 +1878,53 @@ function applyPseudoWaterEstimateToData(data) {
   return data;
 }
 
+function applyDailyWaterSummariesToData(data) {
+  if (!data) return data;
+  (data.daily || []).forEach(day => {
+    const dayHourly = (data.hourly || []).filter(point => String(point?.time || '').startsWith(String(day?.date || '')));
+    const waterPoints = dayHourly.filter(point => isFiniteNumber(point?.waterTemp));
+    const estimatedLows = dayHourly.map(point => firstFinite(point?.waterTempRangeLow, null)).filter(isFiniteNumber);
+    const estimatedHighs = dayHourly.map(point => firstFinite(point?.waterTempRangeHigh, null)).filter(isFiniteNumber);
+    const temps = waterPoints.map(point => point.waterTemp);
+    day.waterTemp = temps.length ? round1(averageNumbers(temps)) : null;
+    day.waterTempMin = temps.length ? round1(Math.min(...temps)) : null;
+    day.waterTempMax = temps.length ? round1(Math.max(...temps)) : null;
+    day.waterTempSource = mergeWaterSourceLabels(...dayHourly.map(point => point?.waterTempSource));
+    day.waterTempConfidence = mergeWaterConfidenceLabels(...dayHourly.map(point => point?.waterTempConfidence));
+    day.waterTempRangeLow = estimatedLows.length ? round1(Math.min(...estimatedLows)) : null;
+    day.waterTempRangeHigh = estimatedHighs.length ? round1(Math.max(...estimatedHighs)) : null;
+    day.waterTempExplanation = dayHourly.find(point => point?.waterTempExplanation)?.waterTempExplanation || '';
+  });
+  return data;
+}
+
 function getWaterConfidenceLabel(confidence) {
   return ({ high: 'high', medium: 'medium', low: 'low', unknown: 'unknown', manual: 'manual' })[confidence] || 'unknown';
 }
 
 function getWaterSignalLevel(confidence) {
   return ({ high: 4, medium: 3, low: 2, unknown: 1, manual: 4 })[confidence] || 1;
+}
+
+function mergeWaterSourceLabels(...labels) {
+  const normalized = labels
+    .map(label => String(label || 'unknown'))
+    .filter(label => label && label !== 'unknown');
+  if (!normalized.length) return 'unknown';
+  const unique = [...new Set(normalized)];
+  return unique.length === 1 ? unique[0] : 'mixed';
+}
+
+function mergeWaterConfidenceLabels(...labels) {
+  const normalized = labels
+    .map(label => getWaterConfidenceLabel(label))
+    .filter(label => label !== 'unknown');
+  if (!normalized.length) return 'unknown';
+  if (normalized.includes('manual')) return normalized.every(label => label === 'manual') ? 'manual' : 'low';
+  if (normalized.includes('low')) return 'low';
+  if (normalized.includes('medium')) return 'medium';
+  if (normalized.includes('high')) return 'high';
+  return 'unknown';
 }
 
 function renderWaterSignal(confidence) {
@@ -1894,6 +1945,7 @@ function getWaterTemperatureSourceLabel(point, data = weatherData) {
   if (point?.waterTempSource === 'manual') return 'manual';
   if (point?.waterTempSource === 'estimated') return `estimated fallback · ${getWaterConfidenceLabel(point.waterTempConfidence)}`;
   if (point?.waterTempSource === 'measured') return data?.marineSource || 'measured water data';
+  if (point?.waterTempSource === 'mixed') return `mixed water sources - ${getWaterConfidenceLabel(point.waterTempConfidence)}`;
   return 'water temp unknown';
 }
 
@@ -4036,10 +4088,8 @@ function jumpToChangelogSection(hash) {
 function decorateFooterVersionLink() {
   if (!(footerVersionLink instanceof HTMLButtonElement)) return;
   const rawVersionLabel = footerVersionLink.textContent?.trim() || '';
-  const milestoneName = findMilestoneNameForVersion(rawVersionLabel);
-  if (!milestoneName) return;
-  footerVersionLink.textContent = `${rawVersionLabel} | ${milestoneName}`;
-  footerVersionLink.setAttribute('aria-label', `Open changelog for Forecast Fit version ${rawVersionLabel}, milestone ${milestoneName}`);
+  footerVersionLink.textContent = rawVersionLabel;
+  footerVersionLink.setAttribute('aria-label', `Open changelog for Forecast Fit version ${rawVersionLabel}`);
 }
 
 function isFiniteNumber(value) {
@@ -5981,8 +6031,8 @@ function clearForecastOnlyPlannerState() {
 function getForecastOnlySummaryText() {
   if (!forecastOnlyMode) return '';
   return forecastOnlyPlannerState
-    ? 'Forecast only is active. Activity presets, route import, best-window search, comfort adjustments, and water override controls are hidden here. Your previous planner setup will return when you exit.'
-    : 'Forecast only is active. Activity presets, route import, best-window search, comfort adjustments, and water override controls are hidden here.';
+    ? 'Forecast only is active. Activity presets, route import, best-window search, and comfort adjustments are hidden here. Planned duration presets, custom duration, water temperature settings, and manual override stay available. Your previous planner setup will return when you exit.'
+    : 'Forecast only is active. Activity presets, route import, best-window search, and comfort adjustments are hidden here. Planned duration presets, custom duration, water temperature settings, and manual override stay available.';
 }
 
 function getForecastOnlyEmptyStateText() {
@@ -6687,6 +6737,7 @@ async function fetchWeatherCore(place) {
   };
 
   applyPseudoWaterEstimateToData(data);
+  applyDailyWaterSummariesToData(data);
   return data;
 }
 
@@ -6804,6 +6855,14 @@ function getInterpolatedHourlyPoint(data, timeStr) {
     gusts: interpolateNumber(before, after, ratio, 'gusts'),
     uv: interpolateNumber(before, after, ratio, 'uv', null),
     aqi: interpolateNumber(before, after, ratio, 'aqi', null),
+    measuredWaterTemp: interpolateNumber(before, after, ratio, 'measuredWaterTemp', null),
+    waterTemp: interpolateNumber(before, after, ratio, 'waterTemp', null),
+    waterTempRangeLow: interpolateNumber(before, after, ratio, 'waterTempRangeLow', null),
+    waterTempRangeHigh: interpolateNumber(before, after, ratio, 'waterTempRangeHigh', null),
+    waveHeight: interpolateNumber(before, after, ratio, 'waveHeight', null),
+    waterTempSource: mergeWaterSourceLabels(before.waterTempSource, after.waterTempSource),
+    waterTempConfidence: mergeWaterConfidenceLabels(before.waterTempConfidence, after.waterTempConfidence),
+    waterTempExplanation: ratio < 0.5 ? before.waterTempExplanation : after.waterTempExplanation,
     windDir: ratio < 0.5 ? before.windDir : after.windDir,
     code: ratio < 0.5 ? before.code : after.code,
     isDay: ratio < 0.5 ? before.isDay : after.isDay
@@ -10733,6 +10792,9 @@ function bindDomActions() {
         break;
       case 'toggleManualWeatherOverride':
         toggleManualWeatherOverride();
+        break;
+      case 'resetWaterModelInputs':
+        resetWaterModelInputs();
         break;
       case 'selectCheckpointModel':
         selectCheckpointModel(trigger.dataset.checkpointModel);

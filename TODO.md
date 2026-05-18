@@ -104,10 +104,10 @@ Planning and follow-up notes for future work.
 
 ### Water Temperature
 
-- For water sports, if possible, show a forecasted water temperature line or range.
-- Investigate whether water temperature can be estimated algorithmically from available forecast/provider inputs and current app parameters.
-- In forecasted weather mode, when there is an air temperature forecast, also try to forecast water temperature if data or estimation is available.
-- If water temperature is estimated rather than sourced directly, label it clearly as `estimated` and show a confidence band or range when possible.
+- [X] For water sports, if possible, show a forecasted water temperature line or range.
+- [X] Investigate whether water temperature can be estimated algorithmically from available forecast/provider inputs and current app parameters.
+- [X] In forecasted weather mode, when there is an air temperature forecast, also try to forecast water temperature if data or estimation is available.
+- [X] If water temperature is estimated rather than sourced directly, label it clearly as `estimated` and show a confidence band or range when possible.
 
 ### RideWithGPS
 

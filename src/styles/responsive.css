@@ -337,7 +337,7 @@
       height: 176px;
     }
     .forecast-table {
-      grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 7px;
       padding-top: 10px;
     }

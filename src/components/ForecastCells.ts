@@ -3,6 +3,7 @@ import { escapeHtml, weatherIconHtml } from '../utils/format';
 import { formatShortTime, formatHumanDate } from '../utils/dateTime';
 import { renderUvValueBadge, renderAqiBadge } from './WarningPanel';
 import { buildForecastChart } from './ForecastChart';
+import { isWaterRelevantActivity } from '../features/gear/waterRules';
 
 export interface DurationProfile {
   label: string;
@@ -27,6 +28,33 @@ export interface ForecastSelection {
   headerMeta?: string;
 }
 
+function hasWaterForecast(point: Record<string, unknown>): boolean {
+  return isFiniteNumber(point.waterTemp) || ['measured', 'estimated', 'manual', 'mixed'].includes(String(point.waterTempSource || ''));
+}
+
+function shouldShowWaterForecast(points: Record<string, unknown>[], activity: string | null): boolean {
+  if (activity) return isWaterRelevantActivity(activity as never);
+  return points.some(hasWaterForecast);
+}
+
+function formatWaterForecastMetric(point: Record<string, unknown>, daily = false): string {
+  const source = String(point.waterTempSource || 'unknown');
+  const low = daily ? point.waterTempMin : point.waterTempRangeLow;
+  const high = daily ? point.waterTempMax : point.waterTempRangeHigh;
+  if (source === 'estimated' && isFiniteNumber(point.waterTempRangeLow) && isFiniteNumber(point.waterTempRangeHigh)) {
+    return `Water est. ~${round1(point.waterTempRangeLow as number)}-${round1(point.waterTempRangeHigh as number)} C`;
+  }
+  if (daily && isFiniteNumber(low) && isFiniteNumber(high)) {
+    const prefix = source === 'manual' ? 'Water manual' : source === 'mixed' ? 'Water mixed' : 'Water';
+    return `${prefix} ${round1(low as number)}-${round1(high as number)} C`;
+  }
+  if (isFiniteNumber(point.waterTemp)) {
+    const prefix = source === 'manual' ? 'Water manual' : source === 'mixed' ? 'Water mixed' : 'Water';
+    return `${prefix} ${round1(point.waterTemp as number)} C`;
+  }
+  return 'Water unknown';
+}
+
 export function renderForecastBlock(
   data: unknown,
   selection: ForecastSelection,
@@ -35,6 +63,7 @@ export function renderForecastBlock(
   routeSamples: unknown[] = [],
 ): string {
   if (!selection.points.length) return '';
+  const showWaterForecast = shouldShowWaterForecast(selection.points, activity);
 
   if (selection.mode === 'daily') {
     const chartSelection = selection.chartPoints?.length
@@ -54,7 +83,7 @@ export function renderForecastBlock(
           <div class="day">${escapeHtml(formatHumanDate(p.date))}</div>
           ${weatherIconHtml(p.code, 'icon')}
           <div class="temps"><span class="forecast-metric" title="High / low temperature">${Math.round(p.tMax as number)}° / ${Math.round(p.tMin as number)}°</span><span class="feels-line forecast-metric" title="Feels-like high / low">feels ${Math.round(p.feelsMax as number)}° / ${Math.round(p.feelsMin as number)}°</span></div>
-          <div class="meta"><span class="forecast-metric" title="Precipitation chance / amount">${Math.round((p.precipProbMax as number) || 0)}% · ${round1((p.precipSum as number) || 0)} mm</span>${isFiniteNumber(p.uvMax) ? `<br>${renderUvValueBadge(p.uvMax, true)}` : ''}${isFiniteNumber(p.aqiMax) ? `<br>${renderAqiBadge(p.aqiMax, true)}` : ''}<br><span class="forecast-metric" title="Sunrise / sunset">${escapeHtml(formatShortTime(p.sunrise))} · ${escapeHtml(formatShortTime(p.sunset))}</span>${daylightH != null ? `<br><span class="forecast-metric" title="Daylight duration">${daylightH} h daylight</span>` : ''}</div>
+          <div class="meta"><span class="forecast-metric" title="Precipitation chance / amount">${Math.round((p.precipProbMax as number) || 0)}% · ${round1((p.precipSum as number) || 0)} mm</span>${showWaterForecast && hasWaterForecast(p) ? `<br><span class="forecast-metric" title="Water temperature">${escapeHtml(formatWaterForecastMetric(p, true))}</span>` : ''}${isFiniteNumber(p.uvMax) ? `<br>${renderUvValueBadge(p.uvMax, true)}` : ''}${isFiniteNumber(p.aqiMax) ? `<br>${renderAqiBadge(p.aqiMax, true)}` : ''}<br><span class="forecast-metric" title="Sunrise / sunset">${escapeHtml(formatShortTime(p.sunrise))} · ${escapeHtml(formatShortTime(p.sunset))}</span>${daylightH != null ? `<br><span class="forecast-metric" title="Daylight duration">${daylightH} h daylight</span>` : ''}</div>
         </div>`;
     }).join('');
     return `
@@ -80,7 +109,7 @@ export function renderForecastBlock(
         <div class="hour">${escapeHtml(formatShortTime(p.time))}</div>
         ${weatherIconHtml(p.code, 'icon')}
         <div class="temp"><span class="forecast-metric" title="Temperature">${Math.round(p.temp as number)}°</span><span class="feels-line forecast-metric" title="Feels like">feels ${Math.round(p.feels as number)}°</span>${isFiniteNumber(p.humidity) ? `<span class="forecast-metric" title="Humidity">${Math.round(p.humidity as number)}% RH</span>` : ''}</div>
-        <div class="meta"><span class="forecast-metric" title="Wind speed">${Math.round((p.wind as number) || 0)} km/h</span><br><span class="forecast-metric" title="Precipitation amount / chance">${round1((p.precip as number) || 0)} mm · ${Math.round((p.precipProb as number) || 0)}%</span>${isFiniteNumber(p.uv) ? `<br>${renderUvValueBadge(p.uv, true)}` : ''}${isFiniteNumber(p.aqi) ? `<br>${renderAqiBadge(p.aqi, true)}` : ''}</div>
+        <div class="meta"><span class="forecast-metric" title="Wind speed">${Math.round((p.wind as number) || 0)} km/h</span><br><span class="forecast-metric" title="Precipitation amount / chance">${round1((p.precip as number) || 0)} mm · ${Math.round((p.precipProb as number) || 0)}%</span>${showWaterForecast && hasWaterForecast(p) ? `<br><span class="forecast-metric" title="Water temperature">${escapeHtml(formatWaterForecastMetric(p))}</span>` : ''}${isFiniteNumber(p.uv) ? `<br>${renderUvValueBadge(p.uv, true)}` : ''}${isFiniteNumber(p.aqi) ? `<br>${renderAqiBadge(p.aqi, true)}` : ''}</div>
       </div>`).join('');
 
   const chartHtml = buildForecastChart(data, selection, routeSamples);

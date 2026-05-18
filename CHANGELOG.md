@@ -965,3 +965,15 @@
 
 - Updated the route elevation profile hover tooltip to show the hovered checkpoint or point type instead of always calling it the current point.
 - Suppressed synthetic post-touch hover re-entry on the route elevation chart so the hover marker and tooltip clear more reliably on mobile and touch devices.
+
+## v12.1
+
+- Surfaced forecasted water temperature directly inside the hourly and multi-day forecast cards for water-relevant planning, including derived daily ranges.
+- Carried measured, estimated, manual, and mixed water-source labels into forecast chart tooltips so the visible forecast stays aligned with the water model provenance.
+- Aggregated hourly marine or fallback water data into daily forecast summaries so multi-day planning can show water ranges even when the source is estimated.
+- Restored the water temperature section and manual override controls inside `Forecast only`, keeping the simplified mode compatible with the new water forecast workflow.
+- Widened the forecast card grid sizing to `repeat(auto-fit, minmax(120px, 1fr))` so the water-temperature-enhanced forecast cells have more room.
+- Kept the planned-duration custom input visible inside `Forecast only`, so the simplified mode still supports both preset and manual duration entry.
+- Hid the average pace / speed field inside `Forecast only` so the planned-duration controls stay focused on direct duration entry there.
+- Removed the derived milestone title from the footer version line in `Credits & attributions` while keeping milestone labels inside the changelog views.
+- Added a `Reset water settings` action for the water temperature section so `Water body type`, `Wind exposure`, and `Pool type` can be restored to their defaults with one click.
