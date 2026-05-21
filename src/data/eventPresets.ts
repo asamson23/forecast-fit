@@ -26,12 +26,30 @@ export const eventPresetsByActivity = {
   ],
   triathlon: [
     { key: 'tri_race_day', label: 'Race day', sublabel: 'Multisport event', distanceLabel: 'Race / event', detail: 'Race-day bias with transition, pre-race, and post-race items.', defaultDuration: 'h2' },
-    { key: 'tri_ss', label: 'Super sprint', sublabel: '250 / 10 / 2.5', distanceLabel: '250 m swim · 10 km bike · 2.5 km run', detail: 'Short fast multisport setup.', defaultDuration: 'h1' },
-    { key: 'tri_s', label: 'Sprint', sublabel: '750 / 20 / 5', distanceLabel: '750 m swim · 20 km bike · 5 km run', detail: 'Typical sprint triathlon.', defaultDuration: 'h2' },
-    { key: 'tri_o', label: 'Olympic', sublabel: '1.5 / 40 / 10', distanceLabel: '1.5 km swim · 40 km bike · 10 km run', detail: 'Standard Olympic-distance triathlon.', defaultDuration: 'h4' },
-    { key: 'tri_t100', label: 'T100', sublabel: '2 / 80 / 18', distanceLabel: '2 km swim · 80 km bike · 18 km run', detail: 'T100 distance triathlon.', defaultDuration: 'h6' },
-    { key: 'tri_70', label: '70.3', sublabel: '1.9 / 90 / 21.1', distanceLabel: '1.9 km swim · 90 km bike · 21.1 km run', detail: 'Half-distance endurance setup.', defaultDuration: 'h8' },
-    { key: 'tri_full', label: 'Ironman', sublabel: '3.8 / 180 / 42.2', distanceLabel: '3.8 km swim · 180 km bike · 42.2 km run', detail: 'Massive exposure and all-day kit.', defaultDuration: 'h12' }
+    { key: 'tri_ss', label: 'Super sprint', sublabel: '400 / 10 / 2.5', distanceLabel: '400 m swim · T1 · 10 km bike · T2 · 2.5 km run', detail: 'Short fast multisport setup.', defaultDuration: 'h1' },
+    { key: 'tri_s', label: 'Sprint', sublabel: '750 / 20 / 5', distanceLabel: '750 m swim · T1 · 20 km bike · T2 · 5 km run', detail: 'Typical sprint triathlon.', defaultDuration: 'h2' },
+    { key: 'tri_o', label: 'Olympic', sublabel: '1.5 / 40 / 10', distanceLabel: '1.5 km swim · T1 · 40 km bike · T2 · 10 km run', detail: 'Standard Olympic-distance triathlon.', defaultDuration: 'h4' },
+    { key: 'tri_t100', label: 'T100', sublabel: '2 / 80 / 18', distanceLabel: '2 km swim · T1 · 80 km bike · T2 · 18 km run', detail: 'T100 distance triathlon.', defaultDuration: 'h6' },
+    { key: 'tri_70', label: '70.3', sublabel: '1.9 / 90 / 21.1', distanceLabel: '1.9 km swim · T1 · 90 km bike · T2 · 21.1 km run', detail: 'Half-distance endurance setup.', defaultDuration: 'h8' },
+    { key: 'tri_full', label: 'Ironman', sublabel: '3.8 / 180 / 42.2', distanceLabel: '3.8 km swim · T1 · 180 km bike · T2 · 42.2 km run', detail: 'Massive exposure and all-day kit.', defaultDuration: 'h12' }
+  ],
+  swimrun: [
+    { key: 'swimrun_race_day', label: 'Race day', sublabel: 'Swimrun event', distanceLabel: 'Race / event', detail: 'Race-day bias for repeated swim-run transitions and support items.', defaultDuration: 'h2' },
+    { key: 'swimrun_short', label: 'Short', sublabel: '1 / 8', distanceLabel: '1 km swim · 8 km run', detail: 'Short swimrun or mixed training day.', defaultDuration: 'h2' },
+    { key: 'swimrun_standard', label: 'Standard', sublabel: '2 / 18', distanceLabel: '2 km swim · 18 km run', detail: 'Typical swimrun race distance.', defaultDuration: 'h4' },
+    { key: 'swimrun_long', label: 'Long', sublabel: '4 / 36', distanceLabel: '4 km swim · 36 km run', detail: 'Long exposed swimrun day.', defaultDuration: 'h8' }
+  ],
+  duathlon: [
+    { key: 'duathlon_race_day', label: 'Race day', sublabel: 'Run / bike / run', distanceLabel: 'Race / event', detail: 'Race-day bias with transition and support items.', defaultDuration: 'h2' },
+    { key: 'dua_short', label: 'Super sprint', sublabel: '2.5 / 10 / 1.25', distanceLabel: '2.5 km run · 10 km bike · 1.25 km run', detail: 'Short fast duathlon setup.', defaultDuration: 'h1' },
+    { key: 'dua_sprint', label: 'Sprint', sublabel: '5 / 20 / 2.5', distanceLabel: '5 km run · 20 km bike · 2.5 km run', detail: 'Typical sprint duathlon.', defaultDuration: 'h2' },
+    { key: 'dua_standard', label: 'Standard', sublabel: '10 / 40 / 5', distanceLabel: '10 km run · 40 km bike · 5 km run', detail: 'Standard-distance duathlon.', defaultDuration: 'h4' }
+  ],
+  aquathlon: [
+    { key: 'aquathlon_race_day', label: 'Race day', sublabel: 'Swim / run event', distanceLabel: 'Race / event', detail: 'Race-day bias for swim-run transition and support items.', defaultDuration: 'h1' },
+    { key: 'aqua_sprint', label: 'Sprint', sublabel: '750 / 5', distanceLabel: '750 m swim · 5 km run', detail: 'Typical sprint aquathlon.', defaultDuration: 'h1' },
+    { key: 'aqua_standard', label: 'Standard', sublabel: '1 / 10', distanceLabel: '1 km swim · 10 km run', detail: 'Longer aquathlon setup.', defaultDuration: 'h2' },
+    { key: 'aqua_long', label: 'Long', sublabel: '1.5 / 10', distanceLabel: '1.5 km swim · 10 km run', detail: 'Long exposed aquathlon day.', defaultDuration: 'h3' }
   ],
   swimming_open: [
     { key: 'ows750', label: 'Sprint swim', sublabel: '750 m', distanceLabel: '750 m', detail: 'Short open-water effort.', defaultDuration: 'h1' },
@@ -117,6 +135,29 @@ export const eventPresetsByActivity = {
     { key: 'ski_half', label: 'Half day', sublabel: '2–4 h', distanceLabel: 'Half day', detail: 'Shorter resort or hill session.', defaultDuration: 'h4' },
     { key: 'ski_day', label: 'Full day', sublabel: '5–8 h', distanceLabel: 'Full day', detail: 'Standard ski/snowboard day.', defaultDuration: 'h8' },
     { key: 'ski_cold', label: 'Cold / storm day', sublabel: 'exposed', distanceLabel: 'Cold ski day', detail: 'More conservative winter setup.', defaultDuration: 'h6' }
+  ],
+  cross_country_skiing: [
+    { key: 'xcski_short', label: 'Short ski', sublabel: '5–10 km', distanceLabel: '8 km', detail: 'Short aerobic cross-country ski.', defaultDuration: 'h1' },
+    { key: 'xcski_standard', label: 'Standard ski', sublabel: '10–25 km', distanceLabel: '15 km', detail: 'Typical groomed-trail or touring ski.', defaultDuration: 'h2' },
+    { key: 'xcski_long', label: 'Long ski', sublabel: '25 km+', distanceLabel: '30 km+', detail: 'Longer cold-weather Nordic ski day.', defaultDuration: 'h4' }
+  ],
+  biathlon: [
+    { key: 'biathlon_training', label: 'Training', sublabel: 'range + loops', distanceLabel: '10 km', detail: 'Biathlon training with ski-stop exposure at the range.', defaultDuration: 'h2' },
+    { key: 'biathlon_sprint', label: 'Sprint', sublabel: '7.5 km', distanceLabel: '7.5 km', detail: 'Sprint biathlon race distance.', defaultDuration: 'h2' },
+    { key: 'biathlon_standard', label: 'Standard', sublabel: '10 km', distanceLabel: '10 km', detail: 'Standard biathlon race setup.', defaultDuration: 'h2' },
+    { key: 'biathlon_long', label: 'Long', sublabel: '15 km+', distanceLabel: '15 km+', detail: 'Longer biathlon day with more static cold exposure.', defaultDuration: 'h3' }
+  ],
+  cross_triathlon: [
+    { key: 'xtri_race_day', label: 'Race day', sublabel: 'Swim / MTB / trail run', distanceLabel: 'Race / event', detail: 'Race-day bias for off-road triathlon with transition support items.', defaultDuration: 'h2' },
+    { key: 'xtri_short', label: 'Sprint', sublabel: '750 / 20 / 5', distanceLabel: '750 m swim · T1 · 20 km MTB · T2 · 5 km trail run', detail: 'Short cross triathlon setup.', defaultDuration: 'h2' },
+    { key: 'xtri_standard', label: 'Standard', sublabel: '1 / 30 / 10', distanceLabel: '1 km swim · T1 · 30 km MTB · T2 · 10 km trail run', detail: 'Typical cross triathlon distance.', defaultDuration: 'h4' },
+    { key: 'xtri_long', label: 'Long', sublabel: '1.5 / 35 / 10', distanceLabel: '1.5 km swim · T1 · 35 km MTB · T2 · 10 km trail run', detail: 'Longer off-road multisport day.', defaultDuration: 'h6' }
+  ],
+  cross_duathlon: [
+    { key: 'xdu_race_day', label: 'Race day', sublabel: 'Trail / MTB / trail', distanceLabel: 'Race / event', detail: 'Race-day bias for off-road duathlon with transition support items.', defaultDuration: 'h2' },
+    { key: 'xdu_short', label: 'Short', sublabel: '3 / 10 / 2', distanceLabel: '3 km trail run · 10 km MTB · 2 km trail run', detail: 'Short cross duathlon setup.', defaultDuration: 'h2' },
+    { key: 'xdu_standard', label: 'Standard', sublabel: '5 / 20 / 5', distanceLabel: '5 km trail run · 20 km MTB · 5 km trail run', detail: 'Typical cross duathlon distance.', defaultDuration: 'h3' },
+    { key: 'xdu_long', label: 'Long', sublabel: '10 / 30 / 10', distanceLabel: '10 km trail run · 30 km MTB · 10 km trail run', detail: 'Longer off-road duathlon day.', defaultDuration: 'h6' }
   ],
   camping: [
     { key: 'camp_over', label: 'Overnight', sublabel: '1 night', distanceLabel: '1 night', detail: 'Simple overnight camp.', defaultDuration: 'd1' },

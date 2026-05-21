@@ -112,6 +112,9 @@ function getBestWindowActivityName(activity: string | null | undefined): string 
     running: 'running',
     cycling: 'cycling',
     triathlon: 'triathlon',
+    swimrun: 'swimrun',
+    duathlon: 'duathlon',
+    aquathlon: 'aquathlon',
     swimming_open: 'open-water swim',
     swimming_pool: 'pool swim',
     swimming_pool_indoor: 'indoor pool swim',
@@ -126,13 +129,20 @@ function getBestWindowActivityName(activity: string | null | undefined): string 
     camping: 'camping',
     road_trip: 'road trip',
     casual: 'casual use',
+    cross_country_skiing: 'cross-country skiing',
+    biathlon: 'biathlon',
+    cross_triathlon: 'cross triathlon',
+    cross_duathlon: 'cross duathlon',
   } as Record<string, string>)[activity || ''] || 'this activity';
 }
 
 export function getBestWindowComfortBand(activity: string | null | undefined): { low: number; high: number } {
   if (activity === 'cycling') return { low: 7, high: 20 };
   if (activity === 'running') return { low: 4, high: 18 };
-  if (activity === 'triathlon') return { low: 7, high: 21 };
+  if (activity === 'triathlon' || activity === 'duathlon') return { low: 7, high: 21 };
+  if (activity === 'swimrun' || activity === 'aquathlon' || activity === 'cross_triathlon') return { low: 8, high: 20 };
+  if (activity === 'cross_country_skiing' || activity === 'biathlon') return { low: -6, high: 6 };
+  if (activity === 'cross_duathlon') return { low: 5, high: 18 };
   if (waterExposureActivities.has(activity as any)) return { low: 10, high: 24 };
   if (activity === 'swimming_pool' || activity === 'swimming_pool_indoor' || activity === 'swimming_pool_outdoor') return { low: 14, high: 28 };
   if (activity === 'fishing' || activity === 'hunting') return { low: 6, high: 18 };
@@ -149,7 +159,7 @@ export function getBestWindowPrioritySummary(priority: string, activity: string 
     ? 'Biases toward quicker-feeling conditions: lower wind penalties, lower gusts, and lower rain risk.'
     : 'Biases toward smoother, easier-moving conditions for the chosen activity.';
   if (priority === 'safest') return 'Biases toward lower risk: less rain, lower gusts, better daylight, and fewer nasty surprises.';
-  if (activity === 'triathlon') return 'Best overall stays available for training or self-directed sessions; race starts are usually fixed.';
+  if (activity === 'triathlon' || activity === 'duathlon' || activity === 'aquathlon' || activity === 'swimrun' || activity === 'cross_triathlon' || activity === 'cross_duathlon') return 'Best overall stays available for training or self-directed sessions; race starts are usually fixed.';
   return `Best overall quietly adapts to ${getBestWindowActivityName(activity)}.`;
 }
 
@@ -202,10 +212,24 @@ function getBestWindowWeights(priority: string | null | undefined, activity: str
     base.routeHeadwind = 2;
     base.routeCrosswind = 1;
     base.wind = Math.max(0, base.wind - 2);
-  } else if (activity === 'triathlon') {
+  } else if (activity === 'triathlon' || activity === 'duathlon' || activity === 'aquathlon') {
     base.routeHeadwind += 2;
     base.gust += 2;
     base.precipProb += 1;
+  } else if (activity === 'swimrun' || activity === 'cross_triathlon') {
+    base.water += 6;
+    base.gust += 3;
+    base.routeHeadwind += 2;
+    base.daylight += 1;
+  } else if (activity === 'cross_duathlon') {
+    base.routeHeadwind += 2;
+    base.routeCrosswind += 2;
+    base.gust += 2;
+    base.comfort += 1;
+  } else if (activity === 'cross_country_skiing' || activity === 'biathlon') {
+    base.comfort += 4;
+    base.gust += 4;
+    base.daylight += 2;
   }
 
   if (priority === 'driest') {
@@ -455,7 +479,7 @@ export function buildBestWindowReasons(candidate: unknown, options: unknown): st
   const indoorActivities = ['gym', 'indoor_running', 'indoor_cycling', 'indoor_multisport', 'swimming_pool_indoor'];
   const uvRelevant = !opts.activity || !indoorActivities.includes(opts.activity);
   if (uvRelevant && isFiniteNumber(maxUv) && (maxUv as number) < 6) bits.push('UV manageable');
-  if (route && firstFinite(route.avgCrosswind, 99)! < 10 && opts.activity === 'cycling') bits.push('tamer crosswinds');
+  if (route && firstFinite(route.avgCrosswind, 99)! < 10 && (opts.activity === 'cycling' || opts.activity === 'duathlon' || opts.activity === 'cross_triathlon')) bits.push('tamer crosswinds');
   if (!/dark/i.test(light.label || '')) bits.push('full daylight');
   else if (!/mostly dark/i.test(light.label || '')) bits.push('better daylight coverage');
   return bits.slice(0, 3);

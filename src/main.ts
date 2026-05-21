@@ -181,7 +181,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.1.2';
+const APP_VERSION = '12.2.1';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -431,6 +431,40 @@ const customMultisportDefinitions = {
     { key: 'transition', label: 'Transition', detail: 'T1/T2 practice or transition rehearsal' },
     { key: 'strength', label: 'Strength', detail: 'Gym or activation block', indoors: true }
   ],
+  swimrun: [
+    { key: 'swim_open', label: 'Open-water swim', detail: 'Lake, river, ocean, or repeated open-water swim segments', water: true, waterTemperatureRelevant: true, outdoors: true },
+    { key: 'swim_pool_outdoor', label: 'Outdoor pool swim', detail: 'Outdoor pool or lido swim', water: true, outdoors: true },
+    { key: 'run', label: 'Road run', detail: 'Road, path, or shoreline run segment', outdoors: true },
+    { key: 'trail_run', label: 'Trail run', detail: 'Trail or rough-terrain run segment', outdoors: true },
+    { key: 'transition', label: 'Transition', detail: 'Repeated swim-run changes and small-gear management' }
+  ],
+  duathlon: [
+    { key: 'bike', label: 'Outdoor bike', detail: 'Road or outdoor bike leg', outdoors: true },
+    { key: 'indoor_bike', label: 'Indoor bike', detail: 'Trainer, spin bike, or velodrome leg', indoors: true },
+    { key: 'run', label: 'Outdoor run', detail: 'Road, track, trail, or race run leg', outdoors: true },
+    { key: 'indoor_run', label: 'Indoor run', detail: 'Treadmill or indoor-track run leg', indoors: true },
+    { key: 'transition', label: 'Transition', detail: 'Run-bike-run transition practice or race flow' }
+  ],
+  aquathlon: [
+    { key: 'swim_open', label: 'Open-water swim', detail: 'Lake, river, ocean, or standard outdoor race swim', water: true, waterTemperatureRelevant: true, outdoors: true },
+    { key: 'swim_pool_indoor', label: 'Indoor pool swim', detail: 'Pool swim indoors before heading outside', water: true, indoors: true },
+    { key: 'swim_pool_outdoor', label: 'Outdoor pool swim', detail: 'Outdoor pool or lido swim', water: true, outdoors: true },
+    { key: 'run', label: 'Outdoor run', detail: 'Road, track, trail, or race run leg', outdoors: true },
+    { key: 'indoor_run', label: 'Indoor run', detail: 'Treadmill or indoor-track run leg', indoors: true },
+    { key: 'transition', label: 'Transition', detail: 'Swim-run transition rehearsal' }
+  ],
+  cross_triathlon: [
+    { key: 'swim_open', label: 'Open-water swim', detail: 'Lake, river, or outdoor race swim', water: true, waterTemperatureRelevant: true, outdoors: true },
+    { key: 'swim_pool_outdoor', label: 'Outdoor pool swim', detail: 'Outdoor pool or lido swim', water: true, outdoors: true },
+    { key: 'mtb', label: 'MTB leg', detail: 'Off-road bike leg', outdoors: true },
+    { key: 'trail_run', label: 'Trail run', detail: 'Off-road run leg', outdoors: true },
+    { key: 'transition', label: 'Transition', detail: 'Off-road transition practice or race flow' }
+  ],
+  cross_duathlon: [
+    { key: 'mtb', label: 'MTB leg', detail: 'Off-road bike leg', outdoors: true },
+    { key: 'trail_run', label: 'Trail run', detail: 'Off-road run leg', outdoors: true },
+    { key: 'transition', label: 'Transition', detail: 'Off-road transition practice or race flow' }
+  ],
   indoor_multisport: [
     { key: 'indoor_pool', label: 'Indoor pool', detail: 'Pool swim' },
     { key: 'indoor_bike', label: 'Indoor bike / velodrome', detail: 'Trainer, spin, or track' },
@@ -441,12 +475,17 @@ const customMultisportDefinitions = {
 };
 const defaultMultisportSelections = {
   triathlon: ['swim_open', 'bike', 'run'],
+  swimrun: ['swim_open', 'run'],
+  duathlon: ['run', 'bike', 'run'],
+  aquathlon: ['swim_open', 'run'],
+  cross_triathlon: ['swim_open', 'mtb', 'trail_run'],
+  cross_duathlon: ['trail_run', 'mtb'],
   indoor_multisport: ['indoor_bike', 'indoor_run']
 };
-let customMultisportSelections = {
-  triathlon: [...defaultMultisportSelections.triathlon],
-  indoor_multisport: [...defaultMultisportSelections.indoor_multisport]
-};
+const customMultisportActivityKeys = Object.keys(customMultisportDefinitions);
+let customMultisportSelections = Object.fromEntries(
+  customMultisportActivityKeys.map((activity) => [activity, [...(defaultMultisportSelections[activity] || [])]])
+);
 
 let routeState = null;
 let stravaPickerTab = 'routes';
@@ -571,7 +610,7 @@ function isNoLocationIndoorActivity(activity = selectedActivity) {
 }
 
 function isCustomMultisportActivity(activity = selectedActivity) {
-  return activity === 'triathlon' || activity === 'indoor_multisport';
+  return !!activity && customMultisportActivityKeys.includes(activity);
 }
 
 function getMultisportDefinitions(activity = selectedActivity) {
@@ -642,9 +681,15 @@ function renderCustomMultisportControls() {
   const definitions = getMultisportDefinitions(selectedActivity);
   const selected = new Set(getSelectedMultisportLegs(selectedActivity));
   customMultisportSummary.textContent = getMultisportSummary(selectedActivity);
-  customMultisportStatus.textContent = selectedActivity === 'triathlon'
-    ? 'Select the legs you actually need, including indoor or outdoor swim, bike, and run blocks. Indoor swim variants hide open-water temperature assumptions; fully indoor sessions still fit better under Indoor multisport.'
-    : 'Select the indoor blocks you actually plan: pool, bike/velodrome, run, gym, or mobility. This changes the indoor checklist.';
+  customMultisportStatus.textContent = ({
+    triathlon: 'Select the legs you actually need, including indoor or outdoor swim, bike, and run blocks. Indoor swim variants hide open-water temperature assumptions; fully indoor sessions still fit better under Indoor multisport.',
+    swimrun: 'Select the swim and run blocks you actually plan. This keeps repeated open-water transitions and trail-run variants aligned with the checklist and water guidance.',
+    duathlon: 'Select the run and bike blocks you actually plan. Indoor bike or run variants keep the checklist realistic for hybrid sessions.',
+    aquathlon: 'Select the swim and run blocks you actually plan. Indoor-pool variants hide open-water assumptions while outdoor swims still keep water guidance visible.',
+    cross_triathlon: 'Select the off-road swim, MTB, and trail-run blocks you actually plan so the checklist follows the terrain mix.',
+    cross_duathlon: 'Select the trail-run and MTB blocks you actually plan so the checklist follows the off-road session.',
+    indoor_multisport: 'Select the indoor blocks you actually plan: pool, bike/velodrome, run, gym, or mobility. This changes the indoor checklist.'
+  })[selectedActivity || ''] || 'Choose the sports/legs that are actually part of the session. This influences the checklist and water-temperature relevance.';
   customMultisportLegList.innerHTML = definitions.map(def => `
     <button class="pick-pill ${selected.has(def.key) ? 'active' : ''}" type="button" data-action="toggleCustomMultisportLeg" data-leg-key="${escapeHtml(def.key)}" title="${escapeHtml(def.detail)}">
       ${selected.has(def.key) ? '✓ ' : ''}${escapeHtml(def.label)}
@@ -696,7 +741,7 @@ function isPoolSwimmingActivity(activity = selectedActivity) {
 }
 
 function isWaterRelevantActivity(activity = selectedActivity) {
-  if (activity === 'triathlon') return customMultisportHasWaterTemperatureLeg('triathlon');
+  if (isCustomMultisportActivity(activity)) return customMultisportHasWaterTemperatureLeg(activity);
   return activity === 'swimming_open' || isWaterExposureActivity(activity) || ((activity === 'swimming_pool' || activity === 'swimming_pool_outdoor') && getPoolType() !== 'indoor_heated');
 }
 
@@ -1422,7 +1467,7 @@ function getPresetDistanceKm(preset) {
   if (isWaterDistanceActivity(selectedActivity)) {
     return /\bm\b/i.test(text) && !/km/i.test(text) ? value / 1000 : value;
   }
-  if (selectedActivity === 'triathlon' || selectedActivity === 'indoor_multisport' || selectedActivity === 'camping' || selectedActivity === 'walk' || selectedActivity === 'casual') return null;
+  if (['triathlon', 'swimrun', 'duathlon', 'aquathlon', 'cross_triathlon', 'cross_duathlon', 'indoor_multisport', 'camping', 'walk', 'casual'].includes(selectedActivity)) return null;
   return value;
 }
 
@@ -2618,7 +2663,7 @@ function getSmartCheckpointConfig(totalMinutes) {
     : (selectedActivity === 'road_trip' ? 70
     : (selectedActivity === 'camping' || selectedActivity === 'walk' || selectedActivity === 'casual') ? 16
     : isWaterDistanceActivity(selectedActivity) ? 10
-    : (selectedActivity === 'triathlon' ? 22 : 28));
+    : (['triathlon', 'swimrun', 'duathlon', 'aquathlon', 'cross_triathlon', 'cross_duathlon'].includes(selectedActivity) ? 22 : 28));
   if (totalMinutes >= 720) gapKm *= 1.15;
   if (totalMinutes >= 1440) gapKm *= 1.2;
   const startTime = weatherData ? getSelectedStartTime(weatherData) : null;
@@ -3759,7 +3804,7 @@ function performClearAllTool() {
   customDurationInput.value = '';
   averageInput.value = '';
   manualWaterTempInput.value = '';
-  customMultisportSelections = { triathlon: [...defaultMultisportSelections.triathlon], indoor_multisport: [...defaultMultisportSelections.indoor_multisport] };
+  customMultisportSelections = cloneMultisportSelections(defaultMultisportSelections);
   if (waterBodyTypeSelect) waterBodyTypeSelect.value = 'auto';
   if (windExposureSelect) windExposureSelect.value = 'auto';
   if (poolTypeSelect) poolTypeSelect.value = 'indoor_heated';
@@ -4427,10 +4472,7 @@ function capturePersistedAppState(options: { includeRoute?: boolean; includeWeat
     bestWindowMaxTemp: String(bestWindowMaxTempInput?.value || ''),
     bestWindowMinWater: String(bestWindowMinWaterInput?.value || ''),
     bestWindowFinishDaylight: !!bestWindowFinishDaylightInput?.checked,
-    customMultisportSelections: {
-      triathlon: [...(customMultisportSelections?.triathlon || [])],
-      indoor_multisport: [...(customMultisportSelections?.indoor_multisport || [])]
-    },
+    customMultisportSelections: cloneMultisportSelections(),
     weatherRefreshStatus: { ...weatherRefreshStatus },
     weather: includeWeather ? capturePersistedWeatherSnapshot() : null,
     route: includeRoute ? capturePersistedRouteSnapshot() : null
@@ -4540,10 +4582,7 @@ function restorePersistedAppState(snapshot: PersistedAppState | null = null) {
   if (bestWindowMaxTempInput) bestWindowMaxTempInput.value = String(snapshot.bestWindowMaxTemp || '');
   if (bestWindowMinWaterInput) bestWindowMinWaterInput.value = String(snapshot.bestWindowMinWater || '');
   if (bestWindowFinishDaylightInput) bestWindowFinishDaylightInput.checked = !!snapshot.bestWindowFinishDaylight;
-  customMultisportSelections = {
-    triathlon: Array.isArray(snapshot.customMultisportSelections?.triathlon) ? [...snapshot.customMultisportSelections.triathlon] : [...defaultMultisportSelections.triathlon],
-    indoor_multisport: Array.isArray(snapshot.customMultisportSelections?.indoor_multisport) ? [...snapshot.customMultisportSelections.indoor_multisport] : [...defaultMultisportSelections.indoor_multisport]
-  };
+  customMultisportSelections = cloneMultisportSelections(snapshot.customMultisportSelections);
   weatherRefreshStatus = {
     ...weatherRefreshStatus,
     ...(snapshot.weatherRefreshStatus || {})
@@ -5337,7 +5376,7 @@ function getEyewearSuggestionItem(activity, point, planned, light, wetLike, isRa
   const bright = !!light?.isDay && !gloomy && !wetWindow && [0, 1].includes(firstFinite(point?.code, 0));
   const raceDayWindow = null;
 
-  if (activity === 'cycling' || activity === 'triathlon') {
+  if (activity === 'cycling' || activity === 'triathlon' || activity === 'duathlon' || activity === 'cross_triathlon') {
     if (!light?.isDay) return item('Clear-lens cycling glasses', 'Best for dark starts, bugs, and keeping wind out without killing contrast.', ['eyewear']);
     if (wetWindow) return item('Clear or photochromic wraparound glasses', 'Skip dark lenses when it is wet or gloomy so road spray, potholes, and painted lines stay visible.', ['eyewear']);
     if (bright) return item('Dark wraparound sunglasses', 'Good call for bright sun, higher speed, and stronger glare.', ['eyewear']);
@@ -5373,7 +5412,7 @@ function getEyewearSuggestionItemLegacyBroken(activity, point, planned, light, w
   const wetWindow = !!wetLike || !!planned?.anyWet || firstFinite(planned?.maxPrecipProb, 0) >= 35;
   const bright = !!light?.isDay && !gloomy && !wetWindow && [0, 1].includes(firstFinite(point?.code, 0));
 
-  if (activity === 'cycling' || activity === 'triathlon') {
+  if (activity === 'cycling' || activity === 'triathlon' || activity === 'duathlon' || activity === 'cross_triathlon') {
     if (!light?.isDay) return item('Clear-lens cycling glasses', 'Best for dark starts, bugs, and keeping wind out without killing contrast.', ['eyewear']);
     if (wetWindow) return item('Clear or photochromic wraparound glasses', 'Skip dark lenses when it is wet or gloomy so road spray, potholes, and painted lines stay visible.', ['eyewear']);
     if (bright) return item('Dark wraparound sunglasses', 'Good call for bright sun, higher speed, and stronger glare.', ['eyewear']);
@@ -5971,10 +6010,9 @@ function hasPlannerStateThatForecastOnlyWillReset() {
 }
 
 function cloneMultisportSelections(source = customMultisportSelections) {
-  return {
-    triathlon: [...(source?.triathlon || [])],
-    indoor_multisport: [...(source?.indoor_multisport || [])]
-  };
+  return Object.fromEntries(
+    customMultisportActivityKeys.map((activity) => [activity, [...(source?.[activity] || defaultMultisportSelections[activity] || [])]])
+  );
 }
 
 function captureForecastOnlyPlannerState(): ForecastOnlyPlannerState {
@@ -6186,7 +6224,7 @@ function resetActivitySection() {
   clearForecastOnlyPlannerState();
   selectedActivity = null;
   selectedEventKey = null;
-  customMultisportSelections = { triathlon: [...defaultMultisportSelections.triathlon], indoor_multisport: [...defaultMultisportSelections.indoor_multisport] };
+  customMultisportSelections = cloneMultisportSelections(defaultMultisportSelections);
   selectedDuration = 'h1';
   raceDayMode = false;
   temperaturePreference = 0;
@@ -7037,6 +7075,9 @@ function getBestWindowActivityName(activity) {
     running: 'running',
     cycling: 'cycling',
     triathlon: 'triathlon',
+    swimrun: 'swimrun',
+    duathlon: 'duathlon',
+    aquathlon: 'aquathlon',
     swimming_open: 'open-water swim',
     swimming_pool: 'pool swim',
     swimming_pool_indoor: 'indoor pool swim',
@@ -7050,7 +7091,11 @@ function getBestWindowActivityName(activity) {
     hunting: 'hunting',
     camping: 'camping',
     road_trip: 'road trip',
-    casual: 'casual use'
+    casual: 'casual use',
+    cross_country_skiing: 'cross-country skiing',
+    biathlon: 'biathlon',
+    cross_triathlon: 'cross triathlon',
+    cross_duathlon: 'cross duathlon'
   })[activity] || 'this activity';
 }
 
@@ -7178,10 +7223,24 @@ function getBestWindowWeights(priority, activity) {
     base.routeHeadwind = 2;
     base.routeCrosswind = 1;
     base.wind = Math.max(0, base.wind - 2);
-  } else if (activity === 'triathlon') {
+  } else if (activity === 'triathlon' || activity === 'duathlon' || activity === 'aquathlon') {
     base.routeHeadwind += 2;
     base.gust += 2;
     base.precipProb += 1;
+  } else if (activity === 'swimrun' || activity === 'cross_triathlon') {
+    base.water += 6;
+    base.gust += 3;
+    base.routeHeadwind += 2;
+    base.daylight += 1;
+  } else if (activity === 'cross_duathlon') {
+    base.routeHeadwind += 2;
+    base.routeCrosswind += 2;
+    base.gust += 2;
+    base.comfort += 1;
+  } else if (activity === 'cross_country_skiing' || activity === 'biathlon') {
+    base.comfort += 4;
+    base.gust += 4;
+    base.daylight += 2;
   }
 
   if (priority === 'driest') {
@@ -7302,7 +7361,7 @@ function getSmartCheckpointConfigFor(data, startTime, totalMinutes) {
     : (selectedActivity === 'road_trip' ? 70
     : (selectedActivity === 'camping' || selectedActivity === 'walk' || selectedActivity === 'casual') ? 16
     : isWaterDistanceActivity(selectedActivity) ? 10
-    : (selectedActivity === 'triathlon' ? 22 : 28));
+    : (['triathlon', 'swimrun', 'duathlon', 'aquathlon', 'cross_triathlon', 'cross_duathlon'].includes(selectedActivity) ? 22 : 28));
   if (totalMinutes >= 720) gapKm *= 1.15;
   if (totalMinutes >= 1440) gapKm *= 1.2;
   const volatility = Math.min(4, getTerrainVolatilityScore() + getWeatherVolatilityScore(data, startTime) + (totalMinutes >= 360 ? 1 : 0));
@@ -7998,6 +8057,7 @@ function buildWizard(data, activity) {
   ];
   if (routeState?.points?.length) chips.push({ label: `🗺 route ${distanceText}`, tone: '' });
   if (isRaceDay) chips.push({ label: '🏁 race day mode', tone: '' });
+  if ((activity === 'triathlon' || activity === 'cross_triathlon') && isRaceDay) chips.push({ label: '🔁 T1 / T2 live', tone: '' });
   if (raceDayWindow && shouldShowRaceDayTimingPanel()) {
     chips.push({ label: `🗓 day ${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}-${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))}`, tone: raceDayWindow.isValid ? '' : 'warn' });
     chips.push({ label: `🔥 warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)}`, tone: '' });
@@ -8133,12 +8193,16 @@ function buildWizard(data, activity) {
     return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with bike-effective feel around ${Math.round(effective)}°C and ${desc}${wet ? ' with wet-road risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main bike kit', 'Choose the core on-bike clothing system.', mainOptions), makeListStep('Step 2 · Add the bike-specific essentials', 'These make the biggest difference on a ride.', core), makeListStep('Step 3 · Adapt for distance / swingy weather', 'Longer rides reward better layer planning.', extras) ], warning: point.code >= 95 ? 'Thunderstorms plus exposed roads are not a “dress around it” situation.' : null };
   }
 
-  if (activity === 'triathlon') {
-    const triLegSummary = getMultisportSummary('triathlon');
-    const triLegs = getSelectedMultisportLegDetails('triathlon');
-    const hasSwimLeg = triLegs.some(def => def.water);
-    const hasOutdoorSwimLeg = triLegs.some(def => def.waterTemperatureRelevant || (def.water && def.outdoors));
-    const hasIndoorSwimLeg = triLegs.some(def => def.water && def.indoors);
+  if (['triathlon', 'swimrun', 'duathlon', 'aquathlon', 'cross_triathlon', 'cross_duathlon'].includes(activity)) {
+    const multisportActivity = activity;
+    const multisportLabel = activityLabels[activity] || 'multisport';
+    const multisportSummary = getMultisportSummary(multisportActivity);
+    const multisportLegs = getSelectedMultisportLegDetails(multisportActivity);
+    const hasSwimLeg = multisportLegs.some(def => def.water);
+    const hasOutdoorSwimLeg = multisportLegs.some(def => def.waterTemperatureRelevant || (def.water && def.outdoors));
+    const hasIndoorSwimLeg = multisportLegs.some(def => def.water && def.indoors);
+    const isOffRoadMulti = multisportActivity === 'cross_triathlon' || multisportActivity === 'cross_duathlon';
+    const isDryMulti = !hasSwimLeg;
     const wt = hasOutdoorSwimLeg && isFiniteNumber(point.waterTemp) ? point.waterTemp : null;
     const mainOptions = wt != null && wt < 14 ? [ option('Trisuit + full wetsuit', 'This is the sensible race-day default here.', true, ['main']), option('Trisuit + full wetsuit + neoprene hood / gloves / booties', 'Even better if the water is seriously cold.', false, ['cold-water']), option('Anything lighter', 'That gets questionable fast.', false, ['nope']) ] : t >= 18 ? [ option('Trisuit only', 'Warm-weather triathlon answer.', true, ['main']), option('Speedsuit / short-sleeve trisuit', 'Aero-leaning option if you like coverage.', false, ['race']), option('Trisuit + optional arm coolers', 'Useful in sun or for long-course comfort.') ] : t >= 10 ? [ option('Trisuit + arm warmers', 'Very useful shoulder-season tri setup.', true, ['main']), option('Trisuit + gilet for bike leg', 'Great if the bike start will feel cold.', false, ['bike']), option('Short-sleeve trisuit', 'Good if you want more coverage all day.', false, ['race']) ] : [ option('Trisuit + arm warmers + gilet / light jacket', 'Cold-air multisport kit.', true, ['cold']), option('Trisuit + full wetsuit + bike extras', 'Very valid when both water and air are cool.', false, ['cold-water']), option('Aggressively minimal kit', 'Only if you already know you tolerate this well.', false, ['risky']) ];
     if (hasSwimLeg && !hasOutdoorSwimLeg) {
@@ -8172,15 +8236,16 @@ function buildWizard(data, activity) {
       ];
       mainOptions.splice(0, mainOptions.length, ...dryMultiMainOptions);
     }
-    const core = [ item('Planned legs', triLegSummary, ['custom']), item('Race belt / bib attachment plan', 'Small item, easy to forget.'), item('Bike/run visibility if the light is marginal', !light.isDay || light.tone === 'warn' ? 'Especially relevant for early starts or long-course days.' : 'Usually not central on a closed course.', ['light']), item('Base layer decision', t <= 10 ? 'A thin base or a short-sleeve trisuit can matter a lot in cool air.' : 'Usually skip heavy underlayers in warm conditions.', ['base layer']) ];
+    const core = [ item('Planned legs', multisportSummary, ['custom']), item('Race belt / bib attachment plan', 'Small item, easy to forget.'), item('Bike/run visibility if the light is marginal', !light.isDay || light.tone === 'warn' ? 'Especially relevant for early starts or long-course days.' : 'Usually not central on a closed course.', ['light']), item('Base layer decision', t <= 10 ? 'A thin base or one-piece race layer can matter a lot in cool air.' : 'Usually skip heavy underlayers in warm conditions.', ['base layer']) ];
     if (hasOutdoorSwimLeg && wt != null) core.push(item('Water-temp plan', wt >= 22 ? 'Probably warm enough for a lighter swim setup.' : wt >= 18 ? 'A sleeveless or flexible full suit can make sense.' : 'Plan for a full suit.', ['water']));
     if (hasOutdoorSwimLeg) core.push(item('Safety buoy / tow float for training swims', 'Treat it as standard open-water kit outside race rules: visibility, a rest point, and a safer place to carry small essentials if the buoy is designed for it.', ['water', 'safety']));
     if (hasIndoorSwimLeg && !hasOutdoorSwimLeg) core.push(item('Indoor-swim exit plan', 'Stage a towel, dry layer, and the outdoor leg kit so you do not walk out of the pool soaked and underdressed.', ['transition', 'hybrid']));
+    if (multisportActivity === 'triathlon' || multisportActivity === 'cross_triathlon') core.push(item('T1 / T2 plan', isRaceDay ? 'Treat transition flow as part of the race kit: swim exit, helmet/glasses order, bike mount line, and run-out sequence.' : 'If you are rehearsing the event, include the actual order for swim exit, bike setup, and run-out.', ['transition']));
     if (t <= 12) core.push(item('Arm warmers (for example cycling or tri arm warmers)', 'One of the highest-value tri additions for cool air.', ['bike']));
     if (t <= 8 || veryWindy) core.push(item('Gilet / packable shell for the bike', 'Aero-ish discomfort still counts as discomfort.', ['bike']));
-    const triEyewear = getEyewearSuggestionItem('triathlon', point, planned, light, wet, isRaceDay);
-    if (triEyewear) core.push(triEyewear);
-    const extras = [ item('Pre-race warm layer (for example throwaway hoodie or light track pants)', 'Standing around before the start can be colder than the actual race.'), item('Post-race dry clothes (for example tee, hoodie, and dry socks)', 'Very nice once the effort ends.'), item('Socks decision', eventPreset?.key === 'tri_ss' || eventPreset?.key === 'tri_s' ? 'You might go without; otherwise think it through.' : 'Longer-course days often justify socks.', ['transition']) ];
+    const multisportEyewear = getEyewearSuggestionItem(multisportActivity, point, planned, light, wet, isRaceDay);
+    if (multisportEyewear) core.push(multisportEyewear);
+    const extras = [ item('Pre-race warm layer (for example throwaway hoodie or light track pants)', 'Standing around before the start can be colder than the actual race.'), item('Post-race dry clothes (for example tee, hoodie, and dry socks)', 'Very nice once the effort ends.'), item('Socks decision', eventPreset?.key === 'tri_ss' || eventPreset?.key === 'tri_s' || eventPreset?.key === 'dua_short' || eventPreset?.key === 'dua_sprint' ? 'You might go without; otherwise think it through.' : 'Longer-course days often justify socks.', ['transition']) ];
     if (isRaceDay) {
       const raceMainOptions = wt != null && wt < 14 ? [
         option('Trisuit + full wetsuit', 'Most straightforward cold-water race answer.', true, ['race']),
@@ -8214,16 +8279,33 @@ function buildWizard(data, activity) {
           option('Extra pre-start and post-swim warmth plan', 'The swim is sheltered, but the event still starts and continues in cold air.', false, ['race'])
         ];
         mainOptions.splice(0, mainOptions.length, ...hybridRaceMainOptions);
+      } else if (isDryMulti) {
+        const dryRaceMainOptions = t >= 18 ? [
+          option(isOffRoadMulti ? 'Light off-road race kit' : 'Light race top + shorts / skinsuit', 'Simple dry multisport race-day default.', true, ['race']),
+          option(isOffRoadMulti ? 'Run-first kit + MTB layer ready' : 'Bike-first kit + run layer ready', 'Useful when one leg clearly drives the exposure.', false, ['race']),
+          option('Arm coolers / light shell packed', 'Useful when the start looks cool or the course stays exposed.', false, ['race'])
+        ] : t >= 10 ? [
+          option('Light race kit + arm warmers / gilet', 'Balanced cool-weather dry multisport setup.', true, ['race']),
+          option(isOffRoadMulti ? 'Trail-first top + shell packed' : 'Bike-first outer layer plan', 'Useful when the first exposed minutes will feel cold.', false, ['race']),
+          option('Longer-coverage top + shorts', 'Simple answer if you dislike removable layers.', false, ['race'])
+        ] : [
+          option('Thermal race kit + shell / gilet', 'Race-first, but realistic in cold air.', true, ['race']),
+          option(isOffRoadMulti ? 'Warm trail / MTB split setup' : 'Warm bike/run split setup', 'Makes more sense when the air is genuinely cold.', false, ['race']),
+          option('Extra pre-start warmth plan', 'Cold dry multisport rewards organization more than minimalism.', false, ['race'])
+        ];
+        mainOptions.splice(0, mainOptions.length, ...dryRaceMainOptions);
       } else {
         mainOptions.splice(0, mainOptions.length, ...raceMainOptions);
       }
+      if (multisportActivity === 'triathlon' || multisportActivity === 'cross_triathlon') core.unshift(item('Transition layout walkthrough', 'Do a literal T1/T2 walkthrough: where the helmet, glasses, shoes, race belt, and run-out items sit, and what order they happen in.', ['race day', 'transition']));
       core.unshift(item('Race belt / number / timing chip check', 'Do the full pre-race check so you are not improvising in transition.', ['race day']));
+      if (multisportActivity === 'triathlon' || multisportActivity === 'cross_triathlon') extras.unshift(item('Spare transition contingency', 'Bring a small backup plan for T1/T2: spare goggles, extra elastic, dry towel, or a quick wipe-down item if the venue allows it.', ['race day', 'transition']));
       extras.unshift(item('Transition bag / post-race comfort plan', 'A real event day rewards a little extra organization.', ['race day']));
       if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
-    if (eventPreset?.key === 'tri_70' || eventPreset?.key === 'tri_full' || (distanceKmValue != null && distanceKmValue >= 80)) extras.push(item('Long-course fuel / carry plan', 'Clothing and storage choices start to overlap here.', ['long-course']));
+    if (eventPreset?.key === 'tri_70' || eventPreset?.key === 'tri_full' || eventPreset?.key === 'swimrun_long' || eventPreset?.key === 'xtri_long' || eventPreset?.key === 'xdu_long' || (distanceKmValue != null && distanceKmValue >= 80)) extras.push(item('Long-course fuel / carry plan', 'Clothing and storage choices start to overlap here.', ['long-course']));
     const hybridSwimSummary = hasIndoorSwimLeg && !hasOutdoorSwimLeg ? ' The swim block is indoors, so the kit leans toward transition organization and the outdoor legs instead of open-water temperature.' : '';
-    return { point, startTime, chips: hasOutdoorSwimLeg ? [...chips, getWaterTemperatureChip(point, data), { label: `🏁 ${triLegSummary}` }] : [...chips, { label: `🏁 ${triLegSummary}` }], activityLabel: activityLabels[activity], summary: `${eventLabel} preset with ${distanceText}, planned as ${triLegSummary}, around ${Math.round(feels)}°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}.${hybridSwimSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the race-suit system', 'This is the main triathlon clothing decision.', mainOptions), makeListStep('Step 2 · Add the race-specific essentials', 'The small tri items matter more than they look.', core), makeListStep('Step 3 · Before / after / long-course extras', 'Useful once the event gets bigger.', extras) ], warning: hasOutdoorSwimLeg && wt == null ? 'Water temperature was not available here. Check local swim conditions before locking your swim setup.' : null };
+    return { point, startTime, chips: hasOutdoorSwimLeg ? [...chips, getWaterTemperatureChip(point, data), { label: `🏁 ${multisportSummary}` }] : [...chips, { label: `🏁 ${multisportSummary}` }], activityLabel: multisportLabel, summary: `${eventLabel} preset for ${multisportLabel}, planned as ${multisportSummary}, around ${Math.round(feels)}°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}.${hybridSwimSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the main multisport kit', `Build around the ${multisportLabel} legs you selected.`, mainOptions), makeListStep('Step 2 · Add the event-specific essentials', 'The small multisport details matter more than they look.', core), makeListStep('Step 3 · Before / after / long-course extras', 'Useful once the event gets bigger.', extras) ], warning: hasOutdoorSwimLeg && wt == null ? 'Water temperature was not available here. Check local swim conditions before locking your swim setup.' : null };
   }
 
   if (activity === 'swimming_open') {

@@ -7,6 +7,9 @@ export const distanceUnitOptionsByActivity = {
   running: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'm', label: 'm' }, { value: 'yd', label: 'yd' }],
   cycling: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'm', label: 'm' }, { value: 'yd', label: 'yd' }],
   triathlon: [{ value: 'km', label: 'km total' }, { value: 'mi', label: 'mi total' }, { value: 'm', label: 'm total' }, { value: 'yd', label: 'yd total' }],
+  swimrun: [{ value: 'km', label: 'km total' }, { value: 'mi', label: 'mi total' }, { value: 'm', label: 'm total' }, { value: 'yd', label: 'yd total' }],
+  duathlon: [{ value: 'km', label: 'km total' }, { value: 'mi', label: 'mi total' }, { value: 'm', label: 'm total' }, { value: 'yd', label: 'yd total' }],
+  aquathlon: [{ value: 'km', label: 'km total' }, { value: 'mi', label: 'mi total' }, { value: 'm', label: 'm total' }, { value: 'yd', label: 'yd total' }],
   swimming_open: [{ value: 'm', label: 'm' }, { value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'yd', label: 'yd' }],
   swimming_pool: [{ value: 'm', label: 'm' }, { value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'yd', label: 'yd' }],
   swimming_pool_indoor: [{ value: 'm', label: 'm' }, { value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'yd', label: 'yd' }],
@@ -24,6 +27,10 @@ export const distanceUnitOptionsByActivity = {
   trail_running: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'm', label: 'm' }, { value: 'yd', label: 'yd' }],
   mtb_gravel: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'm', label: 'm' }, { value: 'yd', label: 'yd' }],
   ski_snowboard: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }],
+  cross_country_skiing: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }],
+  biathlon: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }],
+  cross_triathlon: [{ value: 'km', label: 'km total' }, { value: 'mi', label: 'mi total' }, { value: 'm', label: 'm total' }, { value: 'yd', label: 'yd total' }],
+  cross_duathlon: [{ value: 'km', label: 'km total' }, { value: 'mi', label: 'mi total' }, { value: 'm', label: 'm total' }, { value: 'yd', label: 'yd total' }],
   camping: [{ value: 'nights', label: 'nights' }, { value: 'days', label: 'days' }],
   road_trip: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'm', label: 'm' }, { value: 'yd', label: 'yd' }],
   walk: [{ value: 'km', label: 'km' }, { value: 'mi', label: 'mi' }, { value: 'm', label: 'm' }, { value: 'yd', label: 'yd' }],
@@ -36,6 +43,9 @@ export const averageUnitOptionsByActivity = {
   running: [{ value: 'min_per_km', label: 'min/km' }, { value: 'kmh', label: 'km/h' }],
   cycling: [{ value: 'kmh', label: 'km/h' }, { value: 'min_per_km', label: 'min/km' }],
   triathlon: [{ value: 'kmh', label: 'km/h' }],
+  swimrun: [{ value: 'kmh', label: 'km/h' }],
+  duathlon: [{ value: 'kmh', label: 'km/h' }],
+  aquathlon: [{ value: 'kmh', label: 'km/h' }],
   swimming_open: [{ value: 'min_per_100m', label: 'min/100m' }, { value: 'kmh', label: 'km/h' }],
   swimming_pool: [{ value: 'min_per_100m', label: 'min/100m' }, { value: 'kmh', label: 'km/h' }],
   swimming_pool_indoor: [{ value: 'min_per_100m', label: 'min/100m' }, { value: 'kmh', label: 'km/h' }],
@@ -53,6 +63,10 @@ export const averageUnitOptionsByActivity = {
   trail_running: [{ value: 'min_per_km', label: 'min/km' }, { value: 'kmh', label: 'km/h' }],
   mtb_gravel: [{ value: 'kmh', label: 'km/h' }, { value: 'min_per_km', label: 'min/km' }],
   ski_snowboard: [{ value: 'kmh', label: 'km/h' }],
+  cross_country_skiing: [{ value: 'kmh', label: 'km/h' }],
+  biathlon: [{ value: 'kmh', label: 'km/h' }],
+  cross_triathlon: [{ value: 'kmh', label: 'km/h' }],
+  cross_duathlon: [{ value: 'kmh', label: 'km/h' }],
   camping: [{ value: 'kmh', label: 'km/h' }],
   road_trip: [{ value: 'kmh', label: 'km/h' }],
   walk: [{ value: 'kmh', label: 'km/h' }, { value: 'min_per_km', label: 'min/km' }],
@@ -61,4 +75,4 @@ export const averageUnitOptionsByActivity = {
   casual: [{ value: 'kmh', label: 'km/h' }, { value: 'min_per_km', label: 'min/km' }]
 };
 
-export const avgDeriveActivities = new Set(['running', 'cycling', 'swimming_open', 'swimming_pool', 'swimming_pool_indoor', 'swimming_pool_outdoor', 'gym', 'indoor_running', 'indoor_cycling', 'indoor_multisport', 'sup', 'kayaking', 'snorkeling', 'water_sports', 'hiking', 'trail_running', 'mtb_gravel', 'ski_snowboard', 'road_trip', 'walk', 'fishing', 'hunting', 'casual']);
+export const avgDeriveActivities = new Set(['running', 'cycling', 'swimming_open', 'swimming_pool', 'swimming_pool_indoor', 'swimming_pool_outdoor', 'gym', 'indoor_running', 'indoor_cycling', 'indoor_multisport', 'sup', 'kayaking', 'snorkeling', 'water_sports', 'hiking', 'trail_running', 'mtb_gravel', 'ski_snowboard', 'cross_country_skiing', 'biathlon', 'road_trip', 'walk', 'fishing', 'hunting', 'casual']);

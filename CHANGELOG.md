@@ -989,3 +989,15 @@
 - Added Safari-on-iOS-15 CSS fallbacks for forecast cards, best-window panels, route/map controls, dialogs, warnings, and upload/import UI so unsupported `color-mix()` styling degrades to readable solid colors instead of disappearing.
 - Added plain `:focus` fallback states for key interactive controls that previously relied on `:focus-visible`, keeping keyboard and switch-control navigation visible on older Safari builds.
 - Treated blur and custom accent styling as progressive enhancement, preserving readable overlays and native form controls when Safari 15 lacks the newer CSS features.
+
+## v12.2
+
+- Added new discipline activities: `Swimrun`, `Duathlon`, `Aquathlon`, `Cross-country skiing`, `Biathlon`, `Cross triathlon`, and `Cross duathlon`.
+- Kept `T100` in the triathlon preset list and corrected the `Super sprint` triathlon preset to `400 m swim · 10 km bike · 2.5 km run`.
+- Added event-distance presets, planner unit options, and best-window / route-timing support for the new disciplines.
+- Expanded the custom multisport leg picker beyond plain triathlon so the new multisport disciplines can keep their swim, bike, run, MTB, and trail-leg assumptions aligned with clothing and water guidance.
+
+## v12.2.1
+
+- Added explicit `T1 / T2` markers to triathlon and cross-triathlon preset distance labels so transitions stay visible in the planner.
+- Added stronger triathlon transition guidance in the clothing planner, including race-day `T1 / T2` chips, transition walkthrough reminders, and small contingency planning.

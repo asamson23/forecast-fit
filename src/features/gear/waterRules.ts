@@ -1,6 +1,9 @@
 import type { ActivityKey } from '../../types/activity';
 
 export const waterRelevantActivities = new Set<ActivityKey>([
+  'triathlon',
+  'swimrun',
+  'aquathlon',
   'swimming_open',
   'swimming_pool',
   'swimming_pool_indoor',
@@ -10,16 +13,19 @@ export const waterRelevantActivities = new Set<ActivityKey>([
   'kayaking',
   'surfing',
   'water_sports',
-  'triathlon',
+  'cross_triathlon',
 ]);
 
 export const waterExposureActivities = new Set<ActivityKey>([
+  'swimrun',
+  'aquathlon',
   'swimming_open',
   'sup',
   'surfing',
   'kayaking',
   'snorkeling',
   'water_sports',
+  'cross_triathlon',
 ]);
 
 export const waterDistanceActivities = new Set<ActivityKey>([

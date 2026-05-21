@@ -10,10 +10,12 @@ function clamp(value: number, min: number, max: number): number {
 export function getSegmentTimeFactor(activity: string | null | undefined, gradePct: number | null | undefined): number {
   const grade = clamp(Number.isFinite(Number(gradePct)) ? Number(gradePct) : 0, -18, 18);
   let factor = 1;
-  if (activity === 'cycling' || activity === 'triathlon') {
+  if (activity === 'cycling' || activity === 'triathlon' || activity === 'duathlon' || activity === 'cross_triathlon') {
     factor += grade > 0 ? grade * 0.07 : grade * 0.025;
-  } else if (activity === 'running') {
+  } else if (activity === 'running' || activity === 'swimrun' || activity === 'aquathlon' || activity === 'cross_duathlon') {
     factor += grade > 0 ? grade * 0.085 : grade * 0.03;
+  } else if (activity === 'cross_country_skiing' || activity === 'biathlon') {
+    factor += grade > 0 ? grade * 0.06 : grade * 0.02;
   } else if (activity === 'road_trip') {
     factor += grade > 0 ? grade * 0.018 : grade * 0.01;
   } else if (activity === 'camping' || activity === 'walk' || activity === 'casual') {
