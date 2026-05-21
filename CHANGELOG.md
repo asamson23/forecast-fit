@@ -983,3 +983,9 @@
 - Added hybrid triathlon leg selection so the `Triathlon` activity can mix indoor and outdoor swim, bike, and run blocks instead of assuming the whole event is outdoors.
 - Changed triathlon water-temperature relevance to follow the selected legs, so indoor-pool swim variants stop surfacing open-water temperature guidance while outdoor swim legs still do.
 - Added compatibility normalization for older saved triathlon sessions that used the legacy `swim` leg key, preserving restored planner state after upgrading.
+
+## v12.1.2
+
+- Added Safari-on-iOS-15 CSS fallbacks for forecast cards, best-window panels, route/map controls, dialogs, warnings, and upload/import UI so unsupported `color-mix()` styling degrades to readable solid colors instead of disappearing.
+- Added plain `:focus` fallback states for key interactive controls that previously relied on `:focus-visible`, keeping keyboard and switch-control navigation visible on older Safari builds.
+- Treated blur and custom accent styling as progressive enhancement, preserving readable overlays and native form controls when Safari 15 lacks the newer CSS features.

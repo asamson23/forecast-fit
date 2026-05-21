@@ -667,3 +667,143 @@
     color: var(--text-soft);
     background: var(--surface2);
   }
+
+.route-fit-control-btn:focus,
+.helper-step:focus,
+.changelog-toc-link:focus,
+.strava-picker-tab:focus,
+.strava-picker-item:focus {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+
+@supports not (color: color-mix(in srgb, white 50%, black)) {
+  .comfort-slider::-webkit-slider-runnable-track,
+  .comfort-slider::-moz-range-track {
+    border-color: var(--border-strong);
+    background:
+      linear-gradient(90deg,
+        #d94838 0%,
+        #f47b45 18%,
+        #f4c96a 37%,
+        var(--surface) 50%,
+        #a9cdfd 63%,
+        #4b93f4 82%,
+        #1565c0 100%);
+  }
+
+  .comfort-slider::-webkit-slider-thumb,
+  .comfort-slider::-moz-range-thumb {
+    box-shadow: 0 0 0 1px rgba(59, 77, 101, 0.7), 0 4px 12px rgba(0, 0, 0, 0.22);
+  }
+
+  .water-controls-panel {
+    border-color: var(--accent2);
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+  }
+
+  .main-breakdown-item {
+    background: var(--surface);
+  }
+
+  .main-breakdown-item::before {
+    border-color: var(--ok);
+  }
+
+  .main-breakdown-item.done {
+    background: rgba(23, 166, 99, 0.07);
+  }
+
+  .helper-backdrop {
+    background: rgba(0, 0, 0, 0.48);
+  }
+
+  .helper-panel {
+    border-color: var(--accent2);
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+  }
+
+  .route-fit-control-btn {
+    border-color: var(--border-strong);
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+  }
+
+  .route-fit-control-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, var(--surface), var(--surface3));
+  }
+
+  .helper-step {
+    border-color: var(--accent2);
+    background: var(--surface);
+  }
+
+  .helper-step:hover,
+  .helper-step:focus {
+    border-color: var(--accent);
+    background: rgba(45, 127, 249, 0.05);
+  }
+
+  .helper-step-num {
+    border-color: var(--accent);
+    background: rgba(252, 76, 2, 0.1);
+  }
+
+  .changelog-toc-link {
+    border-color: var(--accent);
+    background: rgba(252, 76, 2, 0.08);
+  }
+
+  .changelog-milestone-name {
+    border-color: var(--accent2);
+    background: rgba(45, 127, 249, 0.12);
+  }
+
+  .changelog-toc-link:hover,
+  .changelog-toc-link:focus {
+    border-color: var(--accent);
+    background: rgba(252, 76, 2, 0.14);
+  }
+
+  .changelog-entry {
+    border-color: var(--accent2);
+    background: var(--surface);
+  }
+
+  .changelog-entry code {
+    background: rgba(252, 76, 2, 0.16);
+    border-color: rgba(252, 76, 2, 0.24);
+  }
+
+  .strava-picker-tab.active {
+    border-color: var(--accent);
+    background: rgba(252, 76, 2, 0.12);
+  }
+
+  .strava-picker-empty {
+    background: var(--surface2);
+  }
+
+  .strava-picker-item {
+    border-color: var(--accent2);
+    background: var(--surface);
+  }
+
+  .strava-picker-preview-empty {
+    background: var(--surface2);
+  }
+
+  .strava-picker-preview-bg {
+    fill: var(--surface2);
+    stroke: var(--border);
+  }
+
+  .strava-picker-preview-path {
+    stroke: var(--accent);
+  }
+
+  .strava-picker-item:hover,
+  .strava-picker-item:focus {
+    border-color: var(--accent);
+  }
+}

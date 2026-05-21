@@ -466,3 +466,65 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
+
+.version-link:focus,
+.footer-link-btn:focus {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+
+@supports not (color: color-mix(in srgb, white 50%, black)) {
+  .mode-toggle-btn.active {
+    border-color: var(--accent);
+    background: var(--surface3);
+  }
+
+  .version-link:hover,
+  .version-link:focus,
+  .footer-link-btn:hover,
+  .footer-link-btn:focus {
+    color: var(--accent2);
+  }
+
+  #race-day-mode-btn.active {
+    background:
+      linear-gradient(135deg, var(--surface), var(--surface2)) padding-box,
+      linear-gradient(90deg, #ff006e 0%, #ff7b00 16%, #ffd60a 32%, #00d084 48%, #00bbf9 64%, #7b2cff 82%, #ff006e 100%) border-box;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.16) inset,
+      0 0 16px rgba(255, 0, 110, 0.16),
+      0 0 24px rgba(0, 187, 249, 0.12);
+    text-shadow:
+      0 0 10px rgba(255, 255, 255, 0.22),
+      0 0 2px rgba(255, 255, 255, 0.3);
+  }
+
+  #race-day-mode-btn.active:hover {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+      0 0 20px rgba(255, 0, 110, 0.2),
+      0 0 30px rgba(0, 187, 249, 0.18);
+  }
+
+  #planner-card.race-party {
+    border-color: var(--accent);
+    background:
+      linear-gradient(180deg, var(--surface), var(--surface2)) padding-box,
+      linear-gradient(120deg, rgba(255, 0, 110, 0.24), rgba(255, 123, 0, 0.2), rgba(255, 214, 10, 0.2), rgba(0, 208, 132, 0.2), rgba(0, 187, 249, 0.2), rgba(123, 44, 255, 0.2), rgba(255, 0, 110, 0.24)) border-box;
+    box-shadow:
+      var(--shadow),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+      0 0 28px rgba(255, 123, 0, 0.08);
+  }
+
+  #planner-card.race-party .activity-group-title,
+  #planner-card.race-party .section-label-row > label:first-child {
+    color: var(--accent);
+  }
+
+  input:focus,
+  select:focus,
+  #later-box .flatpickr-input[readonly]:focus {
+    box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.18);
+  }
+}

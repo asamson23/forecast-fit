@@ -646,3 +646,140 @@
     text-align: center;
     max-width: 100%;
   }
+
+@supports not (color: color-mix(in srgb, white 50%, black)) {
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(252, 76, 2, 0.08), transparent 32%),
+      radial-gradient(circle at top right, rgba(45, 127, 249, 0.09), transparent 34%),
+      linear-gradient(180deg, var(--bg), var(--bg));
+  }
+
+  .card,
+  .result-panel,
+  .forecast-box,
+  .route-weather-cell,
+  .weather-strip,
+  .wizard-step {
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+    border-color: var(--border);
+  }
+
+  .btn,
+  .reset-btn,
+  .mode-toggle-btn {
+    border-color: var(--border-strong);
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+  }
+
+  .btn:hover,
+  .reset-btn:hover,
+  .mode-toggle-btn:hover {
+    border-color: var(--accent);
+  }
+
+  .reset-btn {
+    background: linear-gradient(180deg, var(--surface2), var(--surface));
+  }
+
+  .quiet-btn:hover {
+    background: rgba(29, 36, 48, 0.08);
+  }
+
+  .clear-btn {
+    border-color: var(--warn);
+    background: linear-gradient(180deg, rgba(217, 131, 31, 0.1), var(--surface2));
+  }
+
+  .clear-btn:hover {
+    border-color: var(--warn);
+    background: linear-gradient(180deg, rgba(217, 131, 31, 0.15), var(--surface2));
+  }
+
+  .activity-btn,
+  .event-btn,
+  .duration-btn,
+  .toggle-btn,
+  .choice-item,
+  .simple-item {
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+    border-color: var(--border);
+  }
+
+  .activity-btn:hover,
+  .event-btn:hover,
+  .duration-btn:hover,
+  .toggle-btn:hover,
+  .choice-item:hover,
+  .simple-item:hover {
+    border-color: var(--accent);
+  }
+
+  .activity-btn.active,
+  .event-btn.active,
+  .duration-btn.active,
+  .toggle-btn.active,
+  .choice-item.active {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(252, 76, 2, 0.14), rgba(45, 127, 249, 0.06));
+    box-shadow:
+      inset 0 0 0 1px rgba(252, 76, 2, 0.42),
+      0 10px 22px rgba(252, 76, 2, 0.1);
+  }
+
+  .mode-toggle-btn.active:not(#race-day-mode-btn) {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--accent), #ff7b32);
+    box-shadow: 0 10px 20px rgba(252, 76, 2, 0.18);
+  }
+
+  .activity-group-title,
+  .planner-subsection-toggle,
+  .block-title,
+  label,
+  .pick-title {
+    color: var(--accent);
+  }
+
+  .mini-chip {
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+    border-color: var(--border);
+  }
+
+  .chart-line-feels {
+    stroke: var(--accent2);
+  }
+
+  .chart-dot-feels {
+    fill: var(--accent2);
+  }
+
+  .chart-tooltip {
+    background: var(--surface);
+    border-color: var(--border);
+  }
+
+  .attribution-card {
+    border-top-color: var(--accent2);
+  }
+
+  .attribution-card a {
+    color: var(--accent2);
+  }
+
+  .location-choice-panel,
+  .comfort-panel {
+    border-color: var(--accent2);
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+  }
+
+  .locate-spinner {
+    border-color: rgba(64, 84, 105, 0.35);
+    border-top-color: var(--text);
+  }
+
+  .water-temp-note {
+    border-color: var(--warn);
+    background: rgba(217, 131, 31, 0.08);
+  }
+}

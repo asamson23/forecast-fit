@@ -717,3 +717,149 @@ span.flatpickr-weekday,
     margin-left: 6px;
     vertical-align: middle;
   }
+
+@supports not (color: color-mix(in srgb, white 50%, black)) {
+  .forecast-only-summary-banner {
+    border-color: var(--accent2);
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+  }
+
+  .activity-btn.active,
+  .event-btn.active,
+  .duration-btn.active,
+  .toggle-btn.active,
+  .best-window-card.active {
+    border-color: var(--accent);
+    background: var(--surface3);
+    box-shadow: inset 0 0 0 1px rgba(252, 76, 2, 0.3);
+  }
+
+  .best-window-card.rank-1 {
+    border-color: #f5c542;
+  }
+
+  .best-window-card.rank-2 {
+    border-color: #c0c6cf;
+  }
+
+  .best-window-card.rank-3 {
+    border-color: #cd7f32;
+  }
+
+  .best-window-card.rank-1.active {
+    box-shadow: inset 0 0 0 1px rgba(245, 197, 66, 0.52);
+  }
+
+  .best-window-card.rank-2.active {
+    box-shadow: inset 0 0 0 1px rgba(192, 198, 207, 0.52);
+  }
+
+  .best-window-card.rank-3.active {
+    box-shadow: inset 0 0 0 1px rgba(205, 127, 50, 0.52);
+  }
+
+  .best-window-start-range,
+  .best-window-explainer-summary {
+    border-color: var(--accent2);
+    background: rgba(45, 127, 249, 0.08);
+    color: var(--accent2);
+  }
+
+  .best-window-overrun-warning {
+    border-color: var(--warn);
+    background: rgba(217, 131, 31, 0.1);
+  }
+
+  .best-window-explainer {
+    background: var(--surface2);
+  }
+
+  .best-window-explainer-row {
+    border-color: var(--border);
+    background: var(--surface);
+  }
+
+  .best-window-explainer-row.tone-boost {
+    border-color: var(--ok);
+    background: rgba(23, 166, 99, 0.08);
+  }
+
+  .best-window-explainer-row.tone-penalty {
+    border-color: var(--warn);
+    background: rgba(217, 131, 31, 0.08);
+  }
+
+  .best-window-strip {
+    background: linear-gradient(180deg, var(--surface), var(--surface2));
+  }
+
+  .best-window-strip-gridline {
+    border-left-color: rgba(20, 33, 47, 0.12);
+  }
+
+  .best-window-strip-gridline.is-minor {
+    border-left-color: rgba(20, 33, 47, 0.07);
+  }
+
+  .best-window-strip-gridline.is-date,
+  .best-window-strip-gridline.is-major {
+    border-left-color: rgba(20, 33, 47, 0.16);
+  }
+
+  .best-window-strip-gridline.is-date {
+    border-left-color: rgba(45, 127, 249, 0.36);
+  }
+
+  .best-window-strip-band {
+    background: rgba(252, 76, 2, 0.18);
+    border-color: rgba(252, 76, 2, 0.32);
+  }
+
+  .best-window-strip-band.rank-1 {
+    background: rgba(245, 197, 66, 0.36);
+    border-color: #f5c542;
+  }
+
+  .best-window-strip-band.rank-2 {
+    background: rgba(192, 198, 207, 0.32);
+    border-color: #c0c6cf;
+  }
+
+  .best-window-strip-band.rank-3 {
+    background: rgba(205, 127, 50, 0.3);
+    border-color: #cd7f32;
+  }
+
+  .best-window-strip-band.rank-runner {
+    background: rgba(45, 127, 249, 0.14);
+    border-color: rgba(45, 127, 249, 0.3);
+  }
+
+  .best-window-strip-marker {
+    border-left-color: rgba(20, 33, 47, 0.72);
+  }
+
+  .best-window-strip-marker.rank-runner {
+    border-left-color: var(--accent2);
+  }
+
+  .best-window-strip-band.active {
+    box-shadow: 0 0 0 2px rgba(20, 33, 47, 0.22), 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .best-window-strip-tick {
+    border-left-color: rgba(20, 33, 47, 0.44);
+  }
+
+  .best-window-strip-tick.is-minor {
+    border-left-color: rgba(20, 33, 47, 0.24);
+  }
+
+  .best-window-strip-tick.is-date {
+    border-left-color: var(--accent2);
+  }
+
+  .best-window-strip-tick-label.is-date {
+    color: var(--accent2);
+  }
+}
