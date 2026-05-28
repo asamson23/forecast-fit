@@ -1001,3 +1001,14 @@
 
 - Added explicit `T1 / T2` markers to triathlon and cross-triathlon preset distance labels so transitions stay visible in the planner.
 - Added stronger triathlon transition guidance in the clothing planner, including race-day `T1 / T2` chips, transition walkthrough reminders, and small contingency planning.
+
+## v12.3
+
+- Rolled the unshipped `12.2.2` water-model work into `12.3`, so this release is the direct follow-up to `12.2.1`.
+- Refactored the fallback water-temperature estimator into a standalone weather helper module with debug components and scenario-test coverage.
+- Reworked the fallback model to use an explicit 24-hour wind window, stricter wind thresholds, aligned daily low/high pairing, seasonal depth effects, and a less over-aggressive uncertainty spread for normal planning cases.
+- Added inline `How to choose` guidance for `Water body type` and `Wind exposure` so the fallback water model settings are easier to select without guessing.
+- Split the estimator's seasonal context into `early`, `mid`, and `late` phases and fed that into the season-sensitive water heuristics and debug output.
+- Added the current seasonal phase to the water-model status summary so the fallback guidance shows the active context alongside water body and wind exposure.
+- Kept the water-temperature planner section auto-open when measured marine water data is missing and auto-collapsed when measured water data is available.
+- Swapped the planner order so `Outdoor swimming` now appears above `Indoor training`.

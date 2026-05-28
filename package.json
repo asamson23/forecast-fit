@@ -1,13 +1,13 @@
 {
   "name": "forecast-fit",
-  "version": "12.2.1",
+  "version": "12.3",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "test": "tsc --noEmit"
+    "test": "tsc --noEmit && tsc -p tsconfig.water-tests.json && node --test tests/waterTemperatureEstimator.test.mjs"
   },
   "dependencies": {
     "@bybas/weather-icons": "^2.0.0",

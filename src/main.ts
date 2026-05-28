@@ -75,6 +75,19 @@ import {
   normalizeSearchResult as normalizeSearchResultFromModule,
   searchPlaces as searchPlacesFromModule,
 } from './features/weather/openMeteoClient';
+import {
+  averageNumbers as averageNumbersFromWaterEstimator,
+  clampEstimate as clampEstimateFromWaterEstimator,
+  estimatePseudoWaterTemperature as estimatePseudoWaterTemperatureFromModule,
+  getLatitudeBand as getLatitudeBandFromWaterEstimator,
+  getRecentDailyRecordsForWater as getRecentDailyRecordsForWaterFromModule,
+  getRecentHourlyRecordsForWater as getRecentHourlyRecordsForWaterFromModule,
+  getSeasonInfo as getSeasonInfoFromWaterEstimator,
+  getWaterBodyConfig as getWaterBodyConfigFromWaterEstimator,
+  mapRange as mapRangeFromWaterEstimator,
+  WATER_BODY_TYPE_DEFINITIONS,
+  WIND_EXPOSURE_DEFINITIONS,
+} from './features/weather/waterTemperatureEstimator';
 import { weatherCodeToEmoji } from './features/weather/weatherCodes';
 import {
   dedupeAlerts as dedupeAlertsFromModule,
@@ -181,7 +194,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.2.1';
+const APP_VERSION = '12.3';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -355,6 +368,7 @@ const plannedEffortLabel = document.getElementById('planned-effort-label');
 const plannedEffortStatus = document.getElementById('planned-effort-status');
 const plannedEffortRow = document.getElementById('planned-effort-row');
 const waterModelStatus = document.getElementById('water-model-status');
+const waterModelGuide = document.getElementById('water-model-guide');
 const checkpointModelStatus = document.getElementById('checkpoint-model-status');
 const routeFileInput = document.getElementById('route-file-input');
 const clearRouteBtn = document.getElementById('clear-route-btn');
@@ -531,6 +545,7 @@ const plannerSubsectionCollapsed: Record<string, boolean> = {
   temperature: true,
   water: true
 };
+let waterSectionAutoStateKey = '';
 const STRAVA_ROUTE_PAGE_SIZE = 50;
 const STRAVA_ACTIVITY_PAGE_SIZE = 25;
 let routeDistanceInputSnapshot: null | { value: string; unit: string } = null;
@@ -757,6 +772,30 @@ function shouldShowWaterTemperatureSignal(point, activity = selectedActivity) {
     return !!point && (isFiniteNumber(point.waterTemp) || ['estimated', 'measured', 'manual', 'unknown'].includes(String(point.waterTempSource || '')));
   }
   return shouldShowWaterTemperature(activity, point);
+}
+
+function hasMeasuredMarineWaterData(data = weatherData) {
+  if (!data) return false;
+  if (isFiniteNumber(data?.current?.measuredWaterTemp)) return true;
+  return (data?.hourly || []).some(point => isFiniteNumber(point?.measuredWaterTemp));
+}
+
+function updateWaterSectionAutoUi() {
+  if (!plannerWaterSection) return;
+  plannerWaterSection.hidden = false;
+  const shouldAutoManage = forecastOnlyMode || shouldShowWaterTemperature(selectedActivity);
+  if (!shouldAutoManage) {
+    waterSectionAutoStateKey = 'inactive';
+    return;
+  }
+  const autoKey = [
+    selectedActivity || '',
+    forecastOnlyMode ? 'forecast-only' : 'planner',
+    hasMeasuredMarineWaterData(weatherData) ? 'measured' : 'missing'
+  ].join('|');
+  if (autoKey === waterSectionAutoStateKey) return;
+  plannerSubsectionCollapsed.water = hasMeasuredMarineWaterData(weatherData);
+  waterSectionAutoStateKey = autoKey;
 }
 
 function isWaterExposureActivity(activity = selectedActivity) {
@@ -1702,84 +1741,87 @@ function getWaterModelSettings() {
   };
 }
 
+function getWaterBodyTypeDefinition(type) {
+  return WATER_BODY_TYPE_DEFINITIONS.find(entry => entry.key === String(type || 'auto')) || WATER_BODY_TYPE_DEFINITIONS[0];
+}
+
+function getWindExposureDefinition(type) {
+  return WIND_EXPOSURE_DEFINITIONS.find(entry => entry.key === String(type || 'auto')) || WIND_EXPOSURE_DEFINITIONS[0];
+}
+
+function renderWaterModelGuide() {
+  if (!waterModelGuide) return;
+  const settings = getWaterModelSettings();
+  const bodyHtml = WATER_BODY_TYPE_DEFINITIONS.map(entry => `
+    <li class="water-model-guide-item ${entry.key === settings.waterBodyType ? 'selected' : ''}">
+      <strong>${escapeHtml(entry.label)}</strong> - ${escapeHtml(entry.summary)}
+    </li>
+  `).join('');
+  const windHtml = WIND_EXPOSURE_DEFINITIONS.map(entry => `
+    <li class="water-model-guide-item ${entry.key === settings.windExposure ? 'selected' : ''}">
+      <strong>${escapeHtml(entry.label)}</strong> - ${escapeHtml(entry.summary)}
+    </li>
+  `).join('');
+  waterModelGuide.innerHTML = `
+    <div class="water-model-guide-block">
+      <div class="water-model-guide-title">How to choose</div>
+      <p class="control-help">Use the closest shoreline and water-body match you actually expect at the venue. When unsure, leave these on auto so the fallback stays conservative.</p>
+      <div class="water-model-guide-grid">
+        <div>
+          <div class="water-model-guide-subtitle">Water body type</div>
+          <ul class="water-model-guide-list">${bodyHtml}</ul>
+        </div>
+        <div>
+          <div class="water-model-guide-subtitle">Wind exposure</div>
+          <ul class="water-model-guide-list">${windHtml}</ul>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function updateWaterModelStatus() {
   if (!waterModelStatus) return;
   const settings = getWaterModelSettings();
-  const bits = [];
-  bits.push(`water body: ${settings.waterBodyType.replace(/_/g, ' ')}`);
-  bits.push(`wind: ${settings.windExposure.replace(/_/g, ' ')}`);
-  if (isPoolSwimmingActivity(selectedActivity)) bits.push(`pool: ${settings.poolType.replace(/_/g, ' ')}`);
+  const body = getWaterBodyTypeDefinition(settings.waterBodyType);
+  const wind = getWindExposureDefinition(settings.windExposure);
+  const bits = [`water body: ${body.label}`, `wind: ${wind.label}`];
+  if (isPoolSwimmingActivity(selectedActivity)) bits.push(`pool: ${String(settings.poolType || '').replace(/_/g, ' ')}`);
+  const seasonInfo = getSeasonInfo(weatherData?.currentTime || new Date().toISOString(), weatherData?.latitude);
+  if (seasonInfo?.label) bits.push(`season: ${seasonInfo.label}`);
   waterModelStatus.textContent = `Measured marine data stays preferred. If unavailable, Forecast Fit estimates a conservative fallback from recent air temperatures, broad latitude band, season, wind, and ${bits.join(' · ')}.`;
 }
 
 function mapRange(value, inMin, inMax, outMin, outMax) {
-  const ratio = clamp((value - inMin) / Math.max(1, inMax - inMin), 0, 1);
-  return outMin + ((outMax - outMin) * ratio);
+  return mapRangeFromWaterEstimator(value, inMin, inMax, outMin, outMax);
 }
 
 function averageNumbers(values) {
-  const nums = values.filter(isFiniteNumber);
-  if (!nums.length) return null;
-  return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+  return averageNumbersFromWaterEstimator(values);
 }
 
 function clampEstimate(value, min, max) {
-  if (!isFiniteNumber(value)) return value;
-  return Math.min(max, Math.max(min, value));
+  return clampEstimateFromWaterEstimator(value, min, max);
 }
 
 function getLatitudeBand(latitude) {
-  const abs = Math.abs(firstFinite(latitude, 45));
-  if (abs < 23.5) return { key: 'tropical', label: 'tropical / low latitude', bias: 3.0 };
-  if (abs < 35) return { key: 'warm', label: 'warm temperate', bias: 1.5 };
-  if (abs < 50) return { key: 'temperate', label: 'temperate', bias: 0 };
-  if (abs < 60) return { key: 'cold', label: 'cool northern / southern', bias: -1.2 };
-  return { key: 'subpolar', label: 'subpolar / high latitude', bias: -2.5 };
+  return getLatitudeBandFromWaterEstimator(latitude);
 }
 
 function getSeasonInfo(dateStr, latitude) {
-  const date = parseLocalString(String(dateStr || '').slice(0, 10) + 'T12:00') || new Date();
-  const month = date.getMonth();
-  const north = firstFinite(latitude, 45) >= 0;
-  const seasonsNorth = ['winter','winter','spring','spring','spring','summer','summer','summer','autumn','autumn','autumn','winter'];
-  const seasonsSouth = ['summer','summer','autumn','autumn','autumn','winter','winter','winter','spring','spring','spring','summer'];
-  const season = (north ? seasonsNorth : seasonsSouth)[month] || 'summer';
-  const autumnStart = new Date(date.getFullYear(), north ? 8 : 2, 1, 12, 0, 0, 0);
-  let weeksIntoAutumn = 0;
-  if (season === 'autumn') weeksIntoAutumn = Math.max(0, (date - autumnStart) / (7 * 24 * 3600 * 1000));
-  const factor = season === 'spring' ? 0 : season === 'summer' ? 0.5 : season === 'autumn' ? 1 : 1.25;
-  return { season, factor, weeksIntoAutumn };
+  return getSeasonInfoFromWaterEstimator(dateStr, latitude);
 }
 
 function getWaterBodyConfig(type) {
-  return ({
-    deep_lake: { label: 'deep lake', depthFactor: 1, positiveScale: 0.55, adjust: 0 },
-    shallow_lake: { label: 'shallow lake', depthFactor: 0, positiveScale: 1.35, adjust: 0.8 },
-    bay: { label: 'bay / inlet', depthFactor: 0, positiveScale: 1.25, adjust: 0.4 },
-    river: { label: 'river', depthFactor: 0.5, positiveScale: 0.75, adjust: -2 },
-    sheltered: { label: 'sheltered beach / pond', depthFactor: 0.5, positiveScale: 1.45, adjust: 1.5 },
-    coastal: { label: 'coastal / sea', depthFactor: 1, positiveScale: 0.65, adjust: -1 },
-    auto: { label: 'unknown water body', depthFactor: 0.5, positiveScale: 1, adjust: 0 }
-  })[type] || { label: 'unknown water body', depthFactor: 0.5, positiveScale: 1, adjust: 0 };
+  return getWaterBodyConfigFromWaterEstimator(type);
 }
 
 function getRecentDailyRecordsForWater(data) {
-  const currentDate = String(data?.currentTime || '').slice(0, 10);
-  const daily = Array.isArray(data?.daily) ? data.daily : [];
-  const past = daily.filter(day => !currentDate || String(day.date) <= currentDate);
-  return (past.length ? past : daily).slice(-7);
+  return getRecentDailyRecordsForWaterFromModule(data);
 }
 
 function getRecentHourlyRecordsForWater(data) {
-  const currentMs = parseAnyTime(data?.currentTime);
-  const hourly = Array.isArray(data?.hourly) ? data.hourly : [];
-  if (!Number.isFinite(currentMs)) return hourly.slice(-48);
-  const minMs = currentMs - (48 * 3600 * 1000);
-  const recent = hourly.filter(point => {
-    const ms = parseAnyTime(point.time);
-    return Number.isFinite(ms) && ms >= minMs && ms <= currentMs;
-  });
-  return (recent.length ? recent : hourly).slice(-48);
+  return getRecentHourlyRecordsForWaterFromModule(data);
 }
 
 /** 
@@ -1792,120 +1834,7 @@ function getRecentHourlyRecordsForWater(data) {
  * wind exposure.
  */
 function estimatePseudoWaterTemperature(data) {
-  const daily = getRecentDailyRecordsForWater(data);
-  const lows = daily.map(day => firstFinite(day.tMin, null)).filter(isFiniteNumber);
-  const highs = daily.map(day => firstFinite(day.tMax, null)).filter(isFiniteNumber);
-  if (lows.length < 2 || highs.length < 2) {
-    return { available: false, source: 'unknown', confidence: 'unknown', explanation: 'Not enough recent temperature data for a fallback estimate.' };
-  }
-  const settings = getWaterModelSettings();
-  const body = getWaterBodyConfig(settings.waterBodyType);
-  const band = getLatitudeBand(data?.latitude);
-  const season = getSeasonInfo(data?.currentTime, data?.latitude);
-  const L = averageNumbers(lows.slice(-2));
-  const L7 = averageNumbers(lows.slice(-7));
-  const H7 = averageNumbers(highs.slice(-7));
-  const recentHourly = getRecentHourlyRecordsForWater(data);
-  const windy = recentHourly.filter(point => firstFinite(point.wind, 0) > 10);
-  const windFraction = recentHourly.length ? windy.length / recentHourly.length : 0;
-  const W_off = settings.windExposure === 'offshore' ? windFraction : 0;
-  const W_on = settings.windExposure === 'onshore' ? windFraction : 0;
-  const genericWind = settings.windExposure === 'auto' || settings.windExposure === 'neutral';
-  const avgRecentWind = averageNumbers(recentHourly.map(point => firstFinite(point.wind, null))) || 0;
-  // Continuous layer: recent overnight lows dominate; daytime highs only add
-  // a small warming signal because water temperature lags air temperature.
-  let estimate =
-      0.55 * L
-    + 0.25 * L7
-    + 0.05 * H7
-    - 6.0 * W_off
-    + 3.0 * W_on
-    - 4.0 * body.depthFactor
-    - 2.0 * season.factor
-    + band.bias;
-
-  // Rule-based layer: clamp obvious patterns so the estimate does not become
-  // unrealistically warm after a single sunny day or unrealistically cold after
-  // a noisy input. Notes are saved for the user-facing explanation.
-  const notes = [`${band.label}`, season.season, body.label];
-  const last2Below10 = lows.slice(-2).filter(v => v < 10).length >= 2;
-  const last3 = lows.slice(-3);
-  const last5 = lows.slice(-5);
-  if (last2Below10) {
-    estimate = Math.min(estimate, 14);
-    notes.push('cool recent nights');
-  }
-  if (last3.length >= 3 && last3.filter(v => v >= 10 && v <= 15).length >= 3) {
-    estimate = clampEstimate(estimate, 14, 18);
-    notes.push('moderate recent nights');
-  }
-  if (last5.length >= 5 && last5.filter(v => v > 15).length >= 5) {
-    estimate = clampEstimate(estimate, 17, 21);
-    notes.push('warm recent nights');
-  }
-  if (last3.length >= 3 && last3.filter(v => v > 20).length >= 3) {
-    estimate = clampEstimate(estimate, 22, 25);
-    notes.push('very warm nights');
-  }
-
-  const last5HighAvg = averageNumbers(highs.slice(-5));
-  const last5LowAvg = averageNumbers(lows.slice(-5));
-  if (isFiniteNumber(last5HighAvg) && isFiniteNumber(last5LowAvg) && last5HighAvg > 25 && last5LowAvg > 15) {
-    estimate += 1.5 * body.positiveScale;
-    notes.push('daytime warming');
-  }
-  const offshoreHours = settings.windExposure === 'offshore' ? windy.length : 0;
-  const onshoreHours = settings.windExposure === 'onshore' ? windy.length : 0;
-  if (offshoreHours >= 12) {
-    estimate -= mapRange(offshoreHours, 12, 24, 2, 6);
-    notes.push('offshore cooling risk');
-  }
-  if (onshoreHours >= 12) {
-    estimate += mapRange(onshoreHours, 12, 24, 1, 3) * body.positiveScale;
-    notes.push('onshore push');
-  }
-  if (genericWind && avgRecentWind >= 22) {
-    estimate -= mapRange(avgRecentWind, 22, 40, 0.5, 2.5);
-    notes.push('wind mixing');
-  }
-  estimate += body.adjust;
-
-  if (season.season === 'spring') {
-    const springCap = band.key === 'tropical' ? 24 : band.key === 'warm' ? 20 : band.key === 'cold' || band.key === 'subpolar' ? 12 : 15;
-    estimate = Math.min(estimate, springCap);
-  }
-  if (season.season === 'summer' && ['shallow_lake', 'bay', 'sheltered'].includes(settings.waterBodyType)) {
-    const summerFloor = band.key === 'tropical' ? 22 : band.key === 'warm' ? 20 : band.key === 'temperate' ? 18 : 16;
-    estimate = Math.max(estimate, summerFloor);
-  }
-  if (season.season === 'autumn') {
-    const autumnFactor = band.key === 'tropical' ? 0.2 : band.key === 'warm' ? 0.4 : 0.65;
-    estimate -= autumnFactor * season.weeksIntoAutumn;
-  }
-  if (season.season === 'winter') {
-    estimate -= band.key === 'tropical' ? 0 : band.key === 'warm' ? 1.5 : 3.5;
-  }
-
-  // Reconciliation layer: clamp to a sane physical range and expose a range
-  // rather than fake decimal precision. The conservative low end feeds gear logic.
-  const finalTemp = clampEstimate(estimate, 0, 30);
-  const confidence = settings.waterBodyType !== 'auto' && lows.length >= 5 && highs.length >= 5 && season.season !== 'winter' ? 'medium' : 'low';
-  const uncertainty = confidence === 'medium' ? 2.0 : 3.5;
-  const low = clampEstimate(finalTemp - uncertainty, 0, 30);
-  const high = clampEstimate(finalTemp + uncertainty, 0, 30);
-  return {
-    available: true,
-    source: 'estimated',
-    confidence,
-    temp: round1(finalTemp),
-    conservativeTemp: round1(low),
-    rangeLow: round1(low),
-    rangeHigh: round1(high),
-    explanation: `Estimated from recent lows/highs, ${notes.slice(0, 5).join(', ')}.`,
-    settings,
-    latitudeBand: band.key,
-    season: season.season
-  };
+  return estimatePseudoWaterTemperatureFromModule(data, getWaterModelSettings());
 }
 
 /** 
@@ -2263,6 +2192,8 @@ function renderPlannerState() {
   renderDurationButtons();
   updateCustomStatusTexts();
   updateWaterModelStatus();
+  renderWaterModelGuide();
+  updateWaterSectionAutoUi();
   updateCheckpointModelUi();
   updateTemperaturePreferenceUi();
   updatePlannedEffortUi();
@@ -6189,6 +6120,16 @@ function toggleActivityGroup(group) {
   activityGroupsLastAutoSyncedActivity = selectedActivity || null;
 }
 
+function reorderActivityGroups() {
+  const sections = document.querySelector('.activity-sections');
+  if (!sections) return;
+  const groups = Array.from(sections.querySelectorAll('.activity-section-group'));
+  const indoorGroup = groups.find(group => group.querySelector('.activity-group-title')?.textContent?.trim() === 'Indoor training');
+  const outdoorSwimGroup = groups.find(group => group.querySelector('.activity-group-title')?.textContent?.trim() === 'Outdoor swimming');
+  if (!indoorGroup || !outdoorSwimGroup) return;
+  sections.insertBefore(outdoorSwimGroup, indoorGroup);
+}
+
 function setupActivityGroupToggles() {
   document.querySelectorAll('.activity-section-group .activity-group-title').forEach(title => {
     title.dataset.activityToggleBound = '1';
@@ -9742,6 +9683,7 @@ document.addEventListener('keydown', event => {
 // elements with direct listeners rather than a framework state store.
 decorateFooterVersionLink();
 setCurrentLocationButtonState(false);
+reorderActivityGroups();
 setupActivityGroupToggles();
 setupPlannerSubsectionToggles();
 const startTimeSection = document.getElementById('start-time-section');

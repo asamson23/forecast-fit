@@ -102,6 +102,46 @@
   .water-controls-panel + .water-controls-panel {
     margin-top: 12px;
   }
+  .water-model-guide {
+    grid-column: 1 / -1;
+  }
+  .water-model-guide-block {
+    margin-top: 2px;
+    border: 1px solid color-mix(in srgb, var(--accent2) 8%, var(--border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface) 92%, white 8%);
+    padding: 10px 12px;
+  }
+  .water-model-guide-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .water-model-guide-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .water-model-guide-subtitle {
+    margin: 2px 0 6px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .water-model-guide-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    color: var(--text-soft);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+  .water-model-guide-item.selected {
+    color: var(--text);
+  }
   .main-breakdown-list {
     display: grid;
     gap: 7px;
