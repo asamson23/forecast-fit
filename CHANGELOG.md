@@ -1020,3 +1020,14 @@
 - Snapshotted route checkpoint weather cache state before forced refreshes so failed route-start or route-point refreshes restore checkpoint weather instead of clearing it permanently.
 - Reset the uploaded route file input after parse failures so the same GPX or GeoJSON file can be retried immediately without a stale half-loaded state.
 - Built imported Strava route state before committing it into the planner flow so picker-based provider imports do not partially mutate the route state when route normalization fails.
+
+## v12.5
+
+- Added an explicit offline/degraded-mode status line that explains what still works from cached planner state, cached route data, and saved forecasts when the network is unavailable.
+- Allowed offline startup restores to reuse stale saved weather as an explicit `saved offline forecast` mode instead of dropping the forecast entirely once it ages past the normal fresh-cache window.
+- Added an `Export plan` action that opens the current planner result in a print-friendly view for browser printing or `Save as PDF`, giving export a concrete user-facing path alongside share planning.
+- Moved sharing into the main header actions and split it into two paths: a lightweight link for planner state plus a re-fetchable location, and a richer JSON export/import package for carrying fuller planner snapshots between devices.
+- Kept uploaded routes and imported provider routes out of share links on purpose, defining the current privacy and bandwidth boundary: route/provider state stays local-only unless a future dedicated shared-route store is introduced.
+- Added JSON share-package export/import that can carry route data, planner settings, and still-usable saved weather so route-heavy plans can move between devices without relying on URL size limits.
+- Applied shared links directly at startup, bypassing resume prompts when a shared plan is present and re-fetching fresh weather for the shared location when possible.
+- Tightened `index.html` accessibility wiring with explicit form-label associations, improved live-region/status semantics, better dialog descriptions, and clearer page landmarks for assistive technologies.

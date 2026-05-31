@@ -10,6 +10,20 @@ Planning and follow-up notes for future work.
 - Keep the frontend deployable as a static GitHub Pages build.
 - Do not put provider secrets or tokens in frontend code.
 - Avoid unrelated visual redesigns while doing UX cleanup.
+- Manual validation remains required before considering route, forecast-only, warning, export, or interaction changes complete:
+  - Re-check route elevation profile interactions:
+    - hover point / hover line visibility
+    - click-to-load route-point forecast in the weather strip
+    - `Back to start` restoring the route-start weather context cleanly
+  - Run the baseline manual review pass after recent forecast-only and route-refresh changes:
+    - keyboard flow through location search, dialogs, route controls, and forecast interactions
+    - warning dialog readability and dismissal behavior
+    - forecast cells and warnings without relying on color alone
+    - touch-target sizing for header, planner, and route actions
+  - Re-check forecast-only mobile layout at:
+    - `699px`
+    - `560px`
+    - `380px`
 
 ## Now
 
@@ -38,7 +52,7 @@ Planning and follow-up notes for future work.
 
 ### Provider Browser UX
 
-- Keep provider-browser preview traces focused on route shape only unless there is a strong reason to add more detail later.
+- [X] Keep provider-browser preview traces focused on route shape only unless there is a strong reason to add more detail later.
 - Revisit whether future provider browsers such as `RideWithGPS` should use the same preview component and fallback behavior.
 
 
@@ -47,22 +61,6 @@ Planning and follow-up notes for future work.
 
 - [X] Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
 - [X] Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
-
-### Manual Validation
-
-- Manually re-check route elevation profile interactions:
-  - hover point / hover line visibility
-  - click-to-load route-point forecast in the weather strip
-  - `Back to start` restoring the route-start weather context cleanly
-- Run the baseline manual review pass after the recent forecast-only and route-refresh changes:
-  - keyboard flow through location search, dialogs, route controls, and forecast interactions
-  - warning dialog readability and dismissal behavior
-  - forecast cells and warnings without relying on color alone
-  - touch-target sizing for header, planner, and route actions
-- Re-check forecast-only mobile layout at:
-  - `699px`
-  - `560px`
-  - `380px`
 
 ## Later
 
@@ -79,21 +77,21 @@ Planning and follow-up notes for future work.
 
 ### Offline And Resilience
 
-- Define an explicit offline or degraded-mode plan for the PWA.
-- Decide which parts of the app should still work with cached route, cached planner state, or stale weather when fresh network data is unavailable.
+- [X] Define an explicit offline or degraded-mode plan for the PWA.
+- [X] Decide which parts of the app should still work with cached route, cached planner state, or stale weather when fresh network data is unavailable.
 
 ### Sharing
 
-- Evaluate sharing of route, weather, and selected activity state.
-- Define which parts of planner state are safe and useful to share through a link versus local-only state.
-- Explore whether share links should use URL params alone, compressed encoded state, or a lightweight backend-backed share token.
-- For route sharing, define a graceful caching or storage strategy that avoids excessive bandwidth or host storage usage.
+- [X] Evaluate sharing of route, weather, and selected activity state.
+- [X] Define which parts of planner state are safe and useful to share through a link versus local-only state.
+- [X] Explore whether share links should use URL params alone, compressed encoded state, or a lightweight backend-backed share token.
+- [X] For route sharing, define a graceful caching or storage strategy that avoids excessive bandwidth or host storage usage.
 - For shared routes, prefer deduplication, compact geometry storage, or expiring share records if backend persistence is introduced.
-- Define privacy and permission expectations for shared state, especially for imported provider routes or location-derived plans.
+- [X] Define privacy and permission expectations for shared state, especially for imported provider routes or location-derived plans.
 
 ### Export
 
-- Review export and share parity so a shared plan can also be evaluated for export as a printable view or `PDF`.
+- [X] Review export and share parity so a shared plan can also be evaluated for export as a printable view or `PDF`.
 
 ### Internationalization And Formatting
 

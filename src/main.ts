@@ -194,7 +194,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.4';
+const APP_VERSION = '12.5';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -212,6 +212,63 @@ interface EntryIntent {
   kind: EntryIntentKind;
   source: EntryIntentSource;
 }
+
+type SharedPlannerState = {
+  selectedActivity: string | null;
+  selectedEventKey: string | null;
+  selectedDuration: string;
+  checkpointModel: string;
+  startMode: string;
+  raceDayMode: boolean;
+  manualWeatherPanelOpen: boolean;
+  temperaturePreference: number;
+  plannedEffort: string;
+  forecastOnlyMode: boolean;
+  customDistance: string;
+  distanceUnit: string;
+  customDuration: string;
+  durationUnit: string;
+  average: string;
+  averageUnit: string;
+  manualWaterTemp: string;
+  waterBodyType: string;
+  windExposure: string;
+  poolType: string;
+  laterInputValue: string;
+  raceDayStart: string;
+  raceDayEnd: string;
+  bestWindowStart: string;
+  bestWindowEnd: string;
+  bestWindowPriority: string;
+  bestWindowStep: string;
+  bestWindowMaxPrecip: string;
+  bestWindowMaxGust: string;
+  bestWindowMinTemp: string;
+  bestWindowMaxTemp: string;
+  bestWindowMinWater: string;
+  bestWindowFinishDaylight: boolean;
+  customMultisportSelections: typeof customMultisportSelections;
+};
+
+type SharedPlanState = {
+  version: number;
+  sharedAt: string;
+  place: {
+    latitude: number;
+    longitude: number;
+    name: string;
+    countryCode?: string;
+  } | null;
+  planner: SharedPlannerState;
+};
+
+type SharedPlanPackage = {
+  version: number;
+  kind: 'share_package';
+  exportedAt: string;
+  appVersion: string;
+  snapshot: PersistedAppState;
+};
 
 type PersistedRouteSnapshot = {
   fileName: string;
@@ -283,6 +340,7 @@ type PersistenceMeta = {
   routePersisted: boolean;
   weatherPersisted: boolean;
   restoredWeatherFromCache: boolean;
+  restoredStaleWeatherOffline: boolean;
   restoredRouteFromCache: boolean;
   warningDismissalsSupported: boolean;
   lastSaveError: string;
@@ -308,6 +366,7 @@ let persistenceMeta: PersistenceMeta = {
   routePersisted: false,
   weatherPersisted: false,
   restoredWeatherFromCache: false,
+  restoredStaleWeatherOffline: false,
   restoredRouteFromCache: false,
   warningDismissalsSupported: false,
   lastSaveError: ''
@@ -392,6 +451,12 @@ const routeFilePanel = document.getElementById('route-file-panel');
 const routeChoiceDivider = document.getElementById('route-choice-divider');
 const stravaPanel = document.getElementById('strava-panel');
 const stravaChoiceDivider = document.getElementById('strava-choice-divider');
+const connectivityStatus = document.getElementById('connectivity-status');
+const shareStatus = document.getElementById('share-status');
+const shareOverlay = document.getElementById('share-overlay');
+const shareCloseBtn = document.getElementById('share-close-btn');
+const shareParamsInput = document.getElementById('share-params-input') as HTMLTextAreaElement | null;
+const shareImportFileInput = document.getElementById('share-import-file-input') as HTMLInputElement | null;
 const quickStartOverlay = document.getElementById('quick-start-overlay');
 const quickStartSteps = document.getElementById('quick-start-steps');
 const quickStartCloseBtn = document.getElementById('quick-start-close-btn');
@@ -538,6 +603,7 @@ let locationCardCollapsed = false;
 let plannerCardCollapsed = false;
 let forecastOnlyMode = false;
 let startupEntryIntentApplied = false;
+let sharedPlanStateApplied = false;
 const plannerSubsectionCollapsed: Record<string, boolean> = {
   duration: false,
   eventDistance: false,
@@ -3708,6 +3774,7 @@ window.clearRoute = clearRoute;
 
 function resetLocationSection() {
   weatherData = null;
+  setShareStatus('');
   setWeatherRefreshStatus({ state: 'idle', source: '', detail: '', error: '', lastAttemptAt: '', lastSuccessAt: '' });
   hideSuggestions();
   hideError();
@@ -3723,6 +3790,7 @@ function resetLocationSection() {
 window.resetLocationSection = resetLocationSection;
 
 function performClearAllTool() {
+  setShareStatus('');
   forecastOnlyMode = false;
   clearForecastOnlyPlannerState();
   raceDayMode = false;
@@ -4157,6 +4225,176 @@ function clearStoredEntryIntent() {
   }
 }
 
+function base64UrlEncode(text) {
+  const bytes = new TextEncoder().encode(String(text || ''));
+  let binary = '';
+  bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlDecode(value) {
+  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function getShareablePlace() {
+  if (!weatherData || !isFiniteNumber(weatherData.latitude) || !isFiniteNumber(weatherData.longitude)) return null;
+  return {
+    latitude: Number(weatherData.latitude),
+    longitude: Number(weatherData.longitude),
+    name: weatherData.locationName || 'Shared location',
+    countryCode: weatherData.countryCode || ''
+  };
+}
+
+function captureSharedPlannerState(): SharedPlannerState {
+  return {
+    selectedActivity,
+    selectedEventKey,
+    selectedDuration,
+    checkpointModel,
+    startMode,
+    raceDayMode,
+    manualWeatherPanelOpen,
+    temperaturePreference,
+    plannedEffort,
+    forecastOnlyMode,
+    customDistance: String(customDistanceInput?.value || ''),
+    distanceUnit: String(distanceUnitSelect?.value || 'km'),
+    customDuration: String(customDurationInput?.value || ''),
+    durationUnit: String(durationUnitSelect?.value || 'h'),
+    average: String(averageInput?.value || ''),
+    averageUnit: String(averageUnitSelect?.value || ''),
+    manualWaterTemp: String(manualWaterTempInput?.value || ''),
+    waterBodyType: String(waterBodyTypeSelect?.value || 'auto'),
+    windExposure: String(windExposureSelect?.value || 'auto'),
+    poolType: String(poolTypeSelect?.value || 'indoor_heated'),
+    laterInputValue: String(laterInput?.value || ''),
+    raceDayStart: String(raceDayStartInput?.value || ''),
+    raceDayEnd: String(raceDayEndInput?.value || ''),
+    bestWindowStart: String(bestWindowStartInput?.value || ''),
+    bestWindowEnd: String(bestWindowEndInput?.value || ''),
+    bestWindowPriority: String(bestWindowPrioritySelect?.value || 'best_overall'),
+    bestWindowStep: String(bestWindowStepSelect?.value || 'auto'),
+    bestWindowMaxPrecip: String(bestWindowMaxPrecipInput?.value || ''),
+    bestWindowMaxGust: String(bestWindowMaxGustInput?.value || ''),
+    bestWindowMinTemp: String(bestWindowMinTempInput?.value || ''),
+    bestWindowMaxTemp: String(bestWindowMaxTempInput?.value || ''),
+    bestWindowMinWater: String(bestWindowMinWaterInput?.value || ''),
+    bestWindowFinishDaylight: !!bestWindowFinishDaylightInput?.checked,
+    customMultisportSelections: cloneMultisportSelections()
+  };
+}
+
+function buildSharedPlanPayload(): SharedPlanState {
+  return {
+    version: 1,
+    sharedAt: new Date().toISOString(),
+    place: getShareablePlace(),
+    planner: captureSharedPlannerState()
+  };
+}
+
+function buildSharedPlanUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('launch');
+  url.searchParams.delete('entry');
+  url.searchParams.set('share', base64UrlEncode(JSON.stringify(buildSharedPlanPayload())));
+  return url.toString();
+}
+
+function buildSharedPlanPackage(): SharedPlanPackage {
+  return {
+    version: 1,
+    kind: 'share_package',
+    exportedAt: new Date().toISOString(),
+    appVersion: APP_VERSION,
+    snapshot: capturePersistedAppState({ includeRoute: true, includeWeather: true })
+  };
+}
+
+function buildSharedPlanPackageText() {
+  return JSON.stringify(buildSharedPlanPackage(), null, 2);
+}
+
+function setShareStatus(message, tone = '') {
+  if (!shareStatus) return;
+  shareStatus.textContent = message || '';
+  shareStatus.hidden = !message;
+  shareStatus.classList.toggle('error', tone === 'error');
+}
+
+function parseSharedPlanFromUrl(): SharedPlanState | null {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('share');
+    if (!raw) return null;
+    const parsed = JSON.parse(base64UrlDecode(raw));
+    if (!parsed || Number(parsed.version) !== 1 || !parsed.planner) return null;
+    return parsed as SharedPlanState;
+  } catch {
+    return null;
+  }
+}
+
+function parseImportedShareSnapshot(rawText: string): PersistedAppState | null {
+  try {
+    const parsed = JSON.parse(String(rawText || ''));
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.kind === 'share_package' && Number(parsed.version) === 1 && parsed.snapshot && typeof parsed.snapshot === 'object') {
+      return parsed.snapshot as PersistedAppState;
+    }
+    if (Number((parsed as PersistedAppState).schemaVersion) === APP_STATE_SCHEMA_VERSION) {
+      return parsed as PersistedAppState;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshImportedShareWeather(snapshot: PersistedAppState) {
+  const cachedWeather = snapshot.weather?.data;
+  const latitude = Number(cachedWeather?.latitude);
+  const longitude = Number(cachedWeather?.longitude);
+  if (!isFiniteNumber(latitude) || !isFiniteNumber(longitude) || isAppOffline()) return false;
+  try {
+    await fetchWeatherFromResult({
+      latitude,
+      longitude,
+      name: String(cachedWeather?.locationName || snapshot.inputValue || 'Imported location'),
+      admin1: '',
+      country: '',
+      country_code: String(cachedWeather?.countryCode || '')
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function applyImportedShareSnapshot(snapshot: PersistedAppState, sourceLabel = 'Imported share package') {
+  if (!snapshot || Number(snapshot.schemaVersion) !== APP_STATE_SCHEMA_VERSION) {
+    throw new Error('That JSON package does not match the current Forecast Fit share format.');
+  }
+  performClearAllTool();
+  const restored = restorePersistedAppState(snapshot);
+  if (!restored) {
+    throw new Error('That JSON package could not be restored.');
+  }
+  let refreshedWeather = false;
+  if (!weatherData) refreshedWeather = await refreshImportedShareWeather(snapshot);
+  schedulePersistedAppStateSave();
+  const routeSummary = snapshot.route ? ' Route data was included.' : ' No route data was included.';
+  const weatherSummary = refreshedWeather
+    ? ' Fresh weather was reloaded for the imported location.'
+    : (weatherData ? ' Saved weather/state was restored.' : ' Weather was not available from the package.');
+  setShareStatus(`${sourceLabel} loaded.${routeSummary}${weatherSummary}`);
+}
+
 function getStartupEntryIntent(): EntryIntent | null {
   return parseEntryIntentFromUrl() || readStoredEntryIntent();
 }
@@ -4164,6 +4402,7 @@ function getStartupEntryIntent(): EntryIntent | null {
 async function applyStartupEntryIntent() {
   if (startupEntryIntentApplied) return;
   startupEntryIntentApplied = true;
+  if (sharedPlanStateApplied || parseSharedPlanFromUrl()) return;
 
   const intent = getStartupEntryIntent();
   if (!intent) return;
@@ -4218,6 +4457,33 @@ function hideError() {
   document.getElementById('error-msg').style.display = 'none';
 }
 
+function isAppOffline() {
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
+function getConnectivityStatusText() {
+  if (!isAppOffline()) return '';
+  const savedAt = getWeatherDataProvenance(weatherData)?.savedAt || weatherRefreshStatus.lastSuccessAt || '';
+  const savedLabel = formatRefreshStatusDateTime(savedAt);
+  if (getWeatherDataProvenance(weatherData)?.kind === 'cached_stale') {
+    return savedLabel
+      ? `Offline mode: showing saved forecast from ${savedLabel}. Planner state, cached route data, and export still work; fresh search, current location, Strava, alerts, and weather refresh need a connection.`
+      : 'Offline mode: showing saved forecast. Planner state, cached route data, and export still work; fresh search, current location, Strava, alerts, and weather refresh need a connection.';
+  }
+  if (weatherData || routeState?.points?.length || selectedActivity) {
+    return 'Offline mode: current planner state, cached route data, and export still work. Fresh search, current location, Strava, alerts, and weather refresh need a connection.';
+  }
+  return 'Offline mode: saved planner sessions and exported plans can still be used, but fresh location search, current location, route imports, Strava, and weather data need a connection.';
+}
+
+function updateConnectivityStatusUi() {
+  if (!connectivityStatus) return;
+  const nextText = getConnectivityStatusText();
+  connectivityStatus.textContent = nextText;
+  connectivityStatus.hidden = !nextText;
+  connectivityStatus.classList.toggle('offline', isAppOffline());
+}
+
 function formatRefreshStatusDateTime(value) {
   if (!value) return '';
   const date = new Date(value);
@@ -4226,6 +4492,10 @@ function formatRefreshStatusDateTime(value) {
 }
 
 function getWeatherRefreshStatusText() {
+  if (isAppOffline() && getWeatherDataProvenance(weatherData)?.kind === 'cached_stale') {
+    const savedAt = formatRefreshStatusDateTime(getWeatherDataProvenance(weatherData)?.savedAt || weatherRefreshStatus.lastSuccessAt);
+    return savedAt ? `Offline mode · showing saved forecast from ${savedAt}.` : 'Offline mode · showing saved forecast.';
+  }
   if (weatherRefreshStatus.state === 'loading') {
     return weatherRefreshStatus.detail || 'Refreshing weatherâ€¦';
   }
@@ -4257,6 +4527,7 @@ function updateWeatherRefreshStatusUi() {
     node.classList.toggle('loading', weatherRefreshStatus.state === 'loading');
     node.classList.toggle('error', weatherRefreshStatus.state === 'error');
   });
+  updateConnectivityStatusUi();
 }
 
 function setWeatherRefreshStatus(patch) {
@@ -4579,9 +4850,11 @@ function restorePersistedAppState(snapshot: PersistedAppState | null = null) {
   }
 
   const savedAtMs = Date.parse(String(snapshot.weather?.savedAt || ''));
-  if (snapshot.weather?.data && Number.isFinite(savedAtMs) && (Date.now() - savedAtMs) <= APP_STATE_MAX_WEATHER_AGE_MS) {
+  const weatherAgeMs = Number.isFinite(savedAtMs) ? (Date.now() - savedAtMs) : Infinity;
+  const restoreStaleWeatherOffline = !!(snapshot.weather?.data && Number.isFinite(savedAtMs) && weatherAgeMs > APP_STATE_MAX_WEATHER_AGE_MS && isAppOffline());
+  if (snapshot.weather?.data && Number.isFinite(savedAtMs) && (weatherAgeMs <= APP_STATE_MAX_WEATHER_AGE_MS || restoreStaleWeatherOffline)) {
     weatherData = setWeatherDataProvenance(snapshot.weather.data, {
-      kind: 'cached',
+      kind: restoreStaleWeatherOffline ? 'cached_stale' : 'cached',
       savedAt: snapshot.weather.savedAt,
       restoredAt: new Date().toISOString()
     });
@@ -4592,6 +4865,7 @@ function restorePersistedAppState(snapshot: PersistedAppState | null = null) {
       lastSuccessAt: snapshot.weather.savedAt
     });
     persistenceMeta.restoredWeatherFromCache = true;
+    persistenceMeta.restoredStaleWeatherOffline = restoreStaleWeatherOffline;
   }
 
   persistenceMeta = {
@@ -4629,6 +4903,90 @@ function formatSavedSessionSummary(snapshot: PersistedAppState | null) {
     : 'A saved planner session is available on this device. Resume it or start with a blank planner.';
 }
 
+function applySharedPlannerState(sharedPlanner) {
+  if (!sharedPlanner || typeof sharedPlanner !== 'object') return;
+  selectedActivity = typeof sharedPlanner.selectedActivity === 'string' ? sharedPlanner.selectedActivity : null;
+  selectedEventKey = typeof sharedPlanner.selectedEventKey === 'string' ? sharedPlanner.selectedEventKey : null;
+  selectedDuration = typeof sharedPlanner.selectedDuration === 'string' ? sharedPlanner.selectedDuration : 'h1';
+  checkpointModel = sharedPlanner.checkpointModel === 'old' ? 'old' : 'smart';
+  startMode = ['now', 'later', 'best'].includes(sharedPlanner.startMode) ? sharedPlanner.startMode : 'now';
+  raceDayMode = !!sharedPlanner.raceDayMode;
+  manualWeatherPanelOpen = !!sharedPlanner.manualWeatherPanelOpen;
+  temperaturePreference = Number.isFinite(Number(sharedPlanner.temperaturePreference)) ? Number(sharedPlanner.temperaturePreference) : 0;
+  plannedEffort = typeof sharedPlanner.plannedEffort === 'string' ? sharedPlanner.plannedEffort : 'steady';
+  forecastOnlyMode = !!sharedPlanner.forecastOnlyMode;
+
+  if (customDistanceInput) customDistanceInput.value = String(sharedPlanner.customDistance || '');
+  if (distanceUnitSelect) distanceUnitSelect.value = String(sharedPlanner.distanceUnit || 'km');
+  if (customDurationInput) customDurationInput.value = String(sharedPlanner.customDuration || '');
+  if (durationUnitSelect) durationUnitSelect.value = String(sharedPlanner.durationUnit || 'h');
+  if (averageInput) averageInput.value = String(sharedPlanner.average || '');
+  if (averageUnitSelect) averageUnitSelect.value = String(sharedPlanner.averageUnit || averageUnitSelect.value || '');
+  if (manualWaterTempInput) manualWaterTempInput.value = String(sharedPlanner.manualWaterTemp || '');
+  if (waterBodyTypeSelect) waterBodyTypeSelect.value = String(sharedPlanner.waterBodyType || 'auto');
+  if (windExposureSelect) windExposureSelect.value = String(sharedPlanner.windExposure || 'auto');
+  if (poolTypeSelect) poolTypeSelect.value = String(sharedPlanner.poolType || 'indoor_heated');
+  if (laterInput) laterInput.value = String(sharedPlanner.laterInputValue || '');
+  if (raceDayStartInput) raceDayStartInput.value = String(sharedPlanner.raceDayStart || '');
+  if (raceDayEndInput) raceDayEndInput.value = String(sharedPlanner.raceDayEnd || '');
+  if (bestWindowStartInput) bestWindowStartInput.value = String(sharedPlanner.bestWindowStart || '');
+  if (bestWindowEndInput) bestWindowEndInput.value = String(sharedPlanner.bestWindowEnd || '');
+  if (bestWindowPrioritySelect) bestWindowPrioritySelect.value = String(sharedPlanner.bestWindowPriority || 'best_overall');
+  if (bestWindowStepSelect) bestWindowStepSelect.value = String(sharedPlanner.bestWindowStep || 'auto');
+  if (bestWindowMaxPrecipInput) bestWindowMaxPrecipInput.value = String(sharedPlanner.bestWindowMaxPrecip || '');
+  if (bestWindowMaxGustInput) bestWindowMaxGustInput.value = String(sharedPlanner.bestWindowMaxGust || '');
+  if (bestWindowMinTempInput) bestWindowMinTempInput.value = String(sharedPlanner.bestWindowMinTemp || '');
+  if (bestWindowMaxTempInput) bestWindowMaxTempInput.value = String(sharedPlanner.bestWindowMaxTemp || '');
+  if (bestWindowMinWaterInput) bestWindowMinWaterInput.value = String(sharedPlanner.bestWindowMinWater || '');
+  if (bestWindowFinishDaylightInput) bestWindowFinishDaylightInput.checked = !!sharedPlanner.bestWindowFinishDaylight;
+  customMultisportSelections = cloneMultisportSelections(sharedPlanner.customMultisportSelections);
+
+  setSelectedActivityButton(selectedActivity);
+  renderCustomControlOptions(true);
+  updateRaceDayModeUi();
+  updateManualWeatherToggleUi();
+  updateManualWeatherStatus();
+  updateCheckpointModelUi();
+  updateForecastOnlyModeUi();
+  renderPlannerState();
+}
+
+async function applySharedPlanFromUrl() {
+  if (sharedPlanStateApplied) return false;
+  const shared = parseSharedPlanFromUrl();
+  if (!shared) return false;
+  sharedPlanStateApplied = true;
+  pendingStartupSnapshot = null;
+  closeStartupSessionPrompt();
+  clearStoredEntryIntent();
+  clearRoute();
+  input.value = shared.place?.name || '';
+  applySharedPlannerState(shared.planner);
+
+  if (!shared.place || !isFiniteNumber(shared.place.latitude) || !isFiniteNumber(shared.place.longitude)) {
+    setShareStatus('Shared planner settings loaded. Uploaded routes and imported provider routes stay local-only, so no route data was included in this link.');
+    if (!weatherData) refreshIndoorAdviceIfNeeded();
+    return true;
+  }
+
+  try {
+    await fetchWeatherFromResult({
+      latitude: Number(shared.place.latitude),
+      longitude: Number(shared.place.longitude),
+      name: shared.place.name || 'Shared location',
+      admin1: '',
+      country: '',
+      country_code: shared.place.countryCode || ''
+    });
+    applySharedPlannerState(shared.planner);
+    setShareStatus('Shared planner link loaded. Route files and imported provider routes are intentionally excluded from share links to keep size, privacy, and provider permissions under control.');
+  } catch (error) {
+    applySharedPlannerState(shared.planner);
+    setShareStatus(error instanceof Error ? `Shared planner settings loaded, but the weather refresh failed: ${error.message}` : 'Shared planner settings loaded, but the weather refresh failed.', 'error');
+  }
+  return true;
+}
+
 function openStartupSessionPrompt(snapshot: PersistedAppState) {
   pendingStartupSnapshot = snapshot;
   if (startupSessionSummary) startupSessionSummary.textContent = formatSavedSessionSummary(snapshot);
@@ -4657,6 +5015,7 @@ function startFreshSession() {
   pendingStartupSnapshot = null;
   closeStartupSessionPrompt();
   clearPersistedAppState();
+  setShareStatus('');
   persistenceMeta = {
     ...persistenceMeta,
     lastSavedAt: '',
@@ -4664,12 +5023,15 @@ function startFreshSession() {
     routePersisted: false,
     weatherPersisted: false,
     restoredWeatherFromCache: false,
+    restoredStaleWeatherOffline: false,
     restoredRouteFromCache: false,
     lastSaveError: ''
   };
+  updateConnectivityStatusUi();
 }
 
 function initializeStartupState() {
+  if (parseSharedPlanFromUrl()) return;
   const snapshot = readPersistedAppState();
   const startupIntent = getStartupEntryIntent();
   if (snapshot && !startupIntent) {
@@ -4771,6 +5133,189 @@ function triggerDiagnosticsExport() {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function openSharePanel() {
+  if (!shareOverlay) return;
+  shareOverlay.hidden = false;
+  document.body.classList.add('helper-open');
+  shareCloseBtn?.focus({ preventScroll: true });
+}
+
+function closeSharePanel() {
+  if (!shareOverlay) return;
+  shareOverlay.hidden = true;
+  document.body.classList.remove('helper-open');
+}
+
+async function triggerSharePlan() {
+  if (!selectedActivity && !weatherData && !resultInner?.innerHTML?.trim()) {
+    showError('Build a plan first, then share it.');
+    return;
+  }
+  const shareUrl = buildSharedPlanUrl();
+  const summary = getShareablePlace()
+    ? 'Shared link copied. It includes planner state plus a re-fetchable location, but keeps uploaded routes, imported provider routes, and raw weather data local-only.'
+    : 'Shared link copied. It includes planner state only; routes and provider-import data stay local-only and are not included.';
+  hideError();
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: 'Forecast Fit plan',
+        text: 'Forecast Fit shared planner link',
+        url: shareUrl
+      });
+      setShareStatus(summary);
+      return;
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    setShareStatus(summary);
+  } catch {
+    window.prompt('Copy this Forecast Fit share link:', shareUrl);
+    setShareStatus('Share link generated. It was opened in a copy prompt because clipboard access was not available.');
+  }
+}
+
+function triggerSharePackageExport() {
+  if (!selectedActivity && !weatherData && !routeState?.points?.length && !resultInner?.innerHTML?.trim()) {
+    showError('Build a plan first, then export its share JSON.');
+    return;
+  }
+  hideError();
+  const text = buildSharedPlanPackageText();
+  if (shareParamsInput) shareParamsInput.value = text;
+  const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `forecast-fit-share-${new Date().toISOString().replace(/[:]/g, '-').slice(0, 19)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setShareStatus(routeState?.points?.length
+    ? 'Share JSON exported. It can include planner state, route data, and any still-usable saved weather; the same JSON was also placed in the sharing panel for copy/paste.'
+    : 'Share JSON exported. It can include planner state and any still-usable saved weather; the same JSON was also placed in the sharing panel for copy/paste.');
+}
+
+function triggerSharePackageImportPicker() {
+  shareImportFileInput?.click();
+}
+
+async function applySharePackageText(rawText: string, sourceLabel = 'Imported share package') {
+  const snapshot = parseImportedShareSnapshot(rawText);
+  if (!snapshot) {
+    throw new Error('That text is not a valid Forecast Fit share JSON package.');
+  }
+  await applyImportedShareSnapshot(snapshot, sourceLabel);
+  closeSharePanel();
+}
+
+async function triggerSharePackageJsonImport() {
+  try {
+    await applySharePackageText(String(shareParamsInput?.value || '').trim(), 'Pasted share package');
+  } catch (error) {
+    showError(error instanceof Error ? error.message : 'Unable to import that share JSON.');
+    setShareStatus(error instanceof Error ? error.message : 'Unable to import that share JSON.', 'error');
+  }
+}
+
+async function handleSharePackageFileInput(event: Event) {
+  const inputNode = event.target as HTMLInputElement | null;
+  const file = inputNode?.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    if (shareParamsInput) shareParamsInput.value = text;
+    await applySharePackageText(text, `Imported ${file.name}`);
+  } catch (error) {
+    showError(error instanceof Error ? error.message : 'Unable to import that JSON file.');
+    setShareStatus(error instanceof Error ? error.message : 'Unable to import that JSON file.', 'error');
+  } finally {
+    if (inputNode) inputNode.value = '';
+  }
+}
+
+function triggerPlanExport() {
+  if (!resultInner?.innerHTML?.trim()) {
+    showError('Load a forecast or plan first, then export it.');
+    return;
+  }
+  const exportWindow = window.open('', '_blank', 'noopener');
+  if (!exportWindow) {
+    showError('The browser blocked the export window. Allow pop-ups for this site and try again.');
+    return;
+  }
+  hideError();
+  const activityLabel = selectedActivity ? activityLabels[selectedActivity] || selectedActivity : 'Activity not selected';
+  const plannerDiagnostics = buildPlannerSourceDiagnostics();
+  const routeSummaryText = routeState?.points?.length ? (routeSummary?.textContent || '') : '';
+  const connectivityText = getConnectivityStatusText();
+  const exportedAt = formatRefreshStatusDateTime(new Date().toISOString());
+  const exportMarkup = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forecast Fit plan export</title>
+<style>
+  :root { color-scheme: light; --bg:#f6f3eb; --surface:#fffdf8; --ink:#213547; --soft:#5a6978; --line:#d7d0c2; --accent:#3b4d65; --warn:#9d6b24; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px; background:var(--bg); color:var(--ink); font:16px/1.5 "DM Sans", system-ui, sans-serif; }
+  .shell { max-width:980px; margin:0 auto; }
+  .toolbar { display:flex; gap:12px; flex-wrap:wrap; margin:0 0 18px; }
+  .toolbar button { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:10px 14px; font:600 14px/1 "DM Sans", system-ui, sans-serif; cursor:pointer; }
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; margin:0 0 16px; }
+  h1 { margin:0 0 6px; font-size:2rem; }
+  h2 { margin:0 0 10px; font-size:1.05rem; }
+  p { margin:0 0 10px; }
+  .muted { color:var(--soft); }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:5px 10px; font:12px/1.3 "DM Mono", monospace; color:var(--soft); background:#fff; }
+  .offline { color:var(--warn); }
+  .export-content button, .export-content [role="button"], .export-content input, .export-content select { display:none !important; }
+  .export-content .helper-overlay, .export-content .wizard-actions-inline, .export-content .summary-action-row .wizard-actions-inline { display:none !important; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .toolbar { display:none !important; }
+    .panel { border:none; border-radius:0; padding:0; margin:0 0 14px; }
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="toolbar">
+      <button type="button" onclick="window.print()">Print / Save PDF</button>
+      <button type="button" onclick="window.close()">Close</button>
+    </div>
+    <section class="panel">
+      <h1>Forecast Fit plan export</h1>
+      <p class="muted">Exported ${escapeHtml(exportedAt || new Date().toLocaleString())} · v${escapeHtml(APP_VERSION)}</p>
+      ${connectivityText ? `<p class="offline"><strong>${escapeHtml(connectivityText)}</strong></p>` : ''}
+      <div class="chips">
+        <span class="chip">${escapeHtml(activityLabel)}</span>
+        ${weatherData?.locationName ? `<span class="chip">${escapeHtml(weatherData.locationName)}</span>` : ''}
+        ${plannerDiagnostics.distance?.label ? `<span class="chip">${escapeHtml(plannerDiagnostics.distance.label)}</span>` : ''}
+        ${plannerDiagnostics.duration?.label ? `<span class="chip">${escapeHtml(plannerDiagnostics.duration.label)}</span>` : ''}
+        ${routeSummaryText ? `<span class="chip">${escapeHtml(routeSummaryText)}</span>` : ''}
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Current plan</h2>
+      <div class="export-content">${resultInner.innerHTML}</div>
+    </section>
+  </div>
+</body>
+</html>`;
+  exportWindow.document.open();
+  exportWindow.document.write(exportMarkup);
+  exportWindow.document.close();
 }
 
 function showResultLoading() {
@@ -9020,6 +9565,7 @@ function getWeatherProvenanceSummary(data = weatherData) {
   const stamp = provenance?.savedAt || weatherRefreshStatus.lastSuccessAt || '';
   const formatted = formatRefreshStatusDateTime(stamp);
   if (provenance?.kind === 'cached') return formatted ? `cached forecast Â· ${formatted}` : 'cached forecast';
+  if (provenance?.kind === 'cached_stale') return formatted ? `saved offline forecast Â· ${formatted}` : 'saved offline forecast';
   return formatted ? `live forecast Â· ${formatted}` : 'live forecast';
 }
 
@@ -9705,6 +10251,16 @@ changelogOverlay?.addEventListener('click', event => {
   }
 });
 
+shareOverlay?.addEventListener('click', event => {
+  if (!(event.target instanceof Element)) return;
+  if (event.target.closest('[data-action="closeSharePanel"]')) closeSharePanel();
+});
+
+shareCloseBtn?.addEventListener('click', closeSharePanel);
+shareImportFileInput?.addEventListener('change', event => {
+  void handleSharePackageFileInput(event);
+});
+
 function jumpToQuickStartTarget(targetId) {
   const target = document.getElementById(targetId);
   closeQuickStartGuide();
@@ -9734,6 +10290,10 @@ document.addEventListener('keydown', event => {
   }
   if (clearAllOverlay && !clearAllOverlay.hidden) {
     closeClearAllConfirm();
+    return;
+  }
+  if (shareOverlay && !shareOverlay.hidden) {
+    closeSharePanel();
     return;
   }
   if (stravaPickerOverlay && !stravaPickerOverlay.hidden) {
@@ -10875,6 +11435,30 @@ function bindDomActions() {
       case 'exportDiagnostics':
         triggerDiagnosticsExport();
         break;
+      case 'openSharePanel':
+        openSharePanel();
+        break;
+      case 'closeSharePanel':
+        closeSharePanel();
+        break;
+      case 'sharePlan':
+        void triggerSharePlan();
+        break;
+      case 'shareCopyLink':
+        void triggerSharePlan();
+        break;
+      case 'exportSharePackage':
+        triggerSharePackageExport();
+        break;
+      case 'importSharePackageFile':
+        triggerSharePackageImportPicker();
+        break;
+      case 'applySharePackageJson':
+        void triggerSharePackageJsonImport();
+        break;
+      case 'exportPlan':
+        triggerPlanExport();
+        break;
       case 'useCurrentLocation':
         useCurrentLocation();
         break;
@@ -10965,9 +11549,14 @@ stravaPickerUrlInput?.addEventListener('keydown', (event) => {
   void handleImportStravaUrl();
 });
 
+window.addEventListener('online', updateConnectivityStatusUi);
+window.addEventListener('offline', updateConnectivityStatusUi);
+
 initializeStartupState();
 renderStravaConnectionStateEnhanced();
 updateRouteHeaderActions();
 bindDomActions();
+void applySharedPlanFromUrl();
+updateConnectivityStatusUi();
 void applyStartupEntryIntent();
 

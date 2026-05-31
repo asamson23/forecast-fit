@@ -35,21 +35,25 @@
   <h1>Forecast <span>Fit</span></h1>
   <p>Weather-aware outfit and route planning, without the fluff</p>
   <div class="header-actions">
-    <button class="mode-toggle-btn" type="button" id="forecast-only-btn" data-action="activateForecastOnlyMode">Forecast only</button>
-    <button class="mode-toggle-btn helper-launch-btn" type="button" id="quick-start-btn" data-action="openQuickStartGuide">Quick start</button>
+    <button class="mode-toggle-btn" type="button" id="forecast-only-btn" data-action="activateForecastOnlyMode" aria-controls="planner-card map-card">Forecast only</button>
+    <button class="mode-toggle-btn" type="button" id="share-btn" data-action="openSharePanel" aria-haspopup="dialog" aria-controls="share-overlay">Share</button>
+    <button class="mode-toggle-btn helper-launch-btn" type="button" id="quick-start-btn" data-action="openQuickStartGuide" aria-haspopup="dialog" aria-controls="quick-start-overlay">Quick start</button>
   </div>
   <p class="header-actions-legend">
     <span><strong>Forecast only</strong>: weather, warnings, and timing without the full planner.</span>
+    <span><strong>Share</strong>: copy a lightweight link, or export/import a richer JSON package that can include route state.</span>
     <span><strong>Quick start</strong>: a guided summary of the main sections and what to do next.</span>
   </p>
+  <p class="status-line compact" id="share-status" hidden role="status" aria-live="polite"></p>
 </header>
 
-<div class="card" id="location-card" style="animation-delay:0.05s">
+<main id="main-content">
+<div class="card" id="location-card" style="animation-delay:0.05s" role="region" aria-labelledby="location-card-title">
   <div class="section-label-row">
-    <label>Location & route</label>
+    <label id="location-card-title">Location & route</label>
     <div class="section-actions-row">
       <span class="inline-summary" id="location-card-summary" hidden></span>
-      <button class="mode-toggle-btn quiet-btn" type="button" id="location-card-toggle-btn" hidden data-action="toggleLocationCardCollapse">Collapse</button>
+      <button class="mode-toggle-btn quiet-btn" type="button" id="location-card-toggle-btn" hidden data-action="toggleLocationCardCollapse" aria-controls="location-card-body">Collapse</button>
       <button class="mode-toggle-btn" type="button" id="refresh-weather-btn" data-action="forceRefreshWeather" disabled>Refresh weather</button>
       <button class="reset-btn" type="button" data-action="resetLocationSection">Reset section</button>
       <button class="mode-toggle-btn clear-btn" type="button" data-action="clearAllTool">Clear all</button>
@@ -58,20 +62,20 @@
   <div id="location-card-body">
     <div class="location-route-choice-grid">
       <div class="location-choice-panel">
-        <label class="sub-label">Location</label>
+        <label class="sub-label" for="location-input">Location</label>
         <div class="input-row location-row">
           <div class="input-wrapper">
-            <input type="text" id="location-input" placeholder="Search for a city" autocomplete="off">
+            <input type="text" id="location-input" placeholder="Search for a city" autocomplete="off" aria-describedby="location-input-note error-msg connectivity-status">
           </div>
           <button class="btn btn-secondary inline-location-btn" id="current-location-btn" type="button" data-action="useCurrentLocation" aria-label="Use current location" title="Use current location"><span class="locate-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></button>
         </div>
-        <p class="field-note compact">Search for a city only. Pick a suggestion or press Enter.</p>
+        <p class="field-note compact" id="location-input-note">Search for a city only. Pick a suggestion or press Enter.</p>
       </div>
       <div class="location-choice-or" id="route-choice-divider" aria-hidden="true">OR</div>
       <div class="location-choice-panel" id="route-file-panel">
-        <label class="sub-label">Route file</label>
+        <label class="sub-label" for="route-file-input">Route file</label>
         <div class="route-file-row">
-          <input type="file" id="route-file-input" accept=".gpx,.geojson,application/gpx+xml,application/geo+json">
+          <input type="file" id="route-file-input" accept=".gpx,.geojson,application/gpx+xml,application/geo+json" aria-describedby="route-status">
           <button class="reset-btn clear-btn" id="clear-route-btn" type="button" data-action="clearRoute" style="display:none">Remove route</button>
         </div>
         <p class="status-line compact" id="route-status">Optional GPX or GeoJSON only. If loaded, the app can sample route checkpoints automatically. Route distance always overrides presets; route duration also overrides it when the file contains time data.</p>
@@ -85,15 +89,16 @@
         <p class="status-line compact" id="strava-status">Import a saved route or recent activity.</p>
       </div>
     </div>
-    <p id="error-msg"></p>
+    <p id="error-msg" role="alert" aria-live="assertive"></p>
+    <p class="status-line compact connectivity-status" id="connectivity-status" hidden role="status" aria-live="polite"></p>
   </div>
 </div>
 
-<div class="card" id="planner-card" style="animation-delay:0.1s">
+<div class="card" id="planner-card" style="animation-delay:0.1s" role="region" aria-labelledby="planner-card-title">
   <div class="section-label-row planner-heading-row">
-    <label>Activity &amp; parameters</label>
+    <label id="planner-card-title">Activity &amp; parameters</label>
     <div class="section-actions-row">
-      <button class="mode-toggle-btn quiet-btn" type="button" id="planner-card-toggle-btn" data-action="togglePlannerCardCollapse">Collapse</button>
+      <button class="mode-toggle-btn quiet-btn" type="button" id="planner-card-toggle-btn" data-action="togglePlannerCardCollapse" aria-controls="planner-card-body">Collapse</button>
       <button class="reset-btn" type="button" data-action="resetActivitySection">Reset section</button>
     </div>
   </div>
@@ -105,14 +110,14 @@
     <div class="setup-grid">
     <div id="activity-setup-column">
       <div class="section-label-row" id="activity-section">
-        <label>Activity</label>
+        <label id="activity-section-title">Activity</label>
         <div class="section-actions-row">
           <button class="mode-toggle-btn" type="button" id="race-day-mode-btn" aria-pressed="false" data-action="toggleRaceDayMode">Race day mode</button>
         </div>
       </div>
-      <div class="activity-sections">
-        <div class="activity-section-group">
-          <div class="activity-group-title">Performance & multisport</div>
+      <div class="activity-sections" role="group" aria-labelledby="activity-section-title">
+        <div class="activity-section-group" role="group" aria-labelledby="activity-group-performance">
+          <div class="activity-group-title" id="activity-group-performance">Performance & multisport</div>
           <div class="activity-grid">
             <button class="activity-btn" data-activity="running" data-action="selectActivity">
               <span class="icon">🏃</span>
@@ -140,8 +145,8 @@
             </button>
           </div>
         </div>
-        <div class="activity-section-group">
-          <div class="activity-group-title">Indoor training</div>
+        <div class="activity-section-group" role="group" aria-labelledby="activity-group-indoor">
+          <div class="activity-group-title" id="activity-group-indoor">Indoor training</div>
           <div class="activity-grid">
             <button class="activity-btn" data-activity="gym" data-action="selectActivity">
               <span class="icon">🏋️</span>
@@ -165,8 +170,8 @@
             </button>
           </div>
         </div>
-        <div class="activity-section-group">
-          <div class="activity-group-title">Outdoor swimming</div>
+        <div class="activity-section-group" role="group" aria-labelledby="activity-group-swim">
+          <div class="activity-group-title" id="activity-group-swim">Outdoor swimming</div>
           <div class="activity-grid">
             <button class="activity-btn" data-activity="swimming_open" data-action="selectActivity">
               <span class="icon">🌊</span>
@@ -182,8 +187,8 @@
             </button>
           </div>
         </div>
-        <div class="activity-section-group">
-          <div class="activity-group-title">Paddling & board sports</div>
+        <div class="activity-section-group" role="group" aria-labelledby="activity-group-paddle">
+          <div class="activity-group-title" id="activity-group-paddle">Paddling & board sports</div>
           <div class="activity-grid">
             <button class="activity-btn" data-activity="sup" data-action="selectActivity">
               <span class="icon">🏄</span>
@@ -203,8 +208,8 @@
             </button>
           </div>
         </div>
-        <div class="activity-section-group">
-          <div class="activity-group-title">Trail & mountain</div>
+        <div class="activity-section-group" role="group" aria-labelledby="activity-group-trail">
+          <div class="activity-group-title" id="activity-group-trail">Trail & mountain</div>
           <div class="activity-grid">
             <button class="activity-btn" data-activity="hiking" data-action="selectActivity">
               <span class="icon">🥾</span>
@@ -240,8 +245,8 @@
             </button>
           </div>
         </div>
-        <div class="activity-section-group">
-          <div class="activity-group-title">Hunting & fishing</div>
+        <div class="activity-section-group" role="group" aria-labelledby="activity-group-hunt">
+          <div class="activity-group-title" id="activity-group-hunt">Hunting & fishing</div>
           <div class="activity-grid">
             <button class="activity-btn" data-activity="fishing" data-action="selectActivity">
               <span class="icon">🎣</span>
@@ -253,8 +258,8 @@
             </button>
           </div>
         </div>
-        <div class="activity-section-group">
-          <div class="activity-group-title">Outdoor & travel</div>
+        <div class="activity-section-group" role="group" aria-labelledby="activity-group-outdoor">
+          <div class="activity-group-title" id="activity-group-outdoor">Outdoor & travel</div>
           <div class="activity-grid">
             <button class="activity-btn" data-activity="walk" data-action="selectActivity">
               <span class="icon">🚶</span>
@@ -278,11 +283,11 @@
 
       <div id="custom-multisport-section" class="custom-multisport-panel" hidden>
         <div class="section-label-row">
-          <label>Custom multisport</label>
+          <label id="custom-multisport-title">Custom multisport</label>
           <span class="comfort-current-label" id="custom-multisport-summary">Preset legs</span>
         </div>
         <p class="status-line compact" id="custom-multisport-status">Choose the sports/legs that are actually part of the session. This influences the checklist and water-temperature relevance.</p>
-        <div class="pick-pill-list" id="custom-multisport-leg-list"></div>
+        <div class="pick-pill-list" id="custom-multisport-leg-list" role="group" aria-labelledby="custom-multisport-title" aria-describedby="custom-multisport-status"></div>
       </div>
 
       <div id="event-distance-section" class="planner-subsection" data-planner-subsection="eventDistance" data-planner-subsection-title="Event and distance" style="margin-top:18px">
@@ -294,10 +299,10 @@
           <p class="event-summary" id="event-summary">Pick an activity to load the usual event-distance presets.</p>
           <div class="custom-grid best-window-range-grid">
             <div>
-              <label class="sub-label">Custom distance</label>
+              <label class="sub-label" for="custom-distance-input">Custom distance</label>
               <div class="inline-fields">
-                <input type="number" id="custom-distance-input" min="0" step="0.1" placeholder="Optional">
-                <select id="distance-unit-select"></select>
+                <input type="number" id="custom-distance-input" min="0" step="0.1" placeholder="Optional" aria-describedby="distance-status">
+                <select id="distance-unit-select" aria-label="Distance unit" aria-describedby="distance-status"></select>
               </div>
               <p class="status-line compact" id="distance-status">Preset distance is used.</p>
             </div>
@@ -317,10 +322,10 @@
       </div>
       <div class="custom-grid">
         <div>
-          <label class="sub-label">Custom duration</label>
+          <label class="sub-label" for="custom-duration-input">Custom duration</label>
           <div class="inline-fields">
-            <input type="text" id="custom-duration-input" placeholder="Optional · 5:38 or 5.5">
-            <select id="duration-unit-select">
+            <input type="text" id="custom-duration-input" placeholder="Optional · 5:38 or 5.5" aria-describedby="duration-status">
+            <select id="duration-unit-select" aria-label="Duration unit" aria-describedby="duration-status">
               <option value="min">minutes</option>
               <option value="h" selected>hours</option>
               <option value="d">days</option>
@@ -329,10 +334,10 @@
           <p class="status-line compact" id="duration-status">Preset duration is used.</p>
         </div>
         <div>
-          <label class="sub-label" id="average-label">Average pace / speed</label>
+          <label class="sub-label" id="average-label" for="average-input">Average pace / speed</label>
           <div class="inline-fields">
-            <input type="text" id="average-input" placeholder="Optional">
-            <select id="average-unit-select"></select>
+            <input type="text" id="average-input" placeholder="Optional" aria-describedby="average-status">
+            <select id="average-unit-select" aria-label="Average pace or speed unit" aria-describedby="average-status"></select>
           </div>
           <p class="status-line compact" id="average-status">Optional. Used when it makes sense.</p>
         </div>
@@ -402,32 +407,32 @@
   </div>
 
   <div id="start-time-section" style="margin-top:18px">
-    <label>Start time</label>
-    <div class="toggle-row start-mode-row">
-      <button class="toggle-btn active" data-start-mode="now" data-action="selectStartMode">
+    <label id="start-time-title">Start time</label>
+    <div class="toggle-row start-mode-row" role="group" aria-labelledby="start-time-title">
+      <button class="toggle-btn active" type="button" data-start-mode="now" data-action="selectStartMode">
         <div class="label">Now</div>
         <div class="sublabel">Use current conditions + next hours</div>
       </button>
-      <button class="toggle-btn" data-start-mode="later" data-action="selectStartMode">
+      <button class="toggle-btn" type="button" data-start-mode="later" data-action="selectStartMode">
         <div class="label">Later</div>
         <div class="sublabel">Pick a start date and time within the forecast range</div>
       </button>
-      <button class="toggle-btn" data-start-mode="best" data-action="selectStartMode">
+      <button class="toggle-btn" type="button" data-start-mode="best" data-action="selectStartMode">
         <div class="label">Best window</div>
         <div class="sublabel">Find the strongest start window in a chosen range</div>
       </button>
     </div>
     <div class="time-box" id="later-box">
-      <input type="text" id="later-input" placeholder="Pick a start date and time" disabled readonly>
+      <input type="text" id="later-input" placeholder="Pick a start date and time" disabled readonly aria-label="Planned start date and time" aria-describedby="later-status">
       <div class="race-day-timing-panel" id="race-day-timing-panel" hidden>
         <div class="custom-grid race-day-timing-grid">
           <div>
-            <label class="sub-label">Day start</label>
-            <input type="text" id="race-day-start-input" placeholder="Pick the day start date and time" disabled readonly>
+            <label class="sub-label" for="race-day-start-input">Day start</label>
+            <input type="text" id="race-day-start-input" placeholder="Pick the day start date and time" disabled readonly aria-describedby="race-day-timing-status">
           </div>
           <div>
-            <label class="sub-label">Day end</label>
-            <input type="text" id="race-day-end-input" placeholder="Pick the day end date and time" disabled readonly>
+            <label class="sub-label" for="race-day-end-input">Day end</label>
+            <input type="text" id="race-day-end-input" placeholder="Pick the day end date and time" disabled readonly aria-describedby="race-day-timing-status">
           </div>
         </div>
         <p class="status-line compact" id="race-day-timing-status">Race day timing uses your planned duration to show the full day and event window.</p>
@@ -438,18 +443,18 @@
       <div class="best-window-panel">
         <div class="custom-grid">
           <div>
-            <label class="sub-label">Search range start</label>
-            <input type="text" id="best-window-start-input" placeholder="Pick a search start date and time" disabled readonly>
+            <label class="sub-label" for="best-window-start-input">Search range start</label>
+            <input type="text" id="best-window-start-input" placeholder="Pick a search start date and time" disabled readonly aria-describedby="best-window-status best-window-note">
           </div>
           <div>
-            <label class="sub-label">Search range end</label>
-            <input type="text" id="best-window-end-input" placeholder="Pick a search end date and time" disabled readonly>
+            <label class="sub-label" for="best-window-end-input">Search range end</label>
+            <input type="text" id="best-window-end-input" placeholder="Pick a search end date and time" disabled readonly aria-describedby="best-window-status best-window-note">
           </div>
         </div>
         <div class="custom-grid" style="margin-top:12px">
           <div>
-            <label class="sub-label">Priority preset</label>
-            <select id="best-window-priority-select" disabled>
+            <label class="sub-label" for="best-window-priority-select">Priority preset</label>
+            <select id="best-window-priority-select" disabled aria-describedby="best-window-note best-window-status">
               <option value="best_overall" selected>Best overall</option>
               <option value="driest">Driest</option>
               <option value="calmest">Calmest</option>
@@ -459,8 +464,8 @@
             </select>
           </div>
           <div>
-            <label class="sub-label">Step size</label>
-            <select id="best-window-step-select" disabled>
+            <label class="sub-label" for="best-window-step-select">Step size</label>
+            <select id="best-window-step-select" disabled aria-describedby="best-window-note best-window-status">
               <option value="auto" selected>Auto</option>
               <option value="15">15 min</option>
               <option value="30">30 min</option>
@@ -475,24 +480,24 @@
           <summary>Advanced limits</summary>
           <div class="custom-grid" style="margin-top:12px">
             <div>
-              <label class="sub-label">Max precip risk %</label>
-              <input type="number" id="best-window-max-precip-input" placeholder="Optional" min="0" max="100" step="5" disabled>
+              <label class="sub-label" for="best-window-max-precip-input">Max precip risk %</label>
+              <input type="number" id="best-window-max-precip-input" placeholder="Optional" min="0" max="100" step="5" disabled aria-describedby="best-window-status">
             </div>
             <div>
-              <label class="sub-label">Max gust km/h</label>
-              <input type="number" id="best-window-max-gust-input" placeholder="Optional" min="0" max="150" step="1" disabled>
+              <label class="sub-label" for="best-window-max-gust-input">Max gust km/h</label>
+              <input type="number" id="best-window-max-gust-input" placeholder="Optional" min="0" max="150" step="1" disabled aria-describedby="best-window-status">
             </div>
             <div>
-              <label class="sub-label">Min air temp °C</label>
-              <input type="number" id="best-window-min-temp-input" placeholder="Optional" step="0.5" disabled>
+              <label class="sub-label" for="best-window-min-temp-input">Min air temp °C</label>
+              <input type="number" id="best-window-min-temp-input" placeholder="Optional" step="0.5" disabled aria-describedby="best-window-status">
             </div>
             <div>
-              <label class="sub-label">Max air temp °C</label>
-              <input type="number" id="best-window-max-temp-input" placeholder="Optional" step="0.5" disabled>
+              <label class="sub-label" for="best-window-max-temp-input">Max air temp °C</label>
+              <input type="number" id="best-window-max-temp-input" placeholder="Optional" step="0.5" disabled aria-describedby="best-window-status">
             </div>
             <div>
-              <label class="sub-label">Min water temp °C</label>
-              <input type="number" id="best-window-min-water-input" placeholder="Optional" step="0.5" disabled>
+              <label class="sub-label" for="best-window-min-water-input">Min water temp °C</label>
+              <input type="number" id="best-window-min-water-input" placeholder="Optional" step="0.5" disabled aria-describedby="best-window-status">
             </div>
             <div>
               <label class="sub-label">Daylight guardrail</label>
@@ -518,14 +523,14 @@
     </div>
     <div data-planner-subsection-body hidden>
       <div class="planner-subsection-inline-actions">
-        <button class="mode-toggle-btn" type="button" id="manual-weather-toggle-btn" aria-pressed="false" data-action="toggleManualWeatherOverride">Show manual override</button>
+        <button class="mode-toggle-btn" type="button" id="manual-weather-toggle-btn" aria-pressed="false" aria-controls="manual-weather-panel" data-action="toggleManualWeatherOverride">Show manual override</button>
         <button class="reset-btn clear-btn" type="button" data-action="resetWaterModelInputs">Reset water settings</button>
       </div>
       <div class="water-controls-panel">
       <div class="water-model-grid">
         <div>
-          <label class="sub-label">Water body type</label>
-          <select id="water-body-type-select">
+          <label class="sub-label" for="water-body-type-select">Water body type</label>
+          <select id="water-body-type-select" aria-describedby="water-model-status">
             <option value="auto" selected>Auto / unknown</option>
             <option value="deep_lake">Deep lake</option>
             <option value="shallow_lake">Shallow lake</option>
@@ -537,8 +542,8 @@
           <p class="control-help">Use this to tell the fallback model how quickly the water usually warms or cools. Deep lakes lag more; shallow/sheltered water reacts faster.</p>
         </div>
         <div>
-          <label class="sub-label">Wind exposure</label>
-          <select id="wind-exposure-select">
+          <label class="sub-label" for="wind-exposure-select">Wind exposure</label>
+          <select id="wind-exposure-select" aria-describedby="water-model-status">
             <option value="auto" selected>Auto / neutral</option>
             <option value="neutral">Neutral / unknown</option>
             <option value="onshore">Mostly onshore</option>
@@ -548,8 +553,8 @@
           <p class="control-help">Onshore can push warmer surface water toward shore; offshore can pull colder water up or away. Leave neutral when you are not sure.</p>
         </div>
         <div>
-          <label class="sub-label">Pool type</label>
-          <select id="pool-type-select">
+          <label class="sub-label" for="pool-type-select">Pool type</label>
+          <select id="pool-type-select" aria-describedby="water-model-status">
             <option value="indoor_heated" selected>Indoor / heated</option>
             <option value="outdoor_heated">Outdoor / heated</option>
             <option value="outdoor_unheated">Outdoor / unheated</option>
@@ -562,9 +567,9 @@
       <p class="status-line compact" id="water-model-status">If no measured marine water temperature is available, the app can estimate a conservative fallback from recent air temperatures, broad latitude band, season, wind exposure, and water-body type.</p>
     </div>
       <div class="water-controls-panel custom-weather-panel" id="manual-weather-panel" hidden>
-      <label class="sub-label">Manual water temperature override</label>
+      <label class="sub-label" for="manual-water-temp-input">Manual water temperature override</label>
       <div class="inline-fields" style="grid-template-columns: minmax(0, 1fr);">
-        <input type="number" id="manual-water-temp-input" step="0.1" placeholder="Water temp °C">
+        <input type="number" id="manual-water-temp-input" step="0.1" placeholder="Water temp °C" aria-describedby="manual-weather-status">
       </div>
       <p class="status-line compact" id="manual-weather-status">Visible only when the toggle is open. Manual water temperature overrides fetched or estimated water data. Quick lookup:<span class="status-links"><a class="status-link" href="https://www.seatemperature.info/" target="_blank" rel="noopener noreferrer">seatemperature.info</a><a class="status-link" href="https://www.seatemperature.org/" target="_blank" rel="noopener noreferrer">seatemperature.org</a></span></p>
       </div>
@@ -592,21 +597,23 @@
   </div>
 </div>
 
-<div class="card" id="map-card">
-  <div class="block-title">Route <span class="route-title-actions"><button class="status-link route-title-action" id="route-open-source-btn" type="button" data-action="openRouteSource" hidden>Open in Strava</button><button class="status-link route-title-action" id="route-download-gpx-btn" type="button" data-action="downloadRouteGpx" hidden>Download GPX</button></span></div>
-  <div id="route-map"></div>
+<div class="card" id="map-card" role="region" aria-labelledby="map-card-title">
+  <div class="block-title" id="map-card-title">Route <span class="route-title-actions"><button class="status-link route-title-action" id="route-open-source-btn" type="button" data-action="openRouteSource" hidden>Open in Strava</button><button class="status-link route-title-action" id="route-download-gpx-btn" type="button" data-action="downloadRouteGpx" hidden>Download GPX</button></span></div>
+  <div id="route-map" role="img" aria-label="Route map preview"></div>
   <div id="route-elevation-profile" class="route-elevation-profile" aria-live="polite"></div>
-  <p class="status-line" id="route-summary">Load a route to see it on the map and sample checkpoint weather.</p>
+  <p class="status-line" id="route-summary" role="status" aria-live="polite">Load a route to see it on the map and sample checkpoint weather.</p>
 </div>
 
-<div class="card" id="result-card">
-  <div id="result-inner"></div>
+<div class="card" id="result-card" role="region" aria-labelledby="result-card-title">
+  <div class="block-title" id="result-card-title">Plan results</div>
+  <div id="result-inner" aria-live="polite"></div>
 </div>
+</main>
 
 <footer class="site-footer">
   <div class="attribution-card">
     <div class="block-title">Credits & attributions</div>
-    <p><strong>Forecast Fit</strong> <button class="version-link" type="button" data-action="openChangelog" aria-haspopup="dialog" aria-controls="changelog-overlay" aria-label="Open changelog for Forecast Fit version 12.4">v12.4</button> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong> · <button class="footer-link-btn" type="button" data-action="exportDiagnostics">Export diagnostics</button>.</p>
+    <p><strong>Forecast Fit</strong> <button class="version-link" type="button" data-action="openChangelog" aria-haspopup="dialog" aria-controls="changelog-overlay" aria-label="Open changelog for Forecast Fit version 12.5">v12.5</button> by <strong><a href="https://asamson.ca" target="_blank" rel="noopener noreferrer">Albert Samson</a></strong> · <button class="footer-link-btn" type="button" data-action="exportPlan">Export plan</button> · <button class="footer-link-btn" type="button" data-action="exportDiagnostics">Export diagnostics</button>.</p>
     <p>Implementation and iteration assistance: <strong>ChatGPT</strong> (including <strong>GPT-5.3-Codex</strong>) and <strong>Claude by Anthropic</strong>. This build does not use any live third-party AI integrations.</p>
     <p><strong>Libraries & assets:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://flatpickr.js.org/" target="_blank" rel="noopener noreferrer">Flatpickr</a>, <a href="https://stuk.github.io/jszip/" target="_blank" rel="noopener noreferrer">JSZip</a>, <a href="https://www.npmjs.com/package/country-flag-icons" target="_blank" rel="noopener noreferrer">country-flag-icons</a> for SVG flags, <a href="https://www.npmjs.com/package/@bybas/weather-icons" target="_blank" rel="noopener noreferrer">@bybas/weather-icons</a> for weather-condition icons, <a href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noopener noreferrer">Microsoft Fluent UI Emoji</a> / <a href="https://www.npmjs.com/package/fluentui-emoji" target="_blank" rel="noopener noreferrer">fluentui-emoji</a> modern SVG assets for selected emoji-style icon surfaces, and Google Fonts for DM Sans / DM Mono.</p>
     <p><strong>Maps & geocoding:</strong> <a href="https://carto.com/" target="_blank" rel="noopener noreferrer">CARTO</a> basemaps with <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> data, plus <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a> and <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> geocoding.</p>
@@ -616,9 +623,36 @@
 
 <div id="suggestions-portal"></div>
 
+<div id="share-overlay" class="helper-overlay" hidden>
+  <div class="helper-backdrop" data-action="closeSharePanel"></div>
+  <section class="helper-panel clear-all-panel share-panel" role="dialog" aria-modal="true" aria-labelledby="share-title" aria-describedby="share-intro">
+    <div class="helper-head">
+      <div>
+        <span class="helper-kicker">Share</span>
+        <h2 id="share-title">Share this plan</h2>
+      </div>
+      <button class="helper-close-btn" type="button" id="share-close-btn" data-action="closeSharePanel" aria-label="Close sharing panel">×</button>
+    </div>
+    <p class="helper-intro" id="share-intro">Use a lightweight link for planner settings plus location, or export/import a richer JSON package when you want to carry route data and a fuller planner snapshot between devices.</p>
+    <div class="confirm-action-row share-action-row">
+      <button class="mode-toggle-btn" type="button" data-action="shareCopyLink">Copy link</button>
+      <button class="mode-toggle-btn" type="button" data-action="exportSharePackage">Export JSON</button>
+      <button class="mode-toggle-btn quiet-btn" type="button" data-action="importSharePackageFile">Import file</button>
+    </div>
+    <input type="file" id="share-import-file-input" accept=".json,application/json" hidden>
+    <label class="sub-label" for="share-params-input" style="margin-top:18px;">Import pasted JSON</label>
+    <textarea id="share-params-input" class="share-params-input" placeholder="Paste a Forecast Fit share JSON package here, then choose Import pasted JSON." spellcheck="false" aria-describedby="share-params-help"></textarea>
+    <p class="field-note compact" id="share-params-help">JSON export/import can include route data, planner state, cached weather when still useful, and the same timing/activity settings that the lightweight share link carries.</p>
+    <div class="confirm-action-row">
+      <button class="mode-toggle-btn quiet-btn" type="button" data-action="closeSharePanel">Close</button>
+      <button class="mode-toggle-btn" type="button" data-action="applySharePackageJson">Import pasted JSON</button>
+    </div>
+  </section>
+</div>
+
 <div id="quick-start-overlay" class="helper-overlay" hidden>
   <div class="helper-backdrop" data-helper-close></div>
-  <section class="helper-panel" role="dialog" aria-modal="true" aria-labelledby="quick-start-title">
+  <section class="helper-panel" role="dialog" aria-modal="true" aria-labelledby="quick-start-title" aria-describedby="quick-start-intro">
     <div class="helper-head">
       <div>
         <span class="helper-kicker">Helper</span>
@@ -633,7 +667,7 @@
 </div>
 <div id="changelog-overlay" class="helper-overlay" hidden>
   <div class="helper-backdrop" data-action="closeChangelog"></div>
-  <section class="helper-panel changelog-panel" role="dialog" aria-modal="true" aria-labelledby="changelog-title">
+  <section class="helper-panel changelog-panel" role="dialog" aria-modal="true" aria-labelledby="changelog-title" aria-describedby="changelog-intro">
     <div class="helper-head">
       <div>
         <span class="helper-kicker">Release notes</span>
@@ -641,7 +675,7 @@
       </div>
       <button class="helper-close-btn" type="button" id="changelog-close-btn" data-action="closeChangelog" aria-label="Close changelog">×</button>
     </div>
-    <p class="helper-intro">Version history pulled from <code>CHANGELOG.md</code>. Newest entries appear at the bottom of the file, so this view reverses them for easier reading.</p>
+    <p class="helper-intro" id="changelog-intro">Version history pulled from <code>CHANGELOG.md</code>. Newest entries appear at the bottom of the file, so this view reverses them for easier reading.</p>
     <div class="changelog-toolbar">
       <div class="changelog-toolbar-actions">
         <button class="mode-toggle-btn quiet-btn" type="button" id="changelog-toc-toggle-btn" data-action="toggleChangelogToc">Hide ToC</button>
@@ -655,7 +689,7 @@
 </div>
 <div id="strava-picker-overlay" class="helper-overlay" hidden>
   <div class="helper-backdrop" data-action="closeStravaPicker"></div>
-  <section class="helper-panel strava-picker-panel" role="dialog" aria-modal="true" aria-labelledby="strava-picker-title">
+  <section class="helper-panel strava-picker-panel" role="dialog" aria-modal="true" aria-labelledby="strava-picker-title" aria-describedby="strava-picker-intro">
     <div class="helper-head">
       <div>
         <span class="helper-kicker">Strava</span>
@@ -663,7 +697,7 @@
       </div>
       <button class="helper-close-btn" type="button" id="strava-picker-close-btn" data-action="closeStravaPicker" aria-label="Close Strava import">×</button>
     </div>
-    <p class="helper-intro">Choose a saved route GPX export or a recent activity with recorded coordinates.</p>
+    <p class="helper-intro" id="strava-picker-intro">Choose a saved route GPX export or a recent activity with recorded coordinates.</p>
     <div class="strava-picker-url-box">
       <label class="sub-label" for="strava-picker-url-input">Strava URL</label>
       <div class="input-row strava-picker-url-row">
@@ -682,7 +716,7 @@
 </div>
 <div id="forecast-only-confirm-overlay" class="helper-overlay" hidden>
   <div class="helper-backdrop" data-action="closeForecastOnlyConfirm"></div>
-  <section class="helper-panel clear-all-panel" role="dialog" aria-modal="true" aria-labelledby="forecast-only-confirm-title">
+  <section class="helper-panel clear-all-panel" role="dialog" aria-modal="true" aria-labelledby="forecast-only-confirm-title" aria-describedby="forecast-only-confirm-intro">
     <div class="helper-head">
       <div>
         <span class="helper-kicker">Confirm mode switch</span>
@@ -690,7 +724,7 @@
       </div>
       <button class="helper-close-btn" type="button" data-action="closeForecastOnlyConfirm" aria-label="Close Forecast only confirmation">×</button>
     </div>
-    <p class="helper-intro">This switches to the simplified forecast-only layout. The current planner setup is hidden while this mode is active, and it returns when you exit.</p>
+    <p class="helper-intro" id="forecast-only-confirm-intro">This switches to the simplified forecast-only layout. The current planner setup is hidden while this mode is active, and it returns when you exit.</p>
     <div class="confirm-action-row">
       <button class="mode-toggle-btn quiet-btn" type="button" data-action="closeForecastOnlyConfirm">Cancel</button>
       <button class="mode-toggle-btn" type="button" id="confirm-forecast-only-btn" data-action="confirmForecastOnlyMode">Enter Forecast only</button>
@@ -699,7 +733,7 @@
 </div>
 <div id="clear-all-overlay" class="helper-overlay" hidden>
   <div class="helper-backdrop" data-action="closeClearAllConfirm"></div>
-  <section class="helper-panel clear-all-panel" role="dialog" aria-modal="true" aria-labelledby="clear-all-title">
+  <section class="helper-panel clear-all-panel" role="dialog" aria-modal="true" aria-labelledby="clear-all-title" aria-describedby="clear-all-intro">
     <div class="helper-head">
       <div>
         <span class="helper-kicker">Confirm reset</span>
@@ -707,7 +741,7 @@
       </div>
       <button class="helper-close-btn" type="button" data-action="closeClearAllConfirm" aria-label="Close clear all confirmation">×</button>
     </div>
-    <p class="helper-intro">This will remove the current location, route, forecast results, planner selections, custom values, and active mode toggles.</p>
+    <p class="helper-intro" id="clear-all-intro">This will remove the current location, route, forecast results, planner selections, custom values, and active mode toggles.</p>
     <div class="confirm-action-row">
       <button class="mode-toggle-btn quiet-btn" type="button" data-action="closeClearAllConfirm">Cancel</button>
       <button class="mode-toggle-btn clear-btn" type="button" id="confirm-clear-all-btn" data-action="confirmClearAll">Clear all</button>
@@ -716,7 +750,7 @@
 </div>
 <div id="startup-session-overlay" class="helper-overlay" hidden>
   <div class="helper-backdrop"></div>
-  <section class="helper-panel clear-all-panel" role="dialog" aria-modal="true" aria-labelledby="startup-session-title">
+  <section class="helper-panel clear-all-panel" role="dialog" aria-modal="true" aria-labelledby="startup-session-title" aria-describedby="startup-session-summary">
     <div class="helper-head">
       <div>
         <span class="helper-kicker">Saved session</span>

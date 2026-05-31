@@ -1226,6 +1226,22 @@
     padding: 12px;
     font-family: 'DM Mono', monospace;
   }
+  .connectivity-status {
+    margin-top: 4px;
+    color: var(--text-soft);
+    font-family: 'DM Mono', monospace;
+  }
+  .connectivity-status.offline {
+    color: var(--warn);
+  }
+  #share-status {
+    margin-top: 8px;
+    color: var(--text-soft);
+    font-family: 'DM Mono', monospace;
+  }
+  #share-status.error {
+    color: var(--accent);
+  }
 
   #suggestions-portal {
     position: fixed;

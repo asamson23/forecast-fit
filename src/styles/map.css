@@ -313,11 +313,34 @@
   .clear-all-panel {
     width: min(460px, 100%);
   }
+  .share-panel {
+    width: min(620px, 100%);
+  }
   .confirm-action-row {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     margin-top: 18px;
+  }
+  .share-action-row {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .share-params-input {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    margin-top: 8px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 90%, var(--surface2) 10%);
+    color: var(--text);
+    padding: 12px 14px;
+    font: 0.84rem/1.45 'DM Mono', monospace;
+  }
+  .share-params-input:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent2) 40%, transparent);
+    outline-offset: 2px;
   }
   .helper-steps {
     display: grid;
