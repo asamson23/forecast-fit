@@ -2,8 +2,8 @@
     --comfort-track-height: 12px;
     width: 100%;
     min-height: 34px;
-    appearance: none;
     -webkit-appearance: none;
+    appearance: none;
     background: transparent;
     cursor: pointer;
   }
@@ -213,6 +213,7 @@
     position: absolute;
     inset: 0;
     background: color-mix(in srgb, black 48%, transparent);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
   }
   .helper-panel {

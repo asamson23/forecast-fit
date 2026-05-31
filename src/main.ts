@@ -194,7 +194,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.5';
+const APP_VERSION = '12.5.1';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -455,6 +455,7 @@ const connectivityStatus = document.getElementById('connectivity-status');
 const shareStatus = document.getElementById('share-status');
 const shareOverlay = document.getElementById('share-overlay');
 const shareCloseBtn = document.getElementById('share-close-btn');
+const shareErrorMsg = document.getElementById('share-error-msg');
 const shareParamsInput = document.getElementById('share-params-input') as HTMLTextAreaElement | null;
 const shareImportFileInput = document.getElementById('share-import-file-input') as HTMLInputElement | null;
 const quickStartOverlay = document.getElementById('quick-start-overlay');
@@ -4327,6 +4328,12 @@ function setShareStatus(message, tone = '') {
   shareStatus.classList.toggle('error', tone === 'error');
 }
 
+function setSharePanelError(message = '') {
+  if (!shareErrorMsg) return;
+  shareErrorMsg.textContent = message || '';
+  shareErrorMsg.hidden = !message;
+}
+
 function parseSharedPlanFromUrl(): SharedPlanState | null {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -5137,6 +5144,7 @@ function triggerDiagnosticsExport() {
 
 function openSharePanel() {
   if (!shareOverlay) return;
+  setSharePanelError('');
   shareOverlay.hidden = false;
   document.body.classList.add('helper-open');
   shareCloseBtn?.focus({ preventScroll: true });
@@ -5144,20 +5152,21 @@ function openSharePanel() {
 
 function closeSharePanel() {
   if (!shareOverlay) return;
+  setSharePanelError('');
   shareOverlay.hidden = true;
   document.body.classList.remove('helper-open');
 }
 
 async function triggerSharePlan() {
   if (!selectedActivity && !weatherData && !resultInner?.innerHTML?.trim()) {
-    showError('Build a plan first, then share it.');
+    setSharePanelError('Build a plan first, then share it.');
     return;
   }
   const shareUrl = buildSharedPlanUrl();
   const summary = getShareablePlace()
     ? 'Shared link copied. It includes planner state plus a re-fetchable location, but keeps uploaded routes, imported provider routes, and raw weather data local-only.'
     : 'Shared link copied. It includes planner state only; routes and provider-import data stay local-only and are not included.';
-  hideError();
+  setSharePanelError('');
 
   try {
     if (navigator.share) {
@@ -5184,10 +5193,10 @@ async function triggerSharePlan() {
 
 function triggerSharePackageExport() {
   if (!selectedActivity && !weatherData && !routeState?.points?.length && !resultInner?.innerHTML?.trim()) {
-    showError('Build a plan first, then export its share JSON.');
+    setSharePanelError('Build a plan first, then export its share JSON.');
     return;
   }
-  hideError();
+  setSharePanelError('');
   const text = buildSharedPlanPackageText();
   if (shareParamsInput) shareParamsInput.value = text;
   const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
@@ -5221,7 +5230,7 @@ async function triggerSharePackageJsonImport() {
   try {
     await applySharePackageText(String(shareParamsInput?.value || '').trim(), 'Pasted share package');
   } catch (error) {
-    showError(error instanceof Error ? error.message : 'Unable to import that share JSON.');
+    setSharePanelError(error instanceof Error ? error.message : 'Unable to import that share JSON.');
     setShareStatus(error instanceof Error ? error.message : 'Unable to import that share JSON.', 'error');
   }
 }
@@ -5235,7 +5244,7 @@ async function handleSharePackageFileInput(event: Event) {
     if (shareParamsInput) shareParamsInput.value = text;
     await applySharePackageText(text, `Imported ${file.name}`);
   } catch (error) {
-    showError(error instanceof Error ? error.message : 'Unable to import that JSON file.');
+    setSharePanelError(error instanceof Error ? error.message : 'Unable to import that JSON file.');
     setShareStatus(error instanceof Error ? error.message : 'Unable to import that JSON file.', 'error');
   } finally {
     if (inputNode) inputNode.value = '';

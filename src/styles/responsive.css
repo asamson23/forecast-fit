@@ -165,6 +165,9 @@
     body {
       padding: calc(34px + env(safe-area-inset-top, 0px)) 10px 30px;
     }
+    #main-content {
+      gap: 14px;
+    }
     header h1 {
       font-size: clamp(2rem, 12vw, 2.7rem);
     }
@@ -472,6 +475,7 @@
     background: color-mix(in srgb, var(--surface2) 72%, transparent);
     cursor: pointer;
     user-select: none;
+    -webkit-user-select: none;
   }
   .activity-group-title::after,
   .planner-subsection-toggle::after {

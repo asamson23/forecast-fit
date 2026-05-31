@@ -37,16 +37,27 @@
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html {
+    min-height: -webkit-fill-available;
+    min-height: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
+    min-height: -webkit-fill-available;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 40px 16px 36px;
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
   }
 
   header {
@@ -93,9 +104,23 @@
     max-width: 980px;
     animation: fadeUp 0.6s ease both;
     overflow: visible;
+    -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
   .card + .card { margin-top: 20px; }
+
+  #main-content {
+    width: min(100%, 980px);
+    display: grid;
+    gap: 20px;
+    align-content: start;
+  }
+  #main-content > .card {
+    max-width: none;
+  }
+  #main-content > .card + .card {
+    margin-top: 0;
+  }
 
   label {
     display: block;
@@ -331,6 +356,7 @@
 }
 .attribution-card a:hover { text-decoration: underline; }
 .version-link {
+  -webkit-appearance: none;
   appearance: none;
   border: 0;
   padding: 0;
@@ -343,6 +369,7 @@
   text-underline-offset: 0.14em;
 }
 .footer-link-btn {
+  -webkit-appearance: none;
   appearance: none;
   border: 0;
   padding: 0;

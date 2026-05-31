@@ -1031,3 +1031,10 @@
 - Added JSON share-package export/import that can carry route data, planner settings, and still-usable saved weather so route-heavy plans can move between devices without relying on URL size limits.
 - Applied shared links directly at startup, bypassing resume prompts when a shared plan is present and re-fetching fresh weather for the shared location when possible.
 - Tightened `index.html` accessibility wiring with explicit form-label associations, improved live-region/status semantics, better dialog descriptions, and clearer page landmarks for assistive technologies.
+
+## v12.5.1
+
+- Added an explicit `#main-content` layout container so the main cards keep a stable shared width and spacing instead of relying on sibling margins alone.
+- Moved share import/export validation errors into the sharing helper panel so sharing problems no longer appear in the global location error line.
+- Added Safari-focused WebKit CSS support for viewport sizing, text-size adjustment, font smoothing, and tap highlight handling so the main layout behaves more consistently on iPhone, iPad, and desktop Safari.
+- Added explicit WebKit-prefixed `appearance` and `backdrop-filter` rules for custom buttons and helper overlays where Safari is stricter about unprefixed support.
