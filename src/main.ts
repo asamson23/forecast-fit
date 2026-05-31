@@ -5980,9 +5980,9 @@ function getEyewearSuggestionItem(activity, point, planned, light, wetLike, isRa
   }
 
   if (raceDayWindow && shouldShowRaceDayTimingPanel()) {
-    chips.push({ label: `Ã°Å¸â€”â€œ day ${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}â€“${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))}`, tone: '' });
-    chips.push({ label: `Ã°Å¸â€Â¥ warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)}`, tone: '' });
-    chips.push({ label: `Ã°Å¸Â§Å  cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}`, tone: '' });
+    chips.push({ label: `🗓 day ${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}–${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))}`, tone: '' });
+    chips.push({ label: `🔥 warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)}`, tone: '' });
+    chips.push({ label: `🧊 cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}`, tone: '' });
   }
 
   if (activity === 'running') {

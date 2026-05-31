@@ -1,4 +1,4 @@
-import { hasFlag } from 'country-flag-icons';
+﻿import { hasFlag } from 'country-flag-icons';
 import weather01dUrl from '@bybas/weather-icons/production/fill/openweathermap/01d.svg?url';
 import weather02dUrl from '@bybas/weather-icons/production/fill/openweathermap/02d.svg?url';
 import weather03dUrl from '@bybas/weather-icons/production/fill/openweathermap/03d.svg?url';
@@ -15,6 +15,28 @@ import thirdPlaceMedalUrl from 'fluentui-emoji/icons/modern/3rd-place-medal.svg?
 import automobileUrl from 'fluentui-emoji/icons/modern/automobile.svg?url';
 import campingUrl from 'fluentui-emoji/icons/modern/camping.svg?url';
 import canoeUrl from 'fluentui-emoji/icons/modern/canoe.svg?url';
+import chequeredFlagUrl from 'fluentui-emoji/icons/modern/chequered-flag.svg?url';
+import crescentMoonUrl from 'fluentui-emoji/icons/modern/crescent-moon.svg?url';
+import downArrowUrl from 'fluentui-emoji/icons/modern/down-arrow.svg?url';
+import fireUrl from 'fluentui-emoji/icons/modern/fire.svg?url';
+import highVoltageUrl from 'fluentui-emoji/icons/modern/high-voltage.svg?url';
+import iceUrl from 'fluentui-emoji/icons/modern/ice.svg?url';
+import lockedUrl from 'fluentui-emoji/icons/modern/locked.svg?url';
+import motorwayUrl from 'fluentui-emoji/icons/modern/motorway.svg?url';
+import personStandingUrl from 'fluentui-emoji/icons/modern/person-standing-default.svg?url';
+import repeatButtonUrl from 'fluentui-emoji/icons/modern/repeat-button.svg?url';
+import scarfUrl from 'fluentui-emoji/icons/modern/scarf.svg?url';
+import spiralCalendarUrl from 'fluentui-emoji/icons/modern/spiral-calendar.svg?url';
+import stopwatchUrl from 'fluentui-emoji/icons/modern/stopwatch.svg?url';
+import straightRulerUrl from 'fluentui-emoji/icons/modern/straight-ruler.svg?url';
+import sunWithFaceUrl from 'fluentui-emoji/icons/modern/sun-with-face.svg?url';
+import tentUrl from 'fluentui-emoji/icons/modern/tent.svg?url';
+import thermometerUrl from 'fluentui-emoji/icons/modern/thermometer.svg?url';
+import threeOclockUrl from 'fluentui-emoji/icons/modern/three-oclock.svg?url';
+import upArrowUrl from 'fluentui-emoji/icons/modern/up-arrow.svg?url';
+import upDownArrowUrl from 'fluentui-emoji/icons/modern/up-down-arrow.svg?url';
+import worldMapUrl from 'fluentui-emoji/icons/modern/world-map.svg?url';
+import writingHandUrl from 'fluentui-emoji/icons/modern/writing-hand-default.svg?url';
 import cloudUrl from 'fluentui-emoji/icons/modern/cloud.svg?url';
 import cloudWithLightningAndRainUrl from 'fluentui-emoji/icons/modern/cloud-with-lightning-and-rain.svg?url';
 import cloudWithRainUrl from 'fluentui-emoji/icons/modern/cloud-with-rain.svg?url';
@@ -106,6 +128,40 @@ const TOKENS = {
   firstPlace: '\u{1F947}',
   secondPlace: '\u{1F948}',
   thirdPlace: '\u{1F949}',
+  stopwatch: '\u23F1',
+  lock: '\u{1F512}',
+  writingHand: '\u270D',
+  upArrow: '\u2B06',
+  downArrow: '\u2B07',
+  upDownArrow: '\u2195',
+  tent: '\u26FA',
+  scarf: '\u{1F9E3}',
+  windFace: '\u{1F32C}',
+  personStanding: '\u{1F9CD}',
+  fire: '\u{1F525}',
+  chequeredFlag: '\u{1F3C1}',
+  straightRuler: '\u{1F4CF}',
+  clock: '\u{1F552}',
+  thermometer: '\u{1F321}',
+  sunWithFace: '\u{1F31E}',
+  crescentMoon: '\u{1F319}',
+  worldMap: '\u{1F5FA}',
+  spiralCalendar: '\u{1F5D3}',
+  repeatButton: '\u{1F501}',
+  ice: '\u{1F9CA}',
+  motorway: '\u{1F6E3}',
+  highVoltage: '\u26A1',
+  ellipsis: '\u2026',
+  emDash: '\u2014',
+  enDash: '\u2013',
+  upwardsArrow: '\u2191',
+  clockwiseArrow: '\u21BB',
+  zigzagArrow: '\u21AF',
+  checkMark: '\u2713',
+  middleDot: '\u00B7',
+  approxEqual: '\u2248',
+  degree: '\u00B0',
+  degreeC: '\u00B0C',
 } as const;
 
 const TEXT_REPAIRS: Array<[string, string]> = [
@@ -174,29 +230,37 @@ const TEXT_REPAIRS: Array<[string, string]> = [
   ['ðŸ¥‡', TOKENS.firstPlace],
   ['ðŸ¥ˆ', TOKENS.secondPlace],
   ['ðŸ¥‰', TOKENS.thirdPlace],
-  ['ðŸ§£', '\u{1F9E3}'],
-  ['ðŸŒ¬', '\u{1F32C}'],
-  ['ðŸ§', '\u{1F9CD}'],
-  ['ðŸ”¥', '\u{1F525}'],
-  ['ðŸ', '\u{1F3C1}'],
-  ['ðŸ“', '\u{1F4CF}'],
-  ['ðŸ•’', '\u{1F552}'],
-  ['ðŸŒ¡', '\u{1F321}'],
-  ['ðŸŒž', '\u{1F31E}'],
-  ['ðŸŒ™', '\u{1F319}'],
-  ['ðŸ—º', '\u{1F5FA}'],
-  ['ðŸ—“', '\u{1F5D3}'],
-  ['ðŸ”', '\u{1F501}'],
-  ['ðŸ§Š', '\u{1F9CA}'],
-  ['ðŸ›£', '\u{1F6E3}'],
-  ['âš¡', '\u26A1'],
-  ['â€¦', '\u2026'],
-  ['â€”', '\u2014'],
-  ['â€“', '\u2013'],
-  ['â†‘', '\u2191'],
-  ['â†»', '\u21BB'],
-  ['â†¯', '\u21AF'],
-  ['âœ“', '\u2713'],
+  ['ðŸ§£', TOKENS.scarf],
+  ['ðŸŒ¬', TOKENS.windFace],
+  ['ðŸ§', TOKENS.personStanding],
+  ['ðŸ”¥', TOKENS.fire],
+  ['ðŸ', TOKENS.chequeredFlag],
+  ['ðŸ“', TOKENS.straightRuler],
+  ['ðŸ•’', TOKENS.clock],
+  ['ðŸŒ¡', TOKENS.thermometer],
+  ['ðŸŒž', TOKENS.sunWithFace],
+  ['ðŸŒ™', TOKENS.crescentMoon],
+  ['ðŸ—º', TOKENS.worldMap],
+  ['ðŸ—“', TOKENS.spiralCalendar],
+  ['ðŸ”', TOKENS.repeatButton],
+  ['ðŸ§Š', TOKENS.ice],
+  ['ðŸ›£', TOKENS.motorway],
+  ['âš¡', TOKENS.highVoltage],
+  ['â€¦', TOKENS.ellipsis],
+  ['â€”', TOKENS.emDash],
+  ['â€“', TOKENS.enDash],
+  ['â†‘', TOKENS.upwardsArrow],
+  ['â†»', TOKENS.clockwiseArrow],
+  ['â†¯', TOKENS.zigzagArrow],
+  ['â±', TOKENS.stopwatch],
+  ['â¬†', TOKENS.upArrow],
+  ['â¬‡', TOKENS.downArrow],
+  ['â‰ˆ', TOKENS.approxEqual],
+  ['ðŸ”’', TOKENS.lock],
+  ['âœ', TOKENS.writingHand],
+  ['â†•', TOKENS.upDownArrow],
+  ['â›º', TOKENS.tent],
+  ['âœ“', TOKENS.checkMark],
   ['â€œ', '"'],
   ['â€', '"'],
   ['â€˜', "'"],
@@ -205,12 +269,13 @@ const TEXT_REPAIRS: Array<[string, string]> = [
   ['Ã¢â‚¬Â', '"'],
   ['Ã¢â‚¬Ëœ', "'"],
   ['Ã¢â‚¬â„¢', "'"],
-  ['Ã‚Â°C', '\u00B0C'],
-  ['Ã‚Â°', '\u00B0'],
-  ['Â°C', '\u00B0C'],
-  ['Â°', '\u00B0'],
-  ['Ã‚Â·', '\u00B7'],
-  ['Â·', '\u00B7'],
+  ['Ã‚Â°C', TOKENS.degreeC],
+  ['Ã‚Â°', TOKENS.degree],
+  ['Â°C', TOKENS.degreeC],
+  ['Â°', TOKENS.degree],
+  ['Ã‚Â·', TOKENS.middleDot],
+  ['Â·', TOKENS.middleDot],
+  ['ðŸ“', TOKENS.location],
 ];
 
 const ICONS: Record<string, IconAsset> = {
@@ -259,6 +324,29 @@ const ICONS: Record<string, IconAsset> = {
   [TOKENS.thirdPlace]: { label: '3rd place', url: thirdPlaceMedalUrl },
   [TOKENS.globe]: { label: 'Globe', url: globeShowingAmericasUrl },
   [TOKENS.location]: { label: 'Location', url: globeShowingAmericasUrl },
+  [TOKENS.stopwatch]: { label: 'Stopwatch', url: stopwatchUrl },
+  [TOKENS.lock]: { label: 'Locked', url: lockedUrl },
+  [TOKENS.writingHand]: { label: 'Custom', url: writingHandUrl },
+  [TOKENS.upArrow]: { label: 'Up', url: upArrowUrl },
+  [TOKENS.downArrow]: { label: 'Down', url: downArrowUrl },
+  [TOKENS.upDownArrow]: { label: 'Up-down', url: upDownArrowUrl },
+  [TOKENS.tent]: { label: 'Tent', url: tentUrl },
+  [TOKENS.scarf]: { label: 'Scarf', url: scarfUrl },
+  [TOKENS.windFace]: { label: 'Wind', url: windFaceUrl },
+  [TOKENS.personStanding]: { label: 'Person standing', url: personStandingUrl },
+  [TOKENS.fire]: { label: 'Fire', url: fireUrl },
+  [TOKENS.chequeredFlag]: { label: 'Chequered flag', url: chequeredFlagUrl },
+  [TOKENS.straightRuler]: { label: 'Ruler', url: straightRulerUrl },
+  [TOKENS.clock]: { label: 'Clock', url: threeOclockUrl },
+  [TOKENS.thermometer]: { label: 'Thermometer', url: thermometerUrl },
+  [TOKENS.sunWithFace]: { label: 'Sun', url: sunWithFaceUrl },
+  [TOKENS.crescentMoon]: { label: 'Moon', url: crescentMoonUrl },
+  [TOKENS.worldMap]: { label: 'Map', url: worldMapUrl },
+  [TOKENS.spiralCalendar]: { label: 'Calendar', url: spiralCalendarUrl },
+  [TOKENS.repeatButton]: { label: 'Repeat', url: repeatButtonUrl },
+  [TOKENS.ice]: { label: 'Ice', url: iceUrl },
+  [TOKENS.motorway]: { label: 'Motorway', url: motorwayUrl },
+  [TOKENS.highVoltage]: { label: 'Lightning', url: highVoltageUrl },
 };
 
 const ACTIVITY_ICON_BY_ACTIVITY: Record<string, string> = {
@@ -441,8 +529,8 @@ export function weatherIconHtml(code: unknown, className = 'icon'): string {
 }
 
 export function formatWindTooltip(speed: unknown, gusts: unknown, dir: unknown): { speedText: string; gustText: string; dirHtml: string } {
-  const speedText = isFiniteNumber(speed) ? `${Math.round(speed)} km/h` : '\u2014';
-  const gustText = isFiniteNumber(gusts) ? `${Math.round(gusts)} km/h` : '\u2014';
+  const speedText = isFiniteNumber(speed) ? `${Math.round(speed)} km/h` : TOKENS.emDash;
+  const gustText = isFiniteNumber(gusts) ? `${Math.round(gusts)} km/h` : TOKENS.emDash;
   return { speedText, gustText, dirHtml: windDirectionHtml(dir, 'wind-dir-inline', true) };
 }
 
