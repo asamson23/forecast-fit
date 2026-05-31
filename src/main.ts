@@ -110,6 +110,7 @@ import { getSegmentTimeFactor as getSegmentTimeFactorFromModule } from './featur
 import { haversineKm } from './utils/distance';
 import {
   countryFlag as countryFlagFromModule,
+  normalizeDisplayText as normalizeDisplayTextFromModule,
   renderLeadingEmojiLabel as renderLeadingEmojiLabelFromModule,
   renderSymbolIconHtml as renderSymbolIconHtmlFromModule,
   replaceActivityEmojiIcons as replaceActivityEmojiIconsFromModule,
@@ -194,7 +195,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.5.1';
+const APP_VERSION = '12.5.2';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -3901,7 +3902,7 @@ function countryFlag(code) {
 }
 
 function escapeHtml(value) {
-  return String(value ?? '')
+  return normalizeDisplayTextFromModule(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -5329,7 +5330,7 @@ function triggerPlanExport() {
 
 function showResultLoading() {
   resultCard.style.display = 'block';
-  resultInner.innerHTML = upgradeEmojiMarkup(`
+  resultInner.innerHTML = repairDisplayMarkup(`
     <div class="skeleton" style="width:42%;height:12px"></div>
     <div class="skeleton" style="width:72%;height:44px;margin-top:12px"></div>
     <div class="skeleton" style="width:100%;height:180px;margin-top:18px"></div>
@@ -5435,6 +5436,79 @@ const upgradeEmojiMarkup = (html) => {
   }
   return upgraded;
 };
+
+const repairDisplayMarkup = (html) => {
+  const replacements = [
+    ['\u{1F3F7}\uFE0F ', `${renderSymbolIconHtml('\u{1F3F7}\uFE0F', 'inline-symbol-icon', 'Activity', true)} `],
+    ['\u{1F3E0} ', `${renderSymbolIconHtml('\u{1F3E0}', 'inline-symbol-icon', 'Indoor', true)} `],
+    ['\u{1F30A} ', `${renderSymbolIconHtml('\u{1F30A}', 'inline-symbol-icon', 'Water', true)} `],
+    ['\u26A0\uFE0F', renderSymbolIconHtml('\u26A0\uFE0F', 'wi', 'Warning', true)],
+    ['\u{1F4A6} ', `${renderSymbolIconHtml('\u{1F4A6}', 'inline-symbol-icon', 'Humidity', true)} `],
+    ['\u{1F4A8} ', `${renderSymbolIconHtml('\u{1F4A8}', 'inline-symbol-icon', 'Wind', true)} `],
+    ['\u{1F327}\uFE0F ', `${renderSymbolIconHtml('\u{1F327}\uFE0F', 'inline-symbol-icon', 'Precipitation', true)} `],
+    ['\u2600\uFE0F ', `${renderSymbolIconHtml('\u2600\uFE0F', 'inline-symbol-icon', 'UV', true)} `],
+    ['\u{1F4CD} ', `${renderSymbolIconHtml('\u{1F30D}', 'inline-symbol-icon', 'Location', true)} `],
+    ['\u{1F30D} ', `${renderSymbolIconHtml('\u{1F30D}', 'inline-symbol-icon', 'Location', true)} `],
+  ];
+  let upgraded = normalizeDisplayTextFromModule(html);
+  for (const [needle, replacement] of replacements) {
+    upgraded = upgraded.split(needle).join(replacement);
+  }
+  return upgraded;
+};
+
+function normalizeElementTextAttributes(node) {
+  if (!(node instanceof Element)) return;
+  ['title', 'aria-label', 'placeholder'].forEach((attr) => {
+    const value = node.getAttribute(attr);
+    if (!value) return;
+    const nextValue = normalizeDisplayTextFromModule(value);
+    if (nextValue !== value) node.setAttribute(attr, nextValue);
+  });
+}
+
+function normalizeVisibleText(root = document.body) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ALL);
+  let current = walker.currentNode;
+  while (current) {
+    if (current.nodeType === Node.TEXT_NODE) {
+      const value = current.nodeValue || '';
+      const nextValue = normalizeDisplayTextFromModule(value);
+      if (nextValue !== value) current.nodeValue = nextValue;
+    } else if (current.nodeType === Node.ELEMENT_NODE) {
+      normalizeElementTextAttributes(current);
+    }
+    current = walker.nextNode();
+  }
+}
+
+function installDisplayTextRepairObserver() {
+  normalizeVisibleText(document.body);
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type === 'characterData') {
+        const value = mutation.target.nodeValue || '';
+        const nextValue = normalizeDisplayTextFromModule(value);
+        if (nextValue !== value) mutation.target.nodeValue = nextValue;
+        continue;
+      }
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const value = node.nodeValue || '';
+          const nextValue = normalizeDisplayTextFromModule(value);
+          if (nextValue !== value) node.nodeValue = nextValue;
+          return;
+        }
+        if (node.nodeType === Node.ELEMENT_NODE) normalizeVisibleText(node);
+      });
+    }
+  });
+  observer.observe(document.body, { childList: true, characterData: true, subtree: true });
+}
+
+if (document.body) installDisplayTextRepairObserver();
+else window.addEventListener('DOMContentLoaded', () => installDisplayTextRepairObserver(), { once: true });
 
 function degreesToCompass(deg) {
   if (!isFiniteNumber(deg)) return 'Variable';
@@ -9665,7 +9739,7 @@ function renderAdvice(data, activity) {
 
   const durationState = getDurationState(getSelectedEvent());
   if (!durationState) {
-      resultInner.innerHTML = upgradeEmojiMarkup(`
+      resultInner.innerHTML = repairDisplayMarkup(`
         <div class="result-sections">
           <section class="result-panel">
           ${renderResultLocationHeader(data.locationName, point)}
@@ -9701,7 +9775,7 @@ function renderAdvice(data, activity) {
   if (!activity) {
     const selectionForWarnings = getForecastSelection(data, startTime);
     const weatherWarningsHtml = renderWeatherHazardWarnings(data, selectionForWarnings, point, activity);
-    resultInner.innerHTML = upgradeEmojiMarkup(`
+    resultInner.innerHTML = repairDisplayMarkup(`
       <div class="result-sections">
         <section class="result-panel">
           ${renderResultLocationHeader(data.locationName, point)}
@@ -9738,7 +9812,7 @@ function renderAdvice(data, activity) {
   const wizard = augmentWizardWithAqiContext(augmentWizardWithUvContext(buildWizard(data, activity), data, activity), data, activity);
   const selectionForWarnings = getForecastSelection(data, wizard.startTime);
   const weatherWarningsHtml = renderWeatherHazardWarnings(data, selectionForWarnings, point, activity);
-  resultInner.innerHTML = upgradeEmojiMarkup(`
+  resultInner.innerHTML = repairDisplayMarkup(`
     <div class="result-sections">
       <section class="result-panel">
         ${renderResultLocationHeader(data.locationName, point)}

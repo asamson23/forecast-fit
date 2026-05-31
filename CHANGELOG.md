@@ -1038,3 +1038,9 @@
 - Moved share import/export validation errors into the sharing helper panel so sharing problems no longer appear in the global location error line.
 - Added Safari-focused WebKit CSS support for viewport sizing, text-size adjustment, font smoothing, and tap highlight handling so the main layout behaves more consistently on iPhone, iPad, and desktop Safari.
 - Added explicit WebKit-prefixed `appearance` and `backdrop-filter` rules for custom buttons and helper overlays where Safari is stricter about unprefixed support.
+
+## v12.5.2
+
+- Fixed header action legend wrapping so each helper line keeps a clean readable width instead of collapsing into awkward centered fragments.
+- Added centralized mojibake cleanup for broken UTF-8 text such as `Â·`, `â€¦`, and corrupted emoji tokens before they reach the UI.
+- Repaired bundled emoji/icon rendering fallbacks so Fluent asset replacements can recover from corrupted source tokens instead of exposing raw `ðŸ...` text in the interface.

@@ -32,7 +32,6 @@ import holeUrl from 'fluentui-emoji/icons/modern/hole.svg?url';
 import hotFaceUrl from 'fluentui-emoji/icons/modern/hot-face.svg?url';
 import houseUrl from 'fluentui-emoji/icons/modern/house.svg?url';
 import informationUrl from 'fluentui-emoji/icons/modern/information.svg?url';
-import kiteUrl from 'fluentui-emoji/icons/modern/kite.svg?url';
 import labelUrl from 'fluentui-emoji/icons/modern/label.svg?url';
 import mountainUrl from 'fluentui-emoji/icons/modern/mountain.svg?url';
 import personBikingUrl from 'fluentui-emoji/icons/modern/person-biking-default.svg?url';
@@ -48,7 +47,6 @@ import sunBehindRainCloudUrl from 'fluentui-emoji/icons/modern/sun-behind-rain-c
 import sunBehindSmallCloudUrl from 'fluentui-emoji/icons/modern/sun-behind-small-cloud.svg?url';
 import sunriseOverMountainsUrl from 'fluentui-emoji/icons/modern/sunrise-over-mountains.svg?url';
 import sunsetUrl from 'fluentui-emoji/icons/modern/sunset.svg?url';
-import sunWithFaceUrl from 'fluentui-emoji/icons/modern/sun-with-face.svg?url';
 import warningUrl from 'fluentui-emoji/icons/modern/warning.svg?url';
 import waterWaveUrl from 'fluentui-emoji/icons/modern/water-wave.svg?url';
 import windFaceUrl from 'fluentui-emoji/icons/modern/wind-face.svg?url';
@@ -60,93 +58,246 @@ type IconAsset = {
   url: string;
 };
 
+const TOKENS = {
+  activity: '\u{1F3F7}\uFE0F',
+  airQuality: '\u{1F637}',
+  camping: '\u{1F3D5}\uFE0F',
+  car: '\u{1F697}',
+  casual: '\u{1F9E5}',
+  cloudy: '\u2601\uFE0F',
+  cold: '\u{1F976}',
+  cycling: '\u{1F6B4}',
+  deer: '\u{1F98C}',
+  fog: '\u{1F32B}\uFE0F',
+  globe: '\u{1F30D}',
+  gym: '\u{1F3CB}\uFE0F',
+  hiking: '\u{1F97E}',
+  highPoint: '\u26F0\uFE0F',
+  hot: '\u{1F975}',
+  humidity: '\u{1F4A6}',
+  indoor: '\u{1F3E0}',
+  indoorMultisport: '\u{1F3DF}\uFE0F',
+  information: '\u2139\uFE0F',
+  kayaking: '\u{1F6F6}',
+  location: '\u{1F4CD}',
+  lowPoint: '\u{1F573}\uFE0F',
+  mountainBiking: '\u{1F6B5}',
+  partlyCloudy: '\u{1F324}\uFE0F',
+  precipitation: '\u{1F327}\uFE0F',
+  rain: '\u{1F327}\uFE0F',
+  roadTrip: '\u{1F697}',
+  running: '\u{1F3C3}',
+  showers: '\u{1F326}\uFE0F',
+  skiing: '\u26F7\uFE0F',
+  snow: '\u{1F328}\uFE0F',
+  snorkeling: '\u{1F93F}',
+  stadium: '\u{1F3DF}\uFE0F',
+  sunrise: '\u{1F305}',
+  sunset: '\u{1F307}',
+  surfing: '\u{1F3C4}',
+  sun: '\u2600\uFE0F',
+  sunText: '\u2600',
+  swimming: '\u{1F3CA}',
+  thunderstorm: '\u26C8\uFE0F',
+  walking: '\u{1F6B6}',
+  warning: '\u26A0\uFE0F',
+  water: '\u{1F30A}',
+  wind: '\u{1F4A8}',
+  firstPlace: '\u{1F947}',
+  secondPlace: '\u{1F948}',
+  thirdPlace: '\u{1F949}',
+} as const;
+
+const TEXT_REPAIRS: Array<[string, string]> = [
+  ['ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â·', TOKENS.activity],
+  ['Ã°Å¸ÂÂ·', TOKENS.activity],
+  ['ðŸ·', TOKENS.activity],
+  ['ÃƒÂ°Ã…Â¸Ã‚ÂÃ‚Â ', TOKENS.indoor],
+  ['Ã°Å¸ÂÂ ', TOKENS.indoor],
+  ['ðŸ ', TOKENS.indoor],
+  ['ÃƒÂ°Ã…Â¸Ã…â€™Ã…Â ', TOKENS.water],
+  ['Ã°Å¸Å’Å ', TOKENS.water],
+  ['ðŸŒŠ', TOKENS.water],
+  ['ÃƒÂ°Ã…Â¸Ã…â€™Ã‚Â', TOKENS.globe],
+  ['Ã°Å¸Å’Â', TOKENS.globe],
+  ['ðŸŒ', TOKENS.globe],
+  ['ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¨', TOKENS.wind],
+  ['Ã°Å¸â€™Â¨', TOKENS.wind],
+  ['ðŸ’¨', TOKENS.wind],
+  ['ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¦', TOKENS.humidity],
+  ['ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â§', TOKENS.humidity],
+  ['Ã°Å¸â€™Â¦', TOKENS.humidity],
+  ['Ã°Å¸â€™Â§', TOKENS.humidity],
+  ['ðŸ’¦', TOKENS.humidity],
+  ['ðŸ’§', TOKENS.humidity],
+  ['ÃƒÂ°Ã…Â¸Ã…â€™Ã‚Â§ÃƒÂ¯Ã‚Â¸Ã‚Â', TOKENS.precipitation],
+  ['ÃƒÂ°Ã…Â¸Ã…â€™Ã‚Â§', TOKENS.precipitation],
+  ['Ã°Å¸Å’Â§Ã¯Â¸Â', TOKENS.precipitation],
+  ['Ã°Å¸Å’Â§', TOKENS.precipitation],
+  ['ðŸŒ§ï¸', TOKENS.precipitation],
+  ['ðŸŒ§', TOKENS.precipitation],
+  ['ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â', TOKENS.warning],
+  ['Ã¢Å¡Â Ã¯Â¸Â', TOKENS.warning],
+  ['âš ï¸', TOKENS.warning],
+  ['ÃƒÂ¢Ã‹Å“Ã¢â€šÂ¬ÃƒÂ¯Ã‚Â¸Ã‚Â', TOKENS.sun],
+  ['ÃƒÂ¢Ã‹Å“Ã¢â€šÂ¬', TOKENS.sunText],
+  ['Ã¢Ëœâ‚¬Ã¯Â¸Â', TOKENS.sun],
+  ['Ã¢Ëœâ‚¬', TOKENS.sunText],
+  ['â˜€ï¸', TOKENS.sun],
+  ['â˜€', TOKENS.sunText],
+  ['ðŸƒ', TOKENS.running],
+  ['ðŸš´', TOKENS.cycling],
+  ['ðŸŠ', TOKENS.swimming],
+  ['ðŸ‹ï¸', TOKENS.gym],
+  ['ðŸŸï¸', TOKENS.indoorMultisport],
+  ['ðŸ¤¿', TOKENS.snorkeling],
+  ['ðŸ„', TOKENS.surfing],
+  ['ðŸ›¶', TOKENS.kayaking],
+  ['ðŸ¥¾', TOKENS.hiking],
+  ['ðŸšµ', TOKENS.mountainBiking],
+  ['â›·ï¸', TOKENS.skiing],
+  ['ðŸŽ£', TOKENS.deer.replace(TOKENS.deer, '\u{1F3A3}')],
+  ['ðŸ¦Œ', TOKENS.deer],
+  ['ðŸš¶', TOKENS.walking],
+  ['ðŸ§¥', TOKENS.casual],
+  ['ðŸš—', TOKENS.roadTrip],
+  ['ðŸ•ï¸', TOKENS.camping],
+  ['ðŸ˜·', TOKENS.airQuality],
+  ['ðŸ¥¶', TOKENS.cold],
+  ['ðŸ¥µ', TOKENS.hot],
+  ['â›°ï¸', TOKENS.highPoint],
+  ['ðŸ•³ï¸', TOKENS.lowPoint],
+  ['ðŸŒ…', TOKENS.sunrise],
+  ['ðŸŒ‡', TOKENS.sunset],
+  ['â„ï¸', TOKENS.snow],
+  ['â„¹ï¸', TOKENS.information],
+  ['ðŸ¥‡', TOKENS.firstPlace],
+  ['ðŸ¥ˆ', TOKENS.secondPlace],
+  ['ðŸ¥‰', TOKENS.thirdPlace],
+  ['ðŸ§£', '\u{1F9E3}'],
+  ['ðŸŒ¬', '\u{1F32C}'],
+  ['ðŸ§', '\u{1F9CD}'],
+  ['ðŸ”¥', '\u{1F525}'],
+  ['ðŸ', '\u{1F3C1}'],
+  ['ðŸ“', '\u{1F4CF}'],
+  ['ðŸ•’', '\u{1F552}'],
+  ['ðŸŒ¡', '\u{1F321}'],
+  ['ðŸŒž', '\u{1F31E}'],
+  ['ðŸŒ™', '\u{1F319}'],
+  ['ðŸ—º', '\u{1F5FA}'],
+  ['ðŸ—“', '\u{1F5D3}'],
+  ['ðŸ”', '\u{1F501}'],
+  ['ðŸ§Š', '\u{1F9CA}'],
+  ['ðŸ›£', '\u{1F6E3}'],
+  ['âš¡', '\u26A1'],
+  ['â€¦', '\u2026'],
+  ['â€”', '\u2014'],
+  ['â€“', '\u2013'],
+  ['â†‘', '\u2191'],
+  ['â†»', '\u21BB'],
+  ['â†¯', '\u21AF'],
+  ['âœ“', '\u2713'],
+  ['â€œ', '"'],
+  ['â€', '"'],
+  ['â€˜', "'"],
+  ['â€™', "'"],
+  ['Ã¢â‚¬Å“', '"'],
+  ['Ã¢â‚¬Â', '"'],
+  ['Ã¢â‚¬Ëœ', "'"],
+  ['Ã¢â‚¬â„¢', "'"],
+  ['Ã‚Â°C', '\u00B0C'],
+  ['Ã‚Â°', '\u00B0'],
+  ['Â°C', '\u00B0C'],
+  ['Â°', '\u00B0'],
+  ['Ã‚Â·', '\u00B7'],
+  ['Â·', '\u00B7'],
+];
+
 const ICONS: Record<string, IconAsset> = {
-  '☀️': { label: 'Sun', url: sunUrl },
-  '☀': { label: 'Sun', url: sunUrl },
-  '🌤️': { label: 'Partly cloudy', url: sunBehindSmallCloudUrl },
-  '☁️': { label: 'Cloudy', url: cloudUrl },
-  '🌫️': { label: 'Fog', url: foggyUrl },
-  '🌦️': { label: 'Showers', url: sunBehindRainCloudUrl },
-  '🌧️': { label: 'Rain', url: cloudWithRainUrl },
-  '🌨️': { label: 'Snow', url: cloudWithSnowUrl },
-  '⛈️': { label: 'Thunderstorm', url: cloudWithLightningAndRainUrl },
-  '💨': { label: 'Wind', url: windFaceUrl },
-  '😷': { label: 'Air quality', url: faceWithMedicalMaskUrl },
-  '🥶': { label: 'Cold', url: coldFaceUrl },
-  '🥵': { label: 'Hot', url: hotFaceUrl },
-  '⛰️': { label: 'High point', url: mountainUrl },
-  '🕳️': { label: 'Low point', url: holeUrl },
-  '🌅': { label: 'Sunrise', url: sunriseOverMountainsUrl },
-  '🌇': { label: 'Sunset', url: sunsetUrl },
-  '❄️': { label: 'Snow', url: cloudWithSnowUrl },
-  '⚠️': { label: 'Warning', url: warningUrl },
-  'ℹ️': { label: 'Information', url: informationUrl },
-  '🌊': { label: 'Water', url: waterWaveUrl },
-  '💦': { label: 'Water drops', url: dropletUrl },
-  '🏃': { label: 'Running', url: personRunningUrl },
-  '🚴': { label: 'Cycling', url: personBikingUrl },
-  '🏊': { label: 'Swimming', url: personSwimmingUrl },
-  '🏋️': { label: 'Gym', url: personLiftingWeightsUrl },
-  '🏟️': { label: 'Indoor multisport', url: stadiumUrl },
-  '🤿': { label: 'Snorkeling', url: divingMaskUrl },
-  '🏄': { label: 'Surfing', url: personSurfingUrl },
-  '🛶': { label: 'Kayaking', url: canoeUrl },
-  '🥾': { label: 'Hiking', url: hikingBootUrl },
-  '🚵': { label: 'Mountain biking', url: personBikingUrl },
-  '⛷️': { label: 'Skiing', url: skierUrl },
-  '🎣': { label: 'Fishing', url: fishingPoleUrl },
-  '🦌': { label: 'Hunting', url: deerUrl },
-  '🚶': { label: 'Walking', url: personWalkingUrl },
-  '🧥': { label: 'Casual', url: coatUrl },
-  '🚗': { label: 'Road trip', url: automobileUrl },
-  '🏕️': { label: 'Camping', url: campingUrl },
-  '🏷': { label: 'Activity', url: labelUrl },
-  'ðŸ·': { label: 'Activity', url: labelUrl },
-  '🏠': { label: 'Indoor', url: houseUrl },
-  'ðŸ ': { label: 'Indoor', url: houseUrl },
-  '🥇': { label: '1st place', url: firstPlaceMedalUrl },
-  'ðŸ¥‡': { label: '1st place', url: firstPlaceMedalUrl },
-  '🥈': { label: '2nd place', url: secondPlaceMedalUrl },
-  'ðŸ¥ˆ': { label: '2nd place', url: secondPlaceMedalUrl },
-  '🥉': { label: '3rd place', url: thirdPlaceMedalUrl },
-  'ðŸ¥‰': { label: '3rd place', url: thirdPlaceMedalUrl },
-  '🌍': { label: 'Globe', url: globeShowingAmericasUrl },
-  'ðŸŒ': { label: 'Globe', url: globeShowingAmericasUrl },
-  'ðŸŒŠ': { label: 'Water', url: waterWaveUrl },
-  'ðŸ’¨': { label: 'Wind', url: windFaceUrl },
-  'â˜€': { label: 'Sun', url: sunUrl },
-  'âš ï¸': { label: 'Warning', url: warningUrl },
+  [TOKENS.sun]: { label: 'Sun', url: sunUrl },
+  [TOKENS.sunText]: { label: 'Sun', url: sunUrl },
+  [TOKENS.partlyCloudy]: { label: 'Partly cloudy', url: sunBehindSmallCloudUrl },
+  [TOKENS.cloudy]: { label: 'Cloudy', url: cloudUrl },
+  [TOKENS.fog]: { label: 'Fog', url: foggyUrl },
+  [TOKENS.showers]: { label: 'Showers', url: sunBehindRainCloudUrl },
+  [TOKENS.rain]: { label: 'Rain', url: cloudWithRainUrl },
+  [TOKENS.snow]: { label: 'Snow', url: cloudWithSnowUrl },
+  [TOKENS.thunderstorm]: { label: 'Thunderstorm', url: cloudWithLightningAndRainUrl },
+  [TOKENS.wind]: { label: 'Wind', url: windFaceUrl },
+  [TOKENS.airQuality]: { label: 'Air quality', url: faceWithMedicalMaskUrl },
+  [TOKENS.cold]: { label: 'Cold', url: coldFaceUrl },
+  [TOKENS.hot]: { label: 'Hot', url: hotFaceUrl },
+  [TOKENS.highPoint]: { label: 'High point', url: mountainUrl },
+  [TOKENS.lowPoint]: { label: 'Low point', url: holeUrl },
+  [TOKENS.sunrise]: { label: 'Sunrise', url: sunriseOverMountainsUrl },
+  [TOKENS.sunset]: { label: 'Sunset', url: sunsetUrl },
+  [TOKENS.warning]: { label: 'Warning', url: warningUrl },
+  [TOKENS.information]: { label: 'Information', url: informationUrl },
+  [TOKENS.water]: { label: 'Water', url: waterWaveUrl },
+  [TOKENS.humidity]: { label: 'Water drops', url: dropletUrl },
+  [TOKENS.running]: { label: 'Running', url: personRunningUrl },
+  [TOKENS.cycling]: { label: 'Cycling', url: personBikingUrl },
+  [TOKENS.swimming]: { label: 'Swimming', url: personSwimmingUrl },
+  [TOKENS.gym]: { label: 'Gym', url: personLiftingWeightsUrl },
+  [TOKENS.indoorMultisport]: { label: 'Indoor multisport', url: stadiumUrl },
+  [TOKENS.snorkeling]: { label: 'Snorkeling', url: divingMaskUrl },
+  [TOKENS.surfing]: { label: 'Surfing', url: personSurfingUrl },
+  [TOKENS.kayaking]: { label: 'Kayaking', url: canoeUrl },
+  [TOKENS.hiking]: { label: 'Hiking', url: hikingBootUrl },
+  [TOKENS.mountainBiking]: { label: 'Mountain biking', url: personBikingUrl },
+  [TOKENS.skiing]: { label: 'Skiing', url: skierUrl },
+  ['\u{1F3A3}']: { label: 'Fishing', url: fishingPoleUrl },
+  [TOKENS.deer]: { label: 'Hunting', url: deerUrl },
+  [TOKENS.walking]: { label: 'Walking', url: personWalkingUrl },
+  [TOKENS.casual]: { label: 'Casual', url: coatUrl },
+  [TOKENS.roadTrip]: { label: 'Road trip', url: automobileUrl },
+  [TOKENS.camping]: { label: 'Camping', url: campingUrl },
+  [TOKENS.activity]: { label: 'Activity', url: labelUrl },
+  [TOKENS.indoor]: { label: 'Indoor', url: houseUrl },
+  [TOKENS.firstPlace]: { label: '1st place', url: firstPlaceMedalUrl },
+  [TOKENS.secondPlace]: { label: '2nd place', url: secondPlaceMedalUrl },
+  [TOKENS.thirdPlace]: { label: '3rd place', url: thirdPlaceMedalUrl },
+  [TOKENS.globe]: { label: 'Globe', url: globeShowingAmericasUrl },
+  [TOKENS.location]: { label: 'Location', url: globeShowingAmericasUrl },
 };
 
 const ACTIVITY_ICON_BY_ACTIVITY: Record<string, string> = {
-  running: '🏃',
-  cycling: '🚴',
-  triathlon: '🏊',
-  gym: '🏋️',
-  indoor_running: '🏃',
-  indoor_cycling: '🚴',
-  indoor_multisport: '🏟️',
-  swimming_pool_indoor: '🏊',
-  swimming_open: '🌊',
-  swimming_pool_outdoor: '🏊',
-  snorkeling: '🤿',
-  sup: '🏄',
-  kayaking: '🛶',
-  surfing: '🌊',
-  water_sports: '💦',
-  hiking: '🥾',
-  trail_running: '🏃',
-  mtb_gravel: '🚵',
-  ski_snowboard: '⛷️',
-  fishing: '🎣',
-  hunting: '🦌',
-  walk: '🚶',
-  casual: '🧥',
-  road_trip: '🚗',
-  camping: '🏕️',
+  running: TOKENS.running,
+  cycling: TOKENS.cycling,
+  triathlon: TOKENS.swimming,
+  gym: TOKENS.gym,
+  indoor_running: TOKENS.running,
+  indoor_cycling: TOKENS.cycling,
+  indoor_multisport: TOKENS.indoorMultisport,
+  swimming_pool_indoor: TOKENS.swimming,
+  swimming_open: TOKENS.water,
+  swimming_pool_outdoor: TOKENS.swimming,
+  snorkeling: TOKENS.snorkeling,
+  sup: TOKENS.surfing,
+  kayaking: TOKENS.kayaking,
+  surfing: TOKENS.water,
+  water_sports: TOKENS.humidity,
+  hiking: TOKENS.hiking,
+  trail_running: TOKENS.running,
+  mtb_gravel: TOKENS.mountainBiking,
+  ski_snowboard: TOKENS.skiing,
+  fishing: '\u{1F3A3}',
+  hunting: TOKENS.deer,
+  walk: TOKENS.walking,
+  casual: TOKENS.casual,
+  road_trip: TOKENS.roadTrip,
+  camping: TOKENS.camping,
 };
 
 const LEADING_ICON_TOKENS = Object.keys(ICONS).sort((a, b) => b.length - a.length);
+
+export function normalizeDisplayText(value: unknown): string {
+  let normalized = String(value ?? '');
+  for (const [needle, replacement] of TEXT_REPAIRS) {
+    normalized = normalized.split(needle).join(replacement);
+  }
+  return normalized;
+}
 
 export function formatNumber(value: number, digits = 0): string {
   return Number.isFinite(value) ? value.toFixed(digits) : '-';
@@ -155,11 +306,11 @@ export function formatNumber(value: number, digits = 0): string {
 export function formatTemperature(value: number | null | undefined): string {
   return value === null || value === undefined || Number.isNaN(Number(value))
     ? '--'
-    : `${Math.round(Number(value))}°`;
+    : `${Math.round(Number(value))}\u00B0`;
 }
 
 export function escapeHtml(value: unknown): string {
-  return String(value ?? '')
+  return normalizeDisplayText(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -168,19 +319,21 @@ export function escapeHtml(value: unknown): string {
 }
 
 function getIconAsset(token: string | null | undefined): IconAsset | null {
-  if (!token) return null;
-  return ICONS[token] ?? null;
+  const normalizedToken = normalizeDisplayText(token);
+  if (!normalizedToken) return null;
+  return ICONS[normalizedToken] ?? null;
 }
 
 function buildNativeEmojiFallbackHtml(token: string): string {
-  return `<span class="emoji-native-fallback" aria-hidden="true">${escapeHtml(token)}</span>`;
+  return `<span class="emoji-native-fallback" aria-hidden="true">${escapeHtml(normalizeDisplayText(token))}</span>`;
 }
 
 function buildIconImageHtml(token: string, label?: string): string {
-  const asset = getIconAsset(token);
+  const normalizedToken = normalizeDisplayText(token);
+  const asset = getIconAsset(normalizedToken);
   if (!asset) return '';
   const title = escapeHtml(label || asset.label);
-  return `<img class="emoji-asset-img" src="${asset.url}" alt="" decoding="async" title="${title}" onerror="this.hidden=true;this.parentElement&&this.parentElement.classList.add('emoji-asset-fallback')">${buildNativeEmojiFallbackHtml(token)}`;
+  return `<img class="emoji-asset-img" src="${asset.url}" alt="" decoding="async" title="${title}" onerror="this.hidden=true;this.parentElement&&this.parentElement.classList.add('emoji-asset-fallback')">${buildNativeEmojiFallbackHtml(normalizedToken)}`;
 }
 
 function buildAssetImageHtml(url: string, label: string, fallbackToken: string): string {
@@ -193,24 +346,25 @@ export function renderSymbolIconHtml(
   label?: string,
   decorative = false,
 ): string {
+  const normalizedToken = normalizeDisplayText(token);
   const safeClassName = escapeHtml(className);
-  const asset = getIconAsset(token);
-  if (!asset || !token) {
-    if (!token) return '';
-    if (decorative) return `<span class="${safeClassName}" aria-hidden="true">${escapeHtml(token)}</span>`;
-    const safeLabel = escapeHtml(label || token);
-    return `<span class="${safeClassName}" role="img" aria-label="${safeLabel}" title="${safeLabel}">${escapeHtml(token)}</span>`;
+  const asset = getIconAsset(normalizedToken);
+  if (!asset || !normalizedToken) {
+    if (!normalizedToken) return '';
+    if (decorative) return `<span class="${safeClassName}" aria-hidden="true">${escapeHtml(normalizedToken)}</span>`;
+    const safeLabel = escapeHtml(label || normalizedToken);
+    return `<span class="${safeClassName}" role="img" aria-label="${safeLabel}" title="${safeLabel}">${escapeHtml(normalizedToken)}</span>`;
   }
 
   const safeLabel = escapeHtml(label || asset.label);
   const semantics = decorative
     ? 'aria-hidden="true"'
     : `role="img" aria-label="${safeLabel}" title="${safeLabel}"`;
-  return `<span class="${safeClassName} emoji-asset-icon" ${semantics}>${buildIconImageHtml(token, label)}</span>`;
+  return `<span class="${safeClassName} emoji-asset-icon" ${semantics}>${buildIconImageHtml(normalizedToken, label)}</span>`;
 }
 
 function getLeadingIconToken(value: string): string | null {
-  const trimmed = String(value || '').trimStart();
+  const trimmed = normalizeDisplayText(value).trimStart();
   for (const token of LEADING_ICON_TOKENS) {
     if (trimmed === token || trimmed.startsWith(`${token} `)) return token;
   }
@@ -218,7 +372,7 @@ function getLeadingIconToken(value: string): string | null {
 }
 
 export function renderLeadingEmojiLabel(value: unknown, className = 'inline-symbol-icon'): string {
-  const text = String(value ?? '');
+  const text = normalizeDisplayText(value);
   const token = getLeadingIconToken(text);
   if (!token) return escapeHtml(text);
   const rest = text.trimStart().slice(token.length).trimStart();
@@ -228,17 +382,17 @@ export function renderLeadingEmojiLabel(value: unknown, className = 'inline-symb
 
 function getWeatherToken(code: unknown): string {
   const value = Number(code);
-  if (value === 0) return '☀️';
-  if (value <= 2) return '🌤️';
-  if (value === 3) return '☁️';
-  if (value <= 49) return '🌫️';
-  if (value <= 59) return '🌧️';
-  if (value <= 69) return '🌧️';
-  if (value <= 79) return '🌨️';
-  if (value <= 82) return '🌦️';
-  if (value <= 86) return '🌨️';
-  if (value <= 99) return '⛈️';
-  return '☁️';
+  if (value === 0) return TOKENS.sun;
+  if (value <= 2) return TOKENS.partlyCloudy;
+  if (value === 3) return TOKENS.cloudy;
+  if (value <= 49) return TOKENS.fog;
+  if (value <= 59) return TOKENS.rain;
+  if (value <= 69) return TOKENS.rain;
+  if (value <= 79) return TOKENS.snow;
+  if (value <= 82) return TOKENS.showers;
+  if (value <= 86) return TOKENS.snow;
+  if (value <= 99) return TOKENS.thunderstorm;
+  return TOKENS.cloudy;
 }
 
 function getWeatherAssetUrl(code: unknown): string {
@@ -257,10 +411,10 @@ function getWeatherAssetUrl(code: unknown): string {
 }
 
 export function countryFlag(code: string | null | undefined): string {
-  const safeCode = String(code || '').trim().toUpperCase();
-  if (!safeCode) return renderSymbolIconHtml('🌍', 'country-flag-icon', 'Unknown country', true);
+  const safeCode = normalizeDisplayText(code).trim().toUpperCase();
+  if (!safeCode) return renderSymbolIconHtml(TOKENS.globe, 'country-flag-icon', 'Unknown country', true);
   if (!/^[A-Z]{2,3}(?:-[A-Z]{2,3})?$/.test(safeCode) || !hasFlag(safeCode)) {
-    return renderSymbolIconHtml('🌍', 'country-flag-icon', safeCode, true);
+    return renderSymbolIconHtml(TOKENS.globe, 'country-flag-icon', safeCode, true);
   }
   return `<span class="country-flag-icon flag:${escapeHtml(safeCode)}" aria-hidden="true"></span>`;
 }
@@ -273,12 +427,12 @@ export function degreesToCompass(deg: unknown): string {
 
 export function windDirectionHtml(deg: unknown, className = 'wind-dir-inline', showText = true): string {
   if (!isFiniteNumber(deg)) {
-    return `<span class="${escapeHtml(className)}" title="Variable wind" aria-label="Variable wind"><span class="wind-dir-arrow">↻</span>${showText ? '<span>Var.</span>' : ''}</span>`;
+    return `<span class="${escapeHtml(className)}" title="Variable wind" aria-label="Variable wind"><span class="wind-dir-arrow">\u21BB</span>${showText ? '<span>Var.</span>' : ''}</span>`;
   }
   const compass = degreesToCompass(deg);
   const safeDeg = Math.round((((deg as number) % 360) + 360) % 360);
-  const label = `Wind direction ${compass} (${safeDeg}°)`;
-  return `<span class="${escapeHtml(className)}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><span class="wind-dir-arrow" style="transform: rotate(${safeDeg}deg)">↑</span>${showText ? `<span>${escapeHtml(compass)}</span>` : ''}</span>`;
+  const label = `Wind direction ${compass} (${safeDeg}\u00B0)`;
+  return `<span class="${escapeHtml(className)}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><span class="wind-dir-arrow" style="transform: rotate(${safeDeg}deg)">\u2191</span>${showText ? `<span>${escapeHtml(compass)}</span>` : ''}</span>`;
 }
 
 export function weatherIconHtml(code: unknown, className = 'icon'): string {
@@ -287,8 +441,8 @@ export function weatherIconHtml(code: unknown, className = 'icon'): string {
 }
 
 export function formatWindTooltip(speed: unknown, gusts: unknown, dir: unknown): { speedText: string; gustText: string; dirHtml: string } {
-  const speedText = isFiniteNumber(speed) ? `${Math.round(speed)} km/h` : '—';
-  const gustText = isFiniteNumber(gusts) ? `${Math.round(gusts)} km/h` : '—';
+  const speedText = isFiniteNumber(speed) ? `${Math.round(speed)} km/h` : '\u2014';
+  const gustText = isFiniteNumber(gusts) ? `${Math.round(gusts)} km/h` : '\u2014';
   return { speedText, gustText, dirHtml: windDirectionHtml(dir, 'wind-dir-inline', true) };
 }
 
