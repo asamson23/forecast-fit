@@ -1012,3 +1012,11 @@
 - Added the current seasonal phase to the water-model status summary so the fallback guidance shows the active context alongside water body and wind exposure.
 - Kept the water-temperature planner section auto-open when measured marine water data is missing and auto-collapsed when measured water data is available.
 - Swapped the planner order so `Outdoor swimming` now appears above `Indoor training`.
+
+## v12.4
+
+- Normalized forecast and checkpoint timestamps onto the planner's wall-clock format before later-start clamping, interpolation, and route ETA calculations so later-date route timing stays aligned with the forecast window.
+- Preserved the last successful weather result, route-point context, and later-start selection when a weather refresh fails instead of hiding the result card and leaving the UI half-updated.
+- Snapshotted route checkpoint weather cache state before forced refreshes so failed route-start or route-point refreshes restore checkpoint weather instead of clearing it permanently.
+- Reset the uploaded route file input after parse failures so the same GPX or GeoJSON file can be retried immediately without a stale half-loaded state.
+- Built imported Strava route state before committing it into the planner flow so picker-based provider imports do not partially mutate the route state when route normalization fails.

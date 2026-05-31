@@ -34,6 +34,7 @@ Planning and follow-up notes for future work.
 
 - Review whether warning-dismissal state should persist once warnings become individually dismissible in the UI.
 - Review whether route persistence should keep the current storage-size guardrails or move to a more explicit user-controlled cache model.
+- Thin out `src/main.ts` by moving cohesive function groups into smaller modules with clear, significant file names so route, weather, planner, rendering, and provider logic are easier to maintain independently.
 
 ### Provider Browser UX
 
@@ -44,8 +45,8 @@ Planning and follow-up notes for future work.
 
 ### Route Timing And Refresh Follow-Up
 
-- Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
-- Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
+- [X] Review timezone handling and forecast-time assumptions, especially when switching to later forecast dates or calculating route timing against forecast windows.
+- [X] Review error-state recovery across provider import, GPX parsing, route loading, and weather refresh so failures do not leave the UI half-updated or internally inconsistent.
 
 ### Manual Validation
 
