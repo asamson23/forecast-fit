@@ -9715,27 +9715,27 @@ function renderAdvice(data, activity) {
   const [, desc] = wCodeToEmoji(point.code);
   const windSummary = formatWindTooltip(point.wind || data.current.wind, point.gusts || data.current.gusts, point.windDir || data.current.windDir);
   const metaLines = [
-    `ðŸ’§ Humidity <strong>${escapeHtml(data.current.humidity)}%</strong>`,
-    `ðŸ’¨ Wind <strong>${escapeHtml(windSummary.speedText)}</strong> ${windSummary.dirHtml}`,
-    `â†¯ Gusts <strong>${escapeHtml(windSummary.gustText)}</strong>`,
-    `ðŸŒ§ Precip <strong>${escapeHtml(round1(point.precip || 0))} mm</strong> · <strong>${escapeHtml(Math.round(firstFinite(point.precipProb, 0)))}%</strong>`
+    `${renderSymbolIconHtml('💦', 'inline-symbol-icon', 'Humidity', true)} Humidity <strong>${escapeHtml(data.current.humidity)}%</strong>`,
+    `${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} Wind <strong>${escapeHtml(windSummary.speedText)}</strong> ${windSummary.dirHtml}`,
+    `${renderSymbolIconHtml('↯', 'inline-symbol-icon', 'Gusts', true)} Gusts <strong>${escapeHtml(windSummary.gustText)}</strong>`,
+    `${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precip', true)} Precip <strong>${escapeHtml(round1(point.precip || 0))} mm</strong> · <strong>${escapeHtml(Math.round(firstFinite(point.precipProb, 0)))}%</strong>`
   ];
   const uvInfo = getUvRiskInfo(getUvDisplayValue(point, data));
-  if (uvInfo) metaLines.push(`â˜€ ${renderUvBadge(uvInfo.value)}`);
+  if (uvInfo) metaLines.push(`${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(uvInfo.value)}`);
   const aqiInfo = getAqiInfo(point.aqi ?? data.current.aqi);
-  if (aqiInfo) metaLines.push(`ðŸ’¨ ${renderAqiBadge(aqiInfo.value)}`);
+  if (aqiInfo) metaLines.push(`${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Air quality', true)} ${renderAqiBadge(aqiInfo.value)}`);
 
   const weatherMetaDay = getDayRecord(data, point.time || startTime || data.currentTime);
   if (weatherMetaDay?.sunrise || weatherMetaDay?.sunset) {
     const sunBits = [];
-    if (weatherMetaDay.sunrise) sunBits.push(`â¬† Sunrise <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunrise))}</strong>`);
-    if (weatherMetaDay.sunset) sunBits.push(`â¬‡ Sunset <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunset))}</strong>`);
+    if (weatherMetaDay.sunrise) sunBits.push(`${renderSymbolIconHtml('🌅', 'inline-symbol-icon', 'Sunrise', true)} Sunrise <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunrise))}</strong>`);
+    if (weatherMetaDay.sunset) sunBits.push(`${renderSymbolIconHtml('🌇', 'inline-symbol-icon', 'Sunset', true)} Sunset <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunset))}</strong>`);
     if (sunBits.length) metaLines.push(sunBits.join(' · '));
   }
   const waterMetaLine = renderWaterTemperatureMetaLine(point, data);
   const showWaterUi = shouldShowWaterTemperatureSignal(point, activity || selectedActivity);
   if (waterMetaLine) metaLines.push(waterMetaLine);
-  if (isFiniteNumber(point.waveHeight)) metaLines.push(`ã€°ï¸ Waves <strong>${escapeHtml(round1(point.waveHeight))} m</strong>`);
+  if (isFiniteNumber(point.waveHeight)) metaLines.push(`${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Waves', true)} Waves <strong>${escapeHtml(round1(point.waveHeight))} m</strong>`);
 
   const durationState = getDurationState(getSelectedEvent());
   if (!durationState) {
