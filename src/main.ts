@@ -1024,10 +1024,10 @@ function renderDurationFieldMeta() {
   if (!customDurationInput) return;
   const unit = durationUnitSelect?.value || 'h';
   customDurationInput.placeholder = unit === 'min'
-    ? 'Optional Â· 90 or 1:30'
+    ? 'Optional · 90 or 1:30'
     : unit === 'd'
-      ? 'Optional Â· 2 or 2.5'
-      : 'Optional Â· 5:38 or 5.5';
+      ? 'Optional · 2 or 2.5'
+      : 'Optional · 5:38 or 5.5';
 }
 
 function getPreferredDurationUnit(activity = selectedActivity) {
@@ -1189,9 +1189,9 @@ function getLocationCardSummaryText() {
   if (getWeatherDataProvenance(weatherData)?.kind === 'cached') bits.push('cached forecast');
   if (routeState?.points?.length) {
     const routeLabel = routeState?.routeSource?.provider === 'strava' ? 'imported route' : 'local route';
-    bits.push(`${routeState.fileName} Â· ${formatKm(routeState.totalKm)} Â· ${routeLabel}`);
+    bits.push(`${routeState.fileName} · ${formatKm(routeState.totalKm)} · ${routeLabel}`);
   }
-  return bits.join(' Â· ') || 'No location / route loaded';
+  return bits.join(' · ') || 'No location / route loaded';
 }
 
 function updateLocationCardCollapseUi() {
@@ -1534,7 +1534,7 @@ function formatDerivedAverageLabel(kmh) {
   const secs = Math.round((minPerKm - whole) * 60);
   const safeWhole = secs === 60 ? whole + 1 : whole;
   const safeSecs = secs === 60 ? 0 : secs;
-  return `${round1(kmh)} km/h Â· ${safeWhole}:${String(safeSecs).padStart(2, '0')} min/km`;
+  return `${round1(kmh)} km/h · ${safeWhole}:${String(safeSecs).padStart(2, '0')} min/km`;
 }
 
 function getDerivedAverageMetric(eventPreset = getSelectedEvent()) {
@@ -1857,7 +1857,7 @@ function updateWaterModelStatus() {
   if (isPoolSwimmingActivity(selectedActivity)) bits.push(`pool: ${String(settings.poolType || '').replace(/_/g, ' ')}`);
   const seasonInfo = getSeasonInfo(weatherData?.currentTime || new Date().toISOString(), weatherData?.latitude);
   if (seasonInfo?.label) bits.push(`season: ${seasonInfo.label}`);
-  waterModelStatus.textContent = `Measured marine data stays preferred. If unavailable, Forecast Fit estimates a conservative fallback from recent air temperatures, broad latitude band, season, wind, and ${bits.join(' Â· ')}.`;
+  waterModelStatus.textContent = `Measured marine data stays preferred. If unavailable, Forecast Fit estimates a conservative fallback from recent air temperatures, broad latitude band, season, wind, and ${bits.join(' · ')}.`;
 }
 
 function mapRange(value, inMin, inMax, outMin, outMax) {
@@ -2012,7 +2012,7 @@ function formatWaterTemperatureValue(point) {
 
 function getWaterTemperatureSourceLabel(point, data = weatherData) {
   if (point?.waterTempSource === 'manual') return 'manual';
-  if (point?.waterTempSource === 'estimated') return `estimated fallback Â· ${getWaterConfidenceLabel(point.waterTempConfidence)}`;
+  if (point?.waterTempSource === 'estimated') return `estimated fallback · ${getWaterConfidenceLabel(point.waterTempConfidence)}`;
   if (point?.waterTempSource === 'measured') return data?.marineSource || 'measured water data';
   if (point?.waterTempSource === 'mixed') return `mixed water sources - ${getWaterConfidenceLabel(point.waterTempConfidence)}`;
   return 'water temp unknown';
@@ -2023,7 +2023,7 @@ function getWaterTemperatureChip(point, data = weatherData) {
   const confidence = getWaterConfidenceLabel(point.waterTempConfidence || point.waterTempSource);
   const source = getWaterTemperatureSourceLabel(point, data);
   const tempLabel = formatWaterTemperatureValue(point);
-  return { label: `ðŸŒŠ water ${tempLabel} Â· ${source}`, tone: point.waterTemp < 14 || confidence === 'unknown' ? 'warn' : (confidence === 'high' ? 'ok' : '') };
+  return { label: `ðŸŒŠ water ${tempLabel} · ${source}`, tone: point.waterTemp < 14 || confidence === 'unknown' ? 'warn' : (confidence === 'high' ? 'ok' : '') };
 }
 
 function renderWaterTemperatureMetaLine(point, data = weatherData) {
@@ -2121,7 +2121,7 @@ function renderDurationButtons() {
   }
   el.innerHTML = durationKeys.map(key => {
     const p = durationProfiles[key];
-    return `<button class="duration-btn ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} data-action="selectDurationKey" data-duration-key="${escapeHtml(key)}"><div class="label">${escapeHtml(p.label)}</div><div class="sublabel">${escapeHtml(locked && activeKey === key ? `${p.sublabel} Â· route` : p.sublabel)}</div></button>`;
+    return `<button class="duration-btn ${activeKey === key ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" ${locked ? 'disabled' : ''} data-action="selectDurationKey" data-duration-key="${escapeHtml(key)}"><div class="label">${escapeHtml(p.label)}</div><div class="sublabel">${escapeHtml(locked && activeKey === key ? `${p.sublabel} · route` : p.sublabel)}</div></button>`;
   }).join('');
 }
 
@@ -2147,17 +2147,17 @@ function renderEventButtons() {
   } else {
     const distanceState = getDistanceState(selected);
     const sourceText = distanceState.source === 'custom' ? 'custom distance' : distanceState.source === 'derived' ? 'estimated from duration + average' : selected.detail;
-    const summaryLead = raceDayMode && getRaceDayEventPreset() ? `Race day mode Ã‚Â· ${selected.label}` : selected.label;
+    const summaryLead = raceDayMode && getRaceDayEventPreset() ? `Race day mode · ${selected.label}` : selected.label;
     summary.textContent = distanceState.source === 'custom'
-      ? `Custom distance Â· ${distanceState.label}`
-      : `${selected.label} Â· ${distanceState.label}${sourceText ? ` â€” ${sourceText}` : ''}`;
+      ? `Custom distance · ${distanceState.label}`
+      : `${selected.label} · ${distanceState.label}${sourceText ? ` â€” ${sourceText}` : ''}`;
   }
   if (!distanceLocked && raceDayMode && getRaceDayEventPreset()) {
     const distanceState = getDistanceState(selected);
     const sourceText = distanceState.source === 'custom' ? 'custom distance' : distanceState.source === 'derived' ? 'estimated from duration + average' : selected.detail;
     summary.textContent = distanceState.source === 'custom'
-      ? `Custom distance Â· ${distanceState.label}`
-      : `Race day mode Â· ${selected.label} Â· ${distanceState.label}${sourceText ? ` â€” ${sourceText}` : ''}`;
+      ? `Custom distance · ${distanceState.label}`
+      : `Race day mode · ${selected.label} · ${distanceState.label}${sourceText ? ` â€” ${sourceText}` : ''}`;
   }
   refreshSelectionNotes();
 }
@@ -3489,9 +3489,9 @@ function renderRouteMap() {
       .addTo(routeMarkersLayer);
   });
   fitRouteMapToBounds();
-  const gainText = routeState.totalGain >= 20 ? ` Â· +${Math.round(routeState.totalGain)} m` : '';
-  const modelText = checkpointModel === 'smart' ? ' Â· smart checkpoints' : ' Â· standard checkpoints';
-  routeSummary.textContent = `${routeState.fileName} Â· ${routeState.points.length} points Â· ${formatKm(routeState.totalKm)}${gainText}${routeHasDurationOverride() ? ` Â· route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''}${modelText}`;
+  const gainText = routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : '';
+  const modelText = checkpointModel === 'smart' ? ' · smart checkpoints' : ' · standard checkpoints';
+  routeSummary.textContent = `${routeState.fileName} · ${routeState.points.length} points · ${formatKm(routeState.totalKm)}${gainText}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''}${modelText}`;
 }
 
 function getInterpolatedForecastPointFromHourly(hourly, timeStr) {
@@ -3598,11 +3598,11 @@ async function refreshRouteWeatherIfPossible() {
   renderRouteMap();
   const slot = document.getElementById('route-weather-slot');
   if (!hasPlannedDurationSelection()) {
-    routeSummary.textContent = `${routeState.fileName} Â· ${formatKm(routeState.totalKm)}${routeHasDurationOverride() ? ` Â· route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''} Â· choose a duration to time weather checkpoints`;
+    routeSummary.textContent = `${routeState.fileName} · ${formatKm(routeState.totalKm)}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''} · choose a duration to time weather checkpoints`;
     if (slot) slot.innerHTML = buildRouteWeatherHtml();
     return;
   }
-  routeSummary.textContent = `${routeState.fileName} Â· loading checkpoint weatherâ€¦`;
+  routeSummary.textContent = `${routeState.fileName} · loading checkpoint weatherâ€¦`;
   await Promise.all(routeState.samples.map(async cp => {
     try {
       const cache = await withTimeout(fetchRouteCheckpointForecast(cp), 12000, 'Route checkpoint forecast');
@@ -3624,7 +3624,7 @@ async function refreshRouteWeatherIfPossible() {
   }));
   markSmartWeatherEventCheckpoints(routeState.samples);
   renderRouteMap();
-  routeSummary.textContent = `${routeState.fileName} Â· ${formatKm(routeState.totalKm)}${routeHasDurationOverride() ? ` Â· route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''} Â· ${routeState.samples.length} ${getCheckpointModelLabel()} checkpoints`;
+  routeSummary.textContent = `${routeState.fileName} · ${formatKm(routeState.totalKm)}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)}` : ''} · ${routeState.samples.length} ${getCheckpointModelLabel()} checkpoints`;
   if (slot) slot.innerHTML = buildRouteWeatherHtml();
 }
 
@@ -3727,13 +3727,13 @@ async function handleRouteFileChange(event) {
     locationCardCollapsed = true;
     updateLocationCardCollapseUi();
     collapsePlannerSubsection('duration', { scrollToNextOnMobile: true });
-    const routeLoadedMessage = `${file.name} loaded Â· ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` Â· +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` Â· route time ${formatMinutesShort(routeState.elapsedMinutes)} Â· duration locked` : ' Â· no timing found, so duration stays manual'} Â· ${routeState.points.length} points Â· ${getCheckpointModelLabel()} checkpoint model Â· provenance: local route file.`;
+    const routeLoadedMessage = `${file.name} loaded · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''}${routeHasDurationOverride() ? ` · route time ${formatMinutesShort(routeState.elapsedMinutes)} · duration locked` : ' · no timing found, so duration stays manual'} · ${routeState.points.length} points · ${getCheckpointModelLabel()} checkpoint model · provenance: local route file.`;
     routeStatus.textContent = routeLoadedMessage;
     clearRouteBtn.style.display = 'inline-block';
     renderPlannerState();
     if (weatherData) configureLaterInput(weatherData);
     renderRouteMap();
-    routeStatus.textContent = `${routeLoadedMessage} Â· refreshing weatherâ€¦`;
+    routeStatus.textContent = `${routeLoadedMessage} · refreshing weatherâ€¦`;
     try {
       await refreshWeatherForActiveTarget({
         source: 'route_load',
@@ -3744,7 +3744,7 @@ async function handleRouteFileChange(event) {
       routeStatus.textContent = routeLoadedMessage;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to refresh weather.';
-      routeStatus.textContent = `${routeLoadedMessage} Â· weather refresh failed: ${message}`;
+      routeStatus.textContent = `${routeLoadedMessage} · weather refresh failed: ${message}`;
     }
   } catch (err) {
     routeFileInput.value = '';
@@ -4907,7 +4907,7 @@ function formatSavedSessionSummary(snapshot: PersistedAppState | null) {
   if (snapshot.forecastOnlyMode) bits.push('Forecast only');
   if (snapshot.weather?.savedAt) bits.push('cached weather');
   return bits.length
-    ? `${bits.join(' Â· ')}. Resume it or start with a blank planner.`
+    ? `${bits.join(' · ')}. Resume it or start with a blank planner.`
     : 'A saved planner session is available on this device. Resume it or start with a blank planner.';
 }
 
@@ -5412,7 +5412,7 @@ const renderLeadingEmojiLabel = (value, className = 'inline-symbol-icon') =>
 const upgradeEmojiMarkup = (html) => {
   const replacements = [
     ['ðŸ· ', `${renderSymbolIconHtml('ðŸ·', 'inline-symbol-icon', 'Activity', true)} `],
-    ['Ã°Å¸ÂÂ· ', `${renderSymbolIconHtml('ðŸ·', 'inline-symbol-icon', 'Activity', true)} `],
+    ['Ã°Å¸Â· ', `${renderSymbolIconHtml('ðŸ·', 'inline-symbol-icon', 'Activity', true)} `],
     ['ðŸ  ', `${renderSymbolIconHtml('ðŸ ', 'inline-symbol-icon', 'Indoor', true)} `],
     ['Ã°Å¸ÂÂ  ', `${renderSymbolIconHtml('ðŸ ', 'inline-symbol-icon', 'Indoor', true)} `],
     ['ðŸŒŠ ', `${renderSymbolIconHtml('ðŸŒŠ', 'inline-symbol-icon', 'Water', true)} `],
@@ -5532,7 +5532,7 @@ function formatWindTooltip(speed, gusts, dir) {
 
 function buildRouteCheckpointPopupHtml(cp) {
   const place = cp.placeLabel || 'Nearby area';
-  const reasonLine = cp.reasonLabels?.length ? `<span class="popup-muted">${escapeHtml(cp.reasonLabels.join(' Â· '))}</span>` : '';
+  const reasonLine = cp.reasonLabels?.length ? `<span class="popup-muted">${escapeHtml(cp.reasonLabels.join(' · '))}</span>` : '';
   if (!cp.weather) {
     return `<div class="route-popup"><div class="popup-head"><strong>${escapeHtml(cp.label)}</strong><span class="popup-muted popup-km">${escapeHtml(formatKmPrefix(cp.kmFromStart))}</span></div><span class="popup-place">${escapeHtml(place)}</span>${cp.eta ? `<span class="popup-eta">ETA ${escapeHtml(formatShortDateTime(cp.eta))}</span>` : ''}${reasonLine}</div>`;
   }
@@ -5540,7 +5540,7 @@ function buildRouteCheckpointPopupHtml(cp) {
   const [, desc] = wCodeToEmoji(w.code);
   const windBits = formatWindTooltip(w.wind, w.gusts, w.windDir);
   const windowSummary = cp.windowWeather
-    ? `${Math.round(firstFinite(cp.windowWeather.feelsMin, w.feels))}Â° to ${Math.round(firstFinite(cp.windowWeather.feelsMax, w.feels))}Â° feels Â· gusts up to ${Math.round(firstFinite(cp.windowWeather.maxGust, w.gusts, 0))} km/h`
+    ? `${Math.round(firstFinite(cp.windowWeather.feelsMin, w.feels))}Â° to ${Math.round(firstFinite(cp.windowWeather.feelsMax, w.feels))}Â° feels · gusts up to ${Math.round(firstFinite(cp.windowWeather.maxGust, w.gusts, 0))} km/h`
     : null;
   const routeWind = cp.relativeWind?.short ? `<span class="popup-muted">${escapeHtml(cp.relativeWind.short)}</span>` : '';
   return `
@@ -5592,7 +5592,7 @@ function buildRouteWeatherHtml() {
     if (winds.length) bits.push(`peak wind ${Math.round(Math.max(...winds))} km/h`);
     if (precips.length) bits.push(`max precip ${Math.round(Math.max(...precips))}%`);
     if (uvs.length) bits.push(`peak UV ${formatUvValue(Math.max(...uvs))}`);
-    return bits.join(' Â· ');
+    return bits.join(' · ');
   })() : 'Loading checkpoint weatherâ€¦';
 
   return `
@@ -5603,9 +5603,9 @@ function buildRouteWeatherHtml() {
       ${samples.map(cp => {
         const w = cp.weather;
         const reasonLine = checkpointModel === 'smart' && cp.reasonLabels?.length
-          ? cp.reasonLabels.join(' Â· ')
+          ? cp.reasonLabels.join(' · ')
           : null;
-        const routeWind = cp.relativeWind?.short ? ` Â· ${cp.relativeWind.short}` : '';
+        const routeWind = cp.relativeWind?.short ? ` · ${cp.relativeWind.short}` : '';
         const windowBits = cp.windowWeather && w ? (() => {
           const bits = [];
           if (isFiniteNumber(cp.windowWeather.feelsMin) && isFiniteNumber(cp.windowWeather.feelsMax)) {
@@ -5614,7 +5614,7 @@ function buildRouteWeatherHtml() {
           if (isFiniteNumber(cp.windowWeather.maxGust)) bits.push(`gusts up to ${Math.round(cp.windowWeather.maxGust)} km/h`);
           if (isFiniteNumber(cp.windowWeather.maxPrecipProb) && cp.windowWeather.maxPrecipProb >= 10) bits.push(`precip up to ${Math.round(cp.windowWeather.maxPrecipProb)}%`);
           if (isFiniteNumber(cp.windowWeather.maxUv) && cp.windowWeather.maxUv >= 3) bits.push(`UV up to ${formatUvValue(cp.windowWeather.maxUv)}`);
-          return bits.join(' Â· ');
+          return bits.join(' · ');
         })() : '';
         return `
           <div class="route-weather-cell">
@@ -5623,7 +5623,7 @@ function buildRouteWeatherHtml() {
             <div class="cp-place">${escapeHtml(cp.placeLabel || 'Nearby area')}</div>
             <div class="cp-sub">ETA ${cp.eta ? escapeHtml(formatShortDateTime(cp.eta)) : 'â€”'}${reasonLine ? `<br>${escapeHtml(reasonLine)}` : ''}</div>
             ${w ? `
-              <div class="cp-temp">${Math.round(w.temp)}Â° Â· feels ${Math.round(w.feels)}Â°</div>
+              <div class="cp-temp">${Math.round(w.temp)}Â° · feels ${Math.round(w.feels)}Â°</div>
               <div class="cp-humidity">${renderSymbolIconHtml('ðŸ’§', 'inline-symbol-icon', 'Humidity', true)} ${isFiniteNumber(w.humidity) ? `${Math.round(w.humidity)}% RH` : 'â€”'}</div>
               <div class="cp-meta">${renderSymbolIconHtml('ðŸ’¨', 'inline-symbol-icon', 'Wind', true)} ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>â†¯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : 'â€”'} km/h${isFiniteNumber(w.uv) ? `<br>${renderSymbolIconHtml('â˜€ï¸', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(w.uv, true)}` : ''}${isFiniteNumber(w.aqi) ? `<br>${renderSymbolIconHtml('ðŸ˜·', 'inline-symbol-icon', 'AQI', true)} ${renderAqiBadge(w.aqi, true)}` : ''}<br>${renderSymbolIconHtml('ðŸŒ§ï¸', 'inline-symbol-icon', 'Precipitation', true)} ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
             ` : `<div class="cp-temp">Loadingâ€¦</div>`}
@@ -5683,13 +5683,13 @@ function formatUvValue(value) {
 function renderUvBadge(value, compact = false) {
   const info = getUvRiskInfo(value);
   if (!info) return '';
-  return `<span class="uv-badge uv-${escapeHtml(info.className)}${compact ? ' compact' : ''}">UV ${escapeHtml(formatUvValue(info.value))} Â· ${escapeHtml(info.label)}</span>`;
+  return `<span class="uv-badge uv-${escapeHtml(info.className)}${compact ? ' compact' : ''}">UV ${escapeHtml(formatUvValue(info.value))} · ${escapeHtml(info.label)}</span>`;
 }
 
 function renderAqiBadge(value, compact = false) {
   const info = getAqiInfo(value);
   if (!info) return '';
-  return `<span class="aqi-badge aqi-${escapeHtml(info.className)}${compact ? ' compact' : ''}">AQI ${escapeHtml(String(info.value))}${compact ? '' : ` Â· ${escapeHtml(info.category)}`}</span>`;
+  return `<span class="aqi-badge aqi-${escapeHtml(info.className)}${compact ? ' compact' : ''}">AQI ${escapeHtml(String(info.value))}${compact ? '' : ` · ${escapeHtml(info.category)}`}</span>`;
 }
 
 function renderUvRatingBadge(value, compact = false) {
@@ -5745,7 +5745,7 @@ function augmentWizardWithUvContext(wizard, data, activity) {
   if (uvInfo && uvInfo.value >= 3) {
     wizard.chips = Array.isArray(wizard.chips) ? wizard.chips : [];
     if (!wizard.chips.some(chip => /^â˜€ï¸ UV/.test(String(chip.label || '')))) {
-      wizard.chips.push({ label: `â˜€ï¸ UV ${formatUvValue(uvInfo.value)} Â· ${uvInfo.label}`, tone: `uv-${uvInfo.className}` });
+      wizard.chips.push({ label: `â˜€ï¸ UV ${formatUvValue(uvInfo.value)} · ${uvInfo.label}`, tone: `uv-${uvInfo.className}` });
     }
     addItemToWizardStep(wizard, getUvProtectionItem(uvInfo.value, activity, describeLight(data, wizard.startTime || getSelectedStartTime(data), selection)));
   }
@@ -5761,7 +5761,7 @@ function augmentWizardWithAqiContext(wizard, data, activity) {
   if (!aqiInfo || aqiInfo.value < 51) return wizard;
   wizard.chips = Array.isArray(wizard.chips) ? wizard.chips : [];
   if (!wizard.chips.some(chip => /^ðŸ’¨ AQI/.test(String(chip.label || '')))) {
-    wizard.chips.push({ label: `ðŸ’¨ AQI ${aqiInfo.value} Â· ${aqiInfo.category}`, tone: `aqi-${aqiInfo.className}` });
+    wizard.chips.push({ label: `ðŸ’¨ AQI ${aqiInfo.value} · ${aqiInfo.category}`, tone: `aqi-${aqiInfo.className}` });
   }
   if (aqiInfo.value >= 101) {
     addItemToWizardStep(wizard, { label: 'Air quality mask', detail: `AQI ${aqiInfo.value} (${aqiInfo.category}) â€” consider an N95/KN95 mask for prolonged outdoor effort.` });
@@ -6248,7 +6248,7 @@ function ensureLaterPicker() {
     disableMobile: true,
     dateFormat: 'Y-m-d\TH:i',
     altInput: true,
-    altFormat: 'l, M j Â· H:i',
+    altFormat: 'l, M j · H:i',
     minuteIncrement: getLaterPickerMinuteIncrement(),
     locale: {
       firstDayOfWeek: 1
@@ -6272,7 +6272,7 @@ function createBestWindowPicker(input, placeholder, onChange) {
     disableMobile: true,
     dateFormat: 'Y-m-d\TH:i',
     altInput: true,
-    altFormat: 'l, M j Â· H:i',
+    altFormat: 'l, M j · H:i',
     minuteIncrement: getLaterPickerMinuteIncrement(),
     locale: {
       firstDayOfWeek: 1
@@ -6402,7 +6402,7 @@ function syncRaceDayTimingInputs(data, changedField = null) {
     raceDayTimingStatus.classList.toggle('error', invalid);
     raceDayTimingStatus.textContent = invalid
       ? `${raceDayWindow.validationMessage} Showing the default race-day weather window until this is fixed.`
-      : `Day ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))} to ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} Â· event ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}-${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))} Â· warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)} Â· cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}.`;
+      : `Day ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))} to ${formatShortDateTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · event ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}-${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))} · warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)} · cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}.`;
   }
 }
 
@@ -6453,7 +6453,7 @@ function renderSuggestions() {
   }
   focusedIndex = -1;
   suggestionsPortal.innerHTML = suggestionsData.map((r, i) => {
-    const parts = [r.admin1, r.country].filter(Boolean).join(' Â· ') || (r.display_name && r.display_name !== r.name ? r.display_name : '');
+    const parts = [r.admin1, r.country].filter(Boolean).join(' · ') || (r.display_name && r.display_name !== r.name ? r.display_name : '');
     return `
       <button type="button" class="suggestion-item" data-index="${i}" data-action="pickSuggestion">
         <span class="s-flag">${countryFlag(r.country_code)}</span>
@@ -7672,7 +7672,7 @@ function getDisplayForecastSelection(data, startTime) {
       chartLatitude: data?.latitude,
       chartLongitude: data?.longitude,
       chartLocationName: data?.locationName,
-      headerMeta: `${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}â€“${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} Â· main event highlighted`
+      headerMeta: `${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}â€“${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · main event highlighted`
     }
   );
 }
@@ -8566,7 +8566,7 @@ async function runBestWindowAnalysis(force = false) {
     ? ` ${rangeCount} option${rangeCount === 1 ? '' : 's'} show a compact good-start range.`
     : '';
   bestWindowStatus.textContent = lead
-    ? `${getBestWindowPresetLabel(options.priority)}: best start ${formatShortTime(lead.startTime)}. ${leadReasons.join(' Â· ')}. Showing ${optionLabel}; nearby starts are condensed.${rangeNote}${overrunCount ? ` ${overrunCount} option${overrunCount === 1 ? '' : 's'} extend past the search end.` : ''}`
+    ? `${getBestWindowPresetLabel(options.priority)}: best start ${formatShortTime(lead.startTime)}. ${leadReasons.join(' · ')}. Showing ${optionLabel}; nearby starts are condensed.${rangeNote}${overrunCount ? ` ${overrunCount} option${overrunCount === 1 ? '' : 's'} extend past the search end.` : ''}`
     : 'No valid windows found.';
   renderBestWindowResults(bestWindowAnalysis);
   if (weatherData) renderAdvice(weatherData, selectedActivity);
@@ -8636,10 +8636,10 @@ function option(label, detail, selected = false, tags = []) {
 function toChecklistTitle(str) {
   return String(str || '')
     .trim()
-    .split(/(\s+|\/|Â·|\+|â€“|-|\(|\))/)
+    .split(/(\s+|\/|·|\+|â€“|-|\(|\))/)
     .map(token => {
       if (!token || /^\s+$/.test(token)) return token;
-      if (/^[\/+Â·()â€“-]$/.test(token)) return token;
+      if (/^[\/+·()â€“-]$/.test(token)) return token;
       if (/^[0-9]/.test(token)) return token;
       if (/[A-Z]{2,}/.test(token) && !/[a-z]/.test(token)) return token;
       const lower = token.toLowerCase();
@@ -8786,7 +8786,7 @@ function buildWizard(data, activity) {
       if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
     if (profile.minutes >= 240 || (distanceKmValue != null && distanceKmValue >= 30)) extras.push(item('Dry backup layer', 'Helpful when the weather could turn or the stop afterward is chilly.', ['long']));
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup around ${distanceText}, starting at ${Math.round(feels)}Â°C feels-like with ${desc}${wet ? ' and some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the main run kit', 'Choose the broad outfit first.', mainOptions), makeListStep('Step 2 Â· Add the important layers / accessories', 'These are the pieces that meaningfully change comfort.', core), makeListStep('Step 3 Â· Longer-distance / backup items', 'Worth more as the outing or event gets bigger.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are more of a postpone problem than a clothing problem.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup around ${distanceText}, starting at ${Math.round(feels)}Â°C feels-like with ${desc}${wet ? ' and some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main run kit', 'Choose the broad outfit first.', mainOptions), makeListStep('Step 2 · Add the important layers / accessories', 'These are the pieces that meaningfully change comfort.', core), makeListStep('Step 3 · Longer-distance / backup items', 'Worth more as the outing or event gets bigger.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are more of a postpone problem than a clothing problem.' : null };
   }
 
   if (activity === 'cycling') {
@@ -8828,7 +8828,7 @@ function buildWizard(data, activity) {
       );
       if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with bike-effective feel around ${Math.round(effective)}Â°C and ${desc}${wet ? ' with wet-road risk' : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the main bike kit', 'Choose the core on-bike clothing system.', mainOptions), makeListStep('Step 2 Â· Add the bike-specific essentials', 'These make the biggest difference on a ride.', core), makeListStep('Step 3 Â· Adapt for distance / swingy weather', 'Longer rides reward better layer planning.', extras) ], warning: point.code >= 95 ? 'Thunderstorms plus exposed roads are not a â€œdress around itâ€ situation.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with bike-effective feel around ${Math.round(effective)}Â°C and ${desc}${wet ? ' with wet-road risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main bike kit', 'Choose the core on-bike clothing system.', mainOptions), makeListStep('Step 2 · Add the bike-specific essentials', 'These make the biggest difference on a ride.', core), makeListStep('Step 3 · Adapt for distance / swingy weather', 'Longer rides reward better layer planning.', extras) ], warning: point.code >= 95 ? 'Thunderstorms plus exposed roads are not a â€œdress around itâ€ situation.' : null };
   }
 
   if (['triathlon', 'swimrun', 'duathlon', 'aquathlon', 'cross_triathlon', 'cross_duathlon'].includes(activity)) {
@@ -8943,7 +8943,7 @@ function buildWizard(data, activity) {
     }
     if (eventPreset?.key === 'tri_70' || eventPreset?.key === 'tri_full' || eventPreset?.key === 'swimrun_long' || eventPreset?.key === 'xtri_long' || eventPreset?.key === 'xdu_long' || (distanceKmValue != null && distanceKmValue >= 80)) extras.push(item('Long-course fuel / carry plan', 'Clothing and storage choices start to overlap here.', ['long-course']));
     const hybridSwimSummary = hasIndoorSwimLeg && !hasOutdoorSwimLeg ? ' The swim block is indoors, so the kit leans toward transition organization and the outdoor legs instead of open-water temperature.' : '';
-    return { point, startTime, chips: hasOutdoorSwimLeg ? [...chips, getWaterTemperatureChip(point, data), { label: `ðŸ ${multisportSummary}` }] : [...chips, { label: `ðŸ ${multisportSummary}` }], activityLabel: multisportLabel, summary: `${eventLabel} preset for ${multisportLabel}, planned as ${multisportSummary}, around ${Math.round(feels)}Â°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}.${hybridSwimSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 Â· Pick the main multisport kit', `Build around the ${multisportLabel} legs you selected.`, mainOptions), makeListStep('Step 2 Â· Add the event-specific essentials', 'The small multisport details matter more than they look.', core), makeListStep('Step 3 Â· Before / after / long-course extras', 'Useful once the event gets bigger.', extras) ], warning: hasOutdoorSwimLeg && wt == null ? 'Water temperature was not available here. Check local swim conditions before locking your swim setup.' : null };
+    return { point, startTime, chips: hasOutdoorSwimLeg ? [...chips, getWaterTemperatureChip(point, data), { label: `ðŸ ${multisportSummary}` }] : [...chips, { label: `ðŸ ${multisportSummary}` }], activityLabel: multisportLabel, summary: `${eventLabel} preset for ${multisportLabel}, planned as ${multisportSummary}, around ${Math.round(feels)}Â°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}.${hybridSwimSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the main multisport kit', `Build around the ${multisportLabel} legs you selected.`, mainOptions), makeListStep('Step 2 · Add the event-specific essentials', 'The small multisport details matter more than they look.', core), makeListStep('Step 3 · Before / after / long-course extras', 'Useful once the event gets bigger.', extras) ], warning: hasOutdoorSwimLeg && wt == null ? 'Water temperature was not available here. Check local swim conditions before locking your swim setup.' : null };
   }
 
   if (activity === 'swimming_open') {
@@ -8963,7 +8963,7 @@ function buildWizard(data, activity) {
     if (wt == null) warning = 'Water temperature was not available here. Verify it locally before committing to an open-water swim.';
     else if (wt < 10) warning = 'Very cold water: high-consequence conditions unless you are specifically equipped and experienced.';
     else if (wave != null && wave >= 1) warning = 'Surface chop can make the swim and especially the exit feel harsher than the air suggests.';
-    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with air around ${Math.round(feels)}Â°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the swim-suit system', 'For open water, this is the main clothing decision.', suitOptions), makeListStep('Step 2 Â· Add the safety / swim essentials', 'These are the items that make the session workable and visible.', core), makeListStep('Step 3 Â· Before / after extras', 'Open-water comfort often lives outside the actual swim.', extras) ], warning };
+    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with air around ${Math.round(feels)}Â°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the swim-suit system', 'For open water, this is the main clothing decision.', suitOptions), makeListStep('Step 2 · Add the safety / swim essentials', 'These are the items that make the session workable and visible.', core), makeListStep('Step 3 · Before / after extras', 'Open-water comfort often lives outside the actual swim.', extras) ], warning };
   }
 
   if (isWaterExposureActivity(activity) && activity !== 'swimming_open') {
@@ -9019,7 +9019,7 @@ function buildWizard(data, activity) {
     if (wt == null) warning = 'Water temperature was not available here. Verify it locally before locking the setup.';
     else if (wt < 10) warning = 'Very cold water: treat this as high-consequence unless you are specifically equipped and experienced.';
     else if (wave != null && wave >= 1) warning = 'Surface chop can make water sports feel harsher than the air suggests.';
-    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} ${waterName} setup around ${distanceText}, with air around ${Math.round(feels)}Â°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the water setup', 'Start with warmth, immersion risk, and wind exposure.', suitOptions), makeListStep('Step 2 Â· Add the safety / practical pieces', 'These make the session workable rather than just technically dressed.', core), makeListStep('Step 3 Â· Exit / backup extras', 'A good dry exit plan matters a lot around water.', extras) ], warning };
+    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} ${waterName} setup around ${distanceText}, with air around ${Math.round(feels)}Â°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the water setup', 'Start with warmth, immersion risk, and wind exposure.', suitOptions), makeListStep('Step 2 · Add the safety / practical pieces', 'These make the session workable rather than just technically dressed.', core), makeListStep('Step 3 · Exit / backup extras', 'A good dry exit plan matters a lot around water.', extras) ], warning };
   }
 
   if (isPoolSwimmingActivity(activity)) {
@@ -9059,7 +9059,7 @@ function buildWizard(data, activity) {
     const poolSummary = noLocationIndoor
       ? `${eventLabel} around ${distanceText} in an ${poolTypeLabel}. Location is optional here; add one only if you want commute-weather layers.`
       : `${eventLabel} around ${distanceText} in an ${poolTypeLabel}${waterSummary}; outside still lines up with about ${Math.round(feels)}Â°C feels-like.`;
-    return { point, startTime, chips: poolChips, activityLabel: activityLabels[activity], summary: poolSummary, steps: [ makeChoiceStep('Step 1 Â· Pick the swim kit', 'This part stays simple for pool swimming, unless the pool is outdoor and unheated.', mainOptions), makeListStep('Step 2 Â· Add the practical pool pieces', 'The useful bits are mostly before and after the water.', core), makeListStep('Step 3 Â· Session extras', 'These matter more on longer or more structured sessions.', extras) ], warning };
+    return { point, startTime, chips: poolChips, activityLabel: activityLabels[activity], summary: poolSummary, steps: [ makeChoiceStep('Step 1 · Pick the swim kit', 'This part stays simple for pool swimming, unless the pool is outdoor and unheated.', mainOptions), makeListStep('Step 2 · Add the practical pool pieces', 'The useful bits are mostly before and after the water.', core), makeListStep('Step 3 · Session extras', 'These matter more on longer or more structured sessions.', extras) ], warning };
   }
 
 
@@ -9111,11 +9111,11 @@ function buildWizard(data, activity) {
     const indoorSummary = noLocationIndoor
       ? `${eventLabel} setup for ${indoorLabel}${isIndoorMulti ? ` (${indoorMultiSummary})` : ''}. Location is optional here; add one only if you want commute-weather layers.`
       : `${eventLabel} setup for ${indoorLabel}${isIndoorMulti ? ` (${indoorMultiSummary})` : ''}, with outside conditions around ${Math.round(feels)}Â°C feels-like for the trip there and back.`;
-    const indoorStepTitle = isIndoorMulti ? 'Step 1 Â· Pick the indoor multisport kit' : 'Step 1 Â· Pick the indoor training kit';
+    const indoorStepTitle = isIndoorMulti ? 'Step 1 · Pick the indoor multisport kit' : 'Step 1 · Pick the indoor training kit';
     const indoorStepHelp = isIndoorMulti
       ? 'Build around the indoor blocks you selected in the custom multisport picker.'
       : 'Dress for heat and sweat indoors, then add commute layers separately.';
-    return { point, startTime, chips, activityLabel: indoorLabel, summary: indoorSummary, steps: [ makeChoiceStep(indoorStepTitle, indoorStepHelp, mainOptions), makeListStep('Step 2 Â· Add the indoor-session basics', 'These matter more than outdoor weather once you are inside.', core), makeListStep('Step 3 Â· Commute / post-workout extras', 'Mostly about not staying wet and cold after the session.', extras) ], warning: null };
+    return { point, startTime, chips, activityLabel: indoorLabel, summary: indoorSummary, steps: [ makeChoiceStep(indoorStepTitle, indoorStepHelp, mainOptions), makeListStep('Step 2 · Add the indoor-session basics', 'These matter more than outdoor weather once you are inside.', core), makeListStep('Step 3 · Commute / post-workout extras', 'Mostly about not staying wet and cold after the session.', extras) ], warning: null };
   }
 
   if (activity === 'hiking' || activity === 'trail_running' || activity === 'mtb_gravel' || activity === 'ski_snowboard') {
@@ -9190,7 +9190,7 @@ function buildWizard(data, activity) {
       item('Sun / eye protection', light.isDay ? 'Useful at elevation, on snow, or exposed trails.' : 'Skip if it stays dark.', ['daylight'])
     ];
     if (snowy || isSnowSport) extras.push(item('Spare gloves / socks', 'Winter days are better with a dry backup.', ['winter']));
-    return { point, startTime, chips, activityLabel: mountainLabel, summary: `${eventLabel} setup for ${mountainLabel}, with planning feel around ${Math.round(exposureTemp)}Â°C${wet ? ' and wet / mixed-surface risk' : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the main trail / mountain kit', 'Start with the clothing system for exposure, terrain, and effort level.', mainOptions), makeListStep('Step 2 Â· Add terrain-specific essentials', 'These are the things that keep the outing practical and safer.', core), makeListStep('Step 3 Â· Backup / exposure extras', 'Worth adding when the day gets longer, colder, higher, or more remote.', extras) ], warning: point.code >= 95 ? 'Storms and exposed terrain are a route/timing problem, not just a gear problem.' : null };
+    return { point, startTime, chips, activityLabel: mountainLabel, summary: `${eventLabel} setup for ${mountainLabel}, with planning feel around ${Math.round(exposureTemp)}Â°C${wet ? ' and wet / mixed-surface risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main trail / mountain kit', 'Start with the clothing system for exposure, terrain, and effort level.', mainOptions), makeListStep('Step 2 · Add terrain-specific essentials', 'These are the things that keep the outing practical and safer.', core), makeListStep('Step 3 · Backup / exposure extras', 'Worth adding when the day gets longer, colder, higher, or more remote.', extras) ], warning: point.code >= 95 ? 'Storms and exposed terrain are a route/timing problem, not just a gear problem.' : null };
   }
 
 
@@ -9236,7 +9236,7 @@ function buildWizard(data, activity) {
     if (isFishing && firstFinite(point.waveHeight, 0) >= 1) extras.push(item('Wave / wind caution', 'Boat, kayak, and shoreline fishing get sketchier when chop builds.', ['water']));
     const fieldChips = isFishing && waterOrFieldRisk ? [...chips, waterOrFieldRisk] : chips;
     const fieldSummary = isFishing && shouldShowWaterTemperature(activity, point) && point.waterTemp != null ? ` Water is around ${formatWaterTemperatureValue(point)}, so keep the cold-water margin in mind.` : '';
-    return { point, startTime, chips: fieldChips, activityLabel: fieldLabel, summary: `${eventLabel} setup for ${fieldLabel}, with static-planning feel around ${Math.round(planningTemp)}Â°C and ${desc}${wet ? ' with wet-weather risk' : ''}.${fieldSummary}`, steps: [ makeChoiceStep(`Step 1 Â· Pick the main ${isFishing ? 'fishing' : 'hunting'} setup`, 'Static exposure, wind, and wet ground matter more than speed here.', mainOptions), makeListStep('Step 2 Â· Add the field essentials', 'Safety, footwear, hands, and weather protection are the big pieces.', core), makeListStep('Step 3 Â· Static-exposure extras', 'These make long sits, shore time, cold starts, or wet exits less miserable.', extras) ], warning: point.code >= 95 ? 'Storms and exposed water/field locations are a timing and safety problem, not just a clothing problem.' : null };
+    return { point, startTime, chips: fieldChips, activityLabel: fieldLabel, summary: `${eventLabel} setup for ${fieldLabel}, with static-planning feel around ${Math.round(planningTemp)}Â°C and ${desc}${wet ? ' with wet-weather risk' : ''}.${fieldSummary}`, steps: [ makeChoiceStep(`Step 1 · Pick the main ${isFishing ? 'fishing' : 'hunting'} setup`, 'Static exposure, wind, and wet ground matter more than speed here.', mainOptions), makeListStep('Step 2 · Add the field essentials', 'Safety, footwear, hands, and weather protection are the big pieces.', core), makeListStep('Step 3 · Static-exposure extras', 'These make long sits, shore time, cold starts, or wet exits less miserable.', extras) ], warning: point.code >= 95 ? 'Storms and exposed water/field locations are a timing and safety problem, not just a clothing problem.' : null };
   }
 
   if (activity === 'walk') {
@@ -9276,7 +9276,7 @@ function buildWizard(data, activity) {
     if (veryWindy) extras.push(item('Wind-blocking outer layer', 'Walking speed is low, but wind can still chew through thin layers.', ['wind']));
     if (t <= -2) extras.push(item('Neck warmer / scarf', 'Small comfort boost in cold wind.', ['cold']));
     if (!easyWalk) extras.push(item('Phone / route / return plan', 'Useful once the walk is long enough to be more than a quick loop.', ['planning']));
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}Â°C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the main walking outfit', 'Choose the broad warmth level first, then tune footwear and small accessories.', mainOptions), makeListStep('Step 2 Â· Add the walking essentials', 'Simple items that matter more once you are outside for a while.', core), makeListStep('Step 3 Â· Longer-walk / bad-weather extras', 'Bring these when the walk gets longer, colder, windier, or darker.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are a timing problem, not a walking-outfit problem.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}Â°C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main walking outfit', 'Choose the broad warmth level first, then tune footwear and small accessories.', mainOptions), makeListStep('Step 2 · Add the walking essentials', 'Simple items that matter more once you are outside for a while.', core), makeListStep('Step 3 · Longer-walk / bad-weather extras', 'Bring these when the walk gets longer, colder, windier, or darker.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are a timing problem, not a walking-outfit problem.' : null };
   }
 
   if (activity === 'road_trip') {
@@ -9326,7 +9326,7 @@ function buildWizard(data, activity) {
       ? ` The route-loaded weather says the coldest stop is ${routeWeather.coldest.label} near ${routeWeather.coldest.placeLabel || 'the route'} at about ${Math.round(routeWeather.coldestFeels)}Â°C feels-like${isFiniteNumber(endDelta) ? `, with the finish running ${endDelta > 0 ? 'about ' + Math.round(endDelta) + 'Â°C warmer' : 'about ' + Math.abs(Math.round(endDelta)) + 'Â°C colder'} than the start` : ''}.`
       : '';
 
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}Â°C feels-like at the planned start and ${desc}${wet ? ' with some wet-stop risk' : ''}.${routeSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 Â· Pick the main travel outfit', 'Focus on what still works when you get out of the car.', mainOptions), makeListStep('Step 2 Â· Add the stop / weather essentials', 'These matter most once you start opening the doors.', core), makeListStep('Step 3 Â· Long-drive extras', 'These start making more sense as the travel day grows.', extras) ], warning: point.code >= 95 ? 'Strong storms can change a road trip more than a clothing choice can.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}Â°C feels-like at the planned start and ${desc}${wet ? ' with some wet-stop risk' : ''}.${routeSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the main travel outfit', 'Focus on what still works when you get out of the car.', mainOptions), makeListStep('Step 2 · Add the stop / weather essentials', 'These matter most once you start opening the doors.', core), makeListStep('Step 3 · Long-drive extras', 'These start making more sense as the travel day grows.', extras) ], warning: point.code >= 95 ? 'Strong storms can change a road trip more than a clothing choice can.' : null };
   }
 
   if (activity === 'camping') {
@@ -9376,7 +9376,7 @@ function buildWizard(data, activity) {
     ];
     if (profile.mode === 'daily') extras.push(item('Check every overnight low, not just the daytime high', `This trip spans about ${overnight?.nightCount || 1} night${(overnight?.nightCount || 1) === 1 ? '' : 's'}, so the sleep system matters as much as the daytime clothing.`, ['sleep']));
 
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with outside conditions around ${Math.round(feels)}Â°C feels-like${campWet ? ' and some wet-weather risk' : ''}${isFiniteNumber(overnightFeels) ? `, and an overnight low around ${Math.round(overnightFeels)}Â°C feels-like` : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the camp clothing system', 'Think daytime movement, evening camp time, and the overnight drop.', mainOptions), makeListStep('Step 2 Â· Add the camp and shelter essentials', 'These matter more than a perfectly optimized daytime outfit.', core), makeListStep('Step 3 Â· Sleep-system and multi-day extras', 'Camping comfort usually lives in the overnight setup.', extras) ], warning: point.code >= 95 ? 'Thunderstorms and camping call for a plan, not just a different jacket.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with outside conditions around ${Math.round(feels)}Â°C feels-like${campWet ? ' and some wet-weather risk' : ''}${isFiniteNumber(overnightFeels) ? `, and an overnight low around ${Math.round(overnightFeels)}Â°C feels-like` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the camp clothing system', 'Think daytime movement, evening camp time, and the overnight drop.', mainOptions), makeListStep('Step 2 · Add the camp and shelter essentials', 'These matter more than a perfectly optimized daytime outfit.', core), makeListStep('Step 3 · Sleep-system and multi-day extras', 'Camping comfort usually lives in the overnight setup.', extras) ], warning: point.code >= 95 ? 'Thunderstorms and camping call for a plan, not just a different jacket.' : null };
   }
 
   const mainOptions = t >= 20 ? [ option('Light top + shorts or light pants', 'Warm-weather normal.', true, ['main']), option('Breathable shirt + light trousers', 'A little sharper without being hot.'), option('Light shell packed only', 'Only if the weather could turn later.') ] : t >= 11 ? [ option('Tee / long-sleeve + overshirt', 'Easy shoulder-season answer.', true, ['main']), option('Sweater / hoodie + regular pants', 'Cozier, especially later in the day.'), option('Light jacket over a tee', 'Good if wind matters more than raw temp.') ] : t >= 3 ? [ option('Sweater / hoodie + jacket + regular pants', 'Normal cool-weather setup.', true, ['main']), option('Light insulated jacket + pants', 'Better if you will be out longer.'), option('Shell over base layer + mid-layer', 'Works well when wet wind matters most.', false, ['base layer']) ] : t >= -6 ? [ option('Insulated jacket + warm layer + pants', 'This is proper cold-weather clothing now.', true, ['winter']), option('Parka + regular layers', 'Comfy if you are mostly standing or walking slowly.'), option('Shell + fleece + thermal base', 'Flexible layered approach.', false, ['base layer']) ] : [ option('Warm winter coat / parka + insulating layers', 'Deep winter default.', true, ['winter']), option('Insulated shell + fleece + thermal base', 'If you prefer layering over one huge coat.', false, ['base layer']), option('Lighter summer setup only', 'This is how you start hating the outing.', false, ['nope']) ];
@@ -9389,14 +9389,14 @@ function buildWizard(data, activity) {
   if (t <= 2) extras.push(item('Warm socks', 'Small thing, big comfort payoff.', ['cold']));
   if (t <= -2 || veryWindy) extras.push(item('Neck layer / scarf', 'Very worthwhile in cold wind.', ['cold']));
   if (profile.minutes >= 240 || profile.mode === 'daily' || (distanceKmValue != null && distanceKmValue >= 8)) extras.push(item('Packable extra layer', 'Longer time out means more chance the weather becomes annoying.', ['long']));
-  return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}Â°C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 Â· Pick the main everyday outfit', 'Choose the broad clothing level first.', mainOptions), makeListStep('Step 2 Â· Add the practical extras', 'Only the pieces that actually improve comfort.', core), makeListStep('Step 3 Â· Optional comfort / winter items', 'Bring these when the duration or cold justifies them.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are much more a â€œgo laterâ€ problem than a â€œdress betterâ€ problem.' : null };
+  return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}Â°C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main everyday outfit', 'Choose the broad clothing level first.', mainOptions), makeListStep('Step 2 · Add the practical extras', 'Only the pieces that actually improve comfort.', core), makeListStep('Step 3 · Optional comfort / winter items', 'Bring these when the duration or cold justifies them.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are much more a â€œgo laterâ€ problem than a â€œdress betterâ€ problem.' : null };
 }
 
 function compactStepTitle(step, index) {
   if (index === 0) return 'Main pick';
   if (index === 1) return 'Add to the setup';
   if (index === 2) return 'Nice-to-have extras';
-  return step.title?.replace(/^Step\s*\d+\s*Â·\s*/i, '').trim() || `Step ${index + 1}`;
+  return step.title?.replace(/^Step\s*\d+\s*·\s*/i, '').trim() || `Step ${index + 1}`;
 }
 
 function buildCompactSummary(point, desc, wizard) {
@@ -9406,7 +9406,7 @@ function buildCompactSummary(point, desc, wizard) {
   const darkChip = wizard.chips.find(chip => /dark|night/i.test(chip.label));
   if (darkChip) bits.push('low light');
   if (isFiniteNumber(point.waterTemp)) bits.push(`water ${round1(point.waterTemp)}Â°C`);
-  return bits.join(' Â· ');
+  return bits.join(' · ');
 }
 
 function getClothingExamples(label, tags = [], activity = selectedActivity) {
@@ -9479,7 +9479,7 @@ function renderSteps(steps) {
                 <div class="choice-copy">
                   <strong>${escapeHtml(toChecklistTitle(opt.label))}</strong>
                   ${opt.detail ? `<span class="detail">${escapeHtml(opt.detail)}</span>` : ''}
-                  ${getClothingExamples(opt.label, opt.tags || []).length ? `<span class="detail">Examples: ${escapeHtml(getClothingExamples(opt.label, opt.tags || []).join(' Â· '))}</span>` : ''}
+                  ${getClothingExamples(opt.label, opt.tags || []).length ? `<span class="detail">Examples: ${escapeHtml(getClothingExamples(opt.label, opt.tags || []).join(' · '))}</span>` : ''}
                 </div>
               </label>`).join('')}
           </div>
@@ -9507,7 +9507,7 @@ function renderSteps(steps) {
               <div class="simple-copy">
                 <strong>${escapeHtml(toChecklistTitle(it.label))}</strong>
                 ${it.detail ? `<span class="detail">${escapeHtml(it.detail)}</span>` : ''}
-                ${getClothingExamples(it.label, it.tags || []).length ? `<span class="detail">Examples: ${escapeHtml(getClothingExamples(it.label, it.tags || []).join(' Â· '))}</span>` : ''}
+                ${getClothingExamples(it.label, it.tags || []).length ? `<span class="detail">Examples: ${escapeHtml(getClothingExamples(it.label, it.tags || []).join(' · '))}</span>` : ''}
                 ${it.tags?.length ? `<div class="tag-row">${it.tags.map(t => `<span class="item-tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
               </div>
             </button>`).join('') : `<button type="button" class="simple-item" data-check-item aria-pressed="false"><div class="mark"></div><div class="simple-copy"><strong>Nothing major to add</strong><span class="detail">This section is already pretty lean for these conditions.</span></div></button>`}
@@ -9647,9 +9647,9 @@ function getWeatherProvenanceSummary(data = weatherData) {
   const provenance = getWeatherDataProvenance(data);
   const stamp = provenance?.savedAt || weatherRefreshStatus.lastSuccessAt || '';
   const formatted = formatRefreshStatusDateTime(stamp);
-  if (provenance?.kind === 'cached') return formatted ? `cached forecast Â· ${formatted}` : 'cached forecast';
-  if (provenance?.kind === 'cached_stale') return formatted ? `saved offline forecast Â· ${formatted}` : 'saved offline forecast';
-  return formatted ? `live forecast Â· ${formatted}` : 'live forecast';
+  if (provenance?.kind === 'cached') return formatted ? `cached forecast · ${formatted}` : 'cached forecast';
+  if (provenance?.kind === 'cached_stale') return formatted ? `saved offline forecast · ${formatted}` : 'saved offline forecast';
+  return formatted ? `live forecast · ${formatted}` : 'live forecast';
 }
 
 function getAlertsProvenanceSummary(data = weatherData) {
@@ -9718,7 +9718,7 @@ function renderAdvice(data, activity) {
     `ðŸ’§ Humidity <strong>${escapeHtml(data.current.humidity)}%</strong>`,
     `ðŸ’¨ Wind <strong>${escapeHtml(windSummary.speedText)}</strong> ${windSummary.dirHtml}`,
     `â†¯ Gusts <strong>${escapeHtml(windSummary.gustText)}</strong>`,
-    `ðŸŒ§ Precip <strong>${escapeHtml(round1(point.precip || 0))} mm</strong> Â· <strong>${escapeHtml(Math.round(firstFinite(point.precipProb, 0)))}%</strong>`
+    `ðŸŒ§ Precip <strong>${escapeHtml(round1(point.precip || 0))} mm</strong> · <strong>${escapeHtml(Math.round(firstFinite(point.precipProb, 0)))}%</strong>`
   ];
   const uvInfo = getUvRiskInfo(getUvDisplayValue(point, data));
   if (uvInfo) metaLines.push(`â˜€ ${renderUvBadge(uvInfo.value)}`);
@@ -9730,7 +9730,7 @@ function renderAdvice(data, activity) {
     const sunBits = [];
     if (weatherMetaDay.sunrise) sunBits.push(`â¬† Sunrise <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunrise))}</strong>`);
     if (weatherMetaDay.sunset) sunBits.push(`â¬‡ Sunset <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunset))}</strong>`);
-    if (sunBits.length) metaLines.push(sunBits.join(' Â· '));
+    if (sunBits.length) metaLines.push(sunBits.join(' · '));
   }
   const waterMetaLine = renderWaterTemperatureMetaLine(point, data);
   const showWaterUi = shouldShowWaterTemperatureSignal(point, activity || selectedActivity);
@@ -9748,7 +9748,7 @@ function renderAdvice(data, activity) {
             <div class="weather-main">
               <div class="when">${escapeHtml(formatWeatherDateTime(point.time || startTime))}</div>
               <div class="temp">${escapeHtml(Math.round(point.temp))}Â°C</div>
-              <div class="desc">${escapeHtml(desc)} Â· feels ${escapeHtml(Math.round(point.feels))}Â°C</div>
+              <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))}Â°C</div>
             </div>
             <div class="weather-meta">${metaLines.join('<br>')}</div>
           </div>
@@ -9784,7 +9784,7 @@ function renderAdvice(data, activity) {
             <div class="weather-main">
               <div class="when">${escapeHtml(formatWeatherDateTime(point.time || startTime))}</div>
               <div class="temp">${escapeHtml(Math.round(point.temp))}Â°C</div>
-              <div class="desc">${escapeHtml(desc)} Â· feels ${escapeHtml(Math.round(point.feels))}Â°C</div>
+              <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))}Â°C</div>
             </div>
             <div class="weather-meta">${metaLines.join('<br>')}</div>
           </div>
@@ -9821,7 +9821,7 @@ function renderAdvice(data, activity) {
           <div class="weather-main">
             <div class="when">${escapeHtml(formatWeatherDateTime(point.time || wizard.startTime))}</div>
             <div class="temp">${escapeHtml(Math.round(point.temp))}Â°C</div>
-            <div class="desc">${escapeHtml(desc)} Â· feels ${escapeHtml(Math.round(point.feels))}Â°C</div>
+            <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))}Â°C</div>
           </div>
           <div class="weather-meta">${metaLines.join('<br>')}</div>
         </div>
@@ -9885,7 +9885,7 @@ async function reverseGeocodePlaceName(lat, lon) {
 function describeRoadTripWeather(cp) {
   if (!cp?.weather) return 'Weather pending';
   const [, desc] = wCodeToEmoji(cp.weather.code);
-  return `${Math.round(cp.weather.temp)}Â°C / feels ${Math.round(cp.weather.feels)}Â°C Â· ${desc.toLowerCase()} Â· wind ${Math.round(cp.weather.wind || 0)} km/h`;
+  return `${Math.round(cp.weather.temp)}Â°C / feels ${Math.round(cp.weather.feels)}Â°C · ${desc.toLowerCase()} · wind ${Math.round(cp.weather.wind || 0)} km/h`;
 }
 
 // Give each itinerary row a reason for existing.
@@ -10089,9 +10089,9 @@ async function triggerRoadTripItinerary() {
               ${!isLast ? `<div class="stop-connector"></div>` : ''}
             </div>
             <div class="stop-body">
-              <div class="stop-label ${labelClass}">${escapeHtml(stop.label)}${stop.type === 'suggested' ? ' Â· suggested' : ''}</div>
+              <div class="stop-label ${labelClass}">${escapeHtml(stop.label)}${stop.type === 'suggested' ? ' · suggested' : ''}</div>
               <div class="stop-name">${escapeHtml(stop.place || stop.label)}</div>
-              <div class="stop-meta">${stop.eta ? `ðŸ•’ ${escapeHtml(stop.eta)}` : ''}${isFiniteNumber(stop.kmFromStart) ? ` Â· ${escapeHtml(formatKmPrefix(stop.kmFromStart))}` : ''}${stop.weather ? ` Â· ${escapeHtml(stop.weather)}` : ''}</div>
+              <div class="stop-meta">${stop.eta ? `ðŸ•’ ${escapeHtml(stop.eta)}` : ''}${isFiniteNumber(stop.kmFromStart) ? ` · ${escapeHtml(formatKmPrefix(stop.kmFromStart))}` : ''}${stop.weather ? ` · ${escapeHtml(stop.weather)}` : ''}</div>
               ${stop.rationale ? `<div class="stop-rationale">${escapeHtml(stop.rationale)}</div>` : ''}
             </div>
           </div>`;
@@ -10995,10 +10995,10 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
   renderPlannerState();
   clearRouteMapLayers();
   renderRouteMap();
-  const routeLoadedMessage = `${importedRoute.name} imported from ${sourceLabel} Â· ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` Â· +${Math.round(routeState.totalGain)} m` : ''} Â· ${routeState.points.length} points Â· provenance: imported route`;
+  const routeLoadedMessage = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points · provenance: imported route`;
   routeStatus.textContent = routeLoadedMessage;
   if (routeState?.points?.[0]) {
-    routeStatus.textContent = `${routeLoadedMessage} Â· refreshing weatherâ€¦`;
+    routeStatus.textContent = `${routeLoadedMessage} · refreshing weatherâ€¦`;
     try {
       await refreshWeatherForActiveTarget({
         source: 'service_import',
@@ -11009,7 +11009,7 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
       routeStatus.textContent = routeLoadedMessage;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to refresh weather.';
-      routeStatus.textContent = `${routeLoadedMessage} Â· weather refresh failed: ${message}`;
+      routeStatus.textContent = `${routeLoadedMessage} · weather refresh failed: ${message}`;
     }
   }
 }
@@ -11064,7 +11064,7 @@ function describeStravaRoute(route) {
   if (Number.isFinite(Number(route?.distance)) && Number(route.distance) > 0) bits.push(formatKm(Number(route.distance) / 1000));
   if (Number.isFinite(Number(route?.elevation_gain)) && Number(route.elevation_gain) > 0) bits.push(`+${Math.round(Number(route.elevation_gain))} m`);
   if (Number.isFinite(Number(route?.estimated_moving_time)) && Number(route.estimated_moving_time) > 0) bits.push(`${formatMinutesShort(Math.round(Number(route.estimated_moving_time) / 60))} est.`);
-  return bits.join(' Â· ');
+  return bits.join(' · ');
 }
 
 function describeStravaActivity(activity) {
@@ -11075,7 +11075,7 @@ function describeStravaActivity(activity) {
   if (Number.isFinite(Number(activity?.moving_time)) && Number(activity.moving_time) > 0) bits.push(`${formatMinutesShort(Math.round(Number(activity.moving_time) / 60))} moving`);
   if (Number.isFinite(Number(activity?.total_elevation_gain)) && Number(activity.total_elevation_gain) > 0) bits.push(`+${Math.round(Number(activity.total_elevation_gain))} m`);
   if (activity?.trainer) bits.push('trainer');
-  return bits.join(' Â· ');
+  return bits.join(' · ');
 }
 
 function getStravaPreviewMarkup(item) {
@@ -11358,7 +11358,7 @@ function renderStravaConnectionStateEnhanced() {
     return;
   }
   stravaConnectPanel.innerHTML = `<div class="inline-fields" style="grid-template-columns:minmax(0,1fr)"><button class="btn btn-secondary" type="button" data-action="openStravaPicker">Browse Strava imports</button><button class="reset-btn clear-btn" type="button" data-action="disconnectStrava">Disconnect</button></div>`;
-  if (stravaStatus) stravaStatus.textContent = `Connected: ${session.athleteName} Â· import a route or activity.`;
+  if (stravaStatus) stravaStatus.textContent = `Connected: ${session.athleteName} · import a route or activity.`;
 }
 
 function handleConnectStravaEnhanced() {
