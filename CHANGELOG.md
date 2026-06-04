@@ -1044,3 +1044,7 @@
 - Fixed header action legend wrapping so each helper line keeps a clean readable width instead of collapsing into awkward centered fragments.
 - Added centralized mojibake cleanup for broken UTF-8 text such as `Â·`, `â€¦`, and corrupted emoji tokens before they reach the UI.
 - Repaired bundled emoji/icon rendering fallbacks so Fluent asset replacements can recover from corrupted source tokens instead of exposing raw `ðŸ...` text in the interface.
+
+## v12.5.3
+
+- Reverted all the mojibake characters manually that got introduced between `v12.3` and `v12.4` in `main.ts` and that broke the content on the web app.

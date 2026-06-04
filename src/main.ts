@@ -195,7 +195,7 @@ const ECCC_ALERTS_API = SHARED_ECCC_ALERTS_API;
 const NOAA_NDBC_ACTIVE_XML = SHARED_NOAA_NDBC_ACTIVE_XML;
 const NOAA_NDBC_REALTIME_BASE = SHARED_NOAA_NDBC_REALTIME_BASE;
 const ECCC_MARINE_STATIONS = SHARED_ECCC_MARINE_STATIONS;
-const APP_VERSION = '12.5.2';
+const APP_VERSION = '12.5.3';
 let ndbcActiveStationsCache = null;
 const FORECAST_ONLY_DURATION_KEYS = ['h1', 'h3', 'h6', 'h8', 'h12', 'd1'];
 const MOBILE_LAYOUT_MAX_WIDTH = 699;
@@ -775,7 +775,7 @@ function renderCustomMultisportControls() {
   })[selectedActivity || ''] || 'Choose the sports/legs that are actually part of the session. This influences the checklist and water-temperature relevance.';
   customMultisportLegList.innerHTML = definitions.map(def => `
     <button class="pick-pill ${selected.has(def.key) ? 'active' : ''}" type="button" data-action="toggleCustomMultisportLeg" data-leg-key="${escapeHtml(def.key)}" title="${escapeHtml(def.detail)}">
-      ${selected.has(def.key) ? 'âœ“ ' : ''}${escapeHtml(def.label)}
+      ${selected.has(def.key) ? '✓ ' : ''}${escapeHtml(def.label)}
     </button>`).join('');
 }
 
@@ -921,15 +921,15 @@ function getPreferredAverageUnit(activity = selectedActivity) {
 function getTemperaturePreferenceInfo(value = temperaturePreference) {
   const safe = Math.max(-4, Math.min(4, Math.round(Number(value) || 0)));
   const map = {
-    '-4': { label: 'Maximum warmth', shortLabel: 'warmth ++++', offset: -7, chip: 'ðŸ§£ max warmth preference' },
-    '-3': { label: 'Much warmer', shortLabel: 'warmth +++', offset: -5, chip: 'ðŸ§£ much warmer preference' },
-    '-2': { label: 'Warmer', shortLabel: 'warmth ++', offset: -3.5, chip: 'ðŸ§£ warmer preference' },
-    '-1': { label: 'Slightly warmer', shortLabel: 'warmth +', offset: -1.75, chip: 'ðŸ§£ slightly warmer preference' },
+    '-4': { label: 'Maximum warmth', shortLabel: 'warmth ++++', offset: -7, chip: '🧣 max warmth preference' },
+    '-3': { label: 'Much warmer', shortLabel: 'warmth +++', offset: -5, chip: '🧣 much warmer preference' },
+    '-2': { label: 'Warmer', shortLabel: 'warmth ++', offset: -3.5, chip: '🧣 warmer preference' },
+    '-1': { label: 'Slightly warmer', shortLabel: 'warmth +', offset: -1.75, chip: '🧣 slightly warmer preference' },
     '0': { label: 'Normal', shortLabel: 'normal', offset: 0, chip: '' },
-    '1': { label: 'Slightly cooler', shortLabel: 'cooler +', offset: 1.75, chip: 'ðŸŒ¬ slightly cooler preference' },
-    '2': { label: 'Cooler', shortLabel: 'cooler ++', offset: 3.5, chip: 'ðŸŒ¬ cooler preference' },
-    '3': { label: 'Much cooler', shortLabel: 'cooler +++', offset: 5, chip: 'ðŸŒ¬ much cooler preference' },
-    '4': { label: 'Maximum cooling', shortLabel: 'cooler ++++', offset: 7, chip: 'ðŸŒ¬ max cooling preference' }
+    '1': { label: 'Slightly cooler', shortLabel: 'cooler +', offset: 1.75, chip: '🌬 slightly cooler preference' },
+    '2': { label: 'Cooler', shortLabel: 'cooler ++', offset: 3.5, chip: '🌬 cooler preference' },
+    '3': { label: 'Much cooler', shortLabel: 'cooler +++', offset: 5, chip: '🌬 much cooler preference' },
+    '4': { label: 'Maximum cooling', shortLabel: 'cooler ++++', offset: 7, chip: '🌬 max cooling preference' }
   };
   return map[String(safe)] || map['0'];
 }
@@ -945,7 +945,7 @@ function updateTemperaturePreferenceUi() {
   if (temperaturePreferenceStatus) {
     temperaturePreferenceStatus.textContent = temperaturePreference === 0
       ? 'Neutral setting. Recommendations use the weather, activity, duration, and exposure normally.'
-      : `${info.label} setting. The kit logic is nudged by about ${Math.abs(info.offset)} °C ${info.offset < 0 ? 'colder' : 'warmer'} so the recommendation lands ${info.offset < 0 ? 'more insulated' : 'lighter'}.`;
+      : `${info.label} setting. The kit logic is nudged by about ${Math.abs(info.offset)}°C ${info.offset < 0 ? 'colder' : 'warmer'} so the recommendation lands ${info.offset < 0 ? 'more insulated' : 'lighter'}.`;
   }
 }
 
@@ -963,11 +963,11 @@ function isEffortRelevantActivity(activity = selectedActivity) {
 
 function getPlannedEffortInfo(value = plannedEffort) {
   const map = {
-    low: { label: 'Low / standing', shortLabel: 'low effort', offset: -3.5, chip: 'ðŸ§ low-effort warmth' },
-    easy: { label: 'Easy', shortLabel: 'easy effort', offset: -1.75, chip: 'ðŸš¶ easy-effort warmth' },
+    low: { label: 'Low / standing', shortLabel: 'low effort', offset: -3.5, chip: '🧍 low-effort warmth' },
+    easy: { label: 'Easy', shortLabel: 'easy effort', offset: -1.75, chip: '🚶 easy-effort warmth' },
     steady: { label: 'Steady', shortLabel: 'steady', offset: 0, chip: '' },
-    hard: { label: 'Hard', shortLabel: 'hard effort', offset: 2.5, chip: 'ðŸ”¥ hard-effort cooling' },
-    race: { label: 'Race', shortLabel: 'race effort', offset: 4, chip: 'ðŸ race-effort cooling' }
+    hard: { label: 'Hard', shortLabel: 'hard effort', offset: 2.5, chip: '🔥 hard-effort cooling' },
+    race: { label: 'Race', shortLabel: 'race effort', offset: 4, chip: '🏁 race-effort cooling' }
   };
   return map[value] || map.steady;
 }
@@ -992,7 +992,7 @@ function updatePlannedEffortUi() {
       ? 'This activity does not use effort strongly, so the recommendation stays close to the default.'
       : plannedEffort === 'steady'
         ? 'Steady setting. Clothing logic uses the normal activity and weather assumptions.'
-        : `${info.label} setting. The clothing logic is nudged by about ${Math.abs(info.offset)} °C ${info.offset < 0 ? 'colder' : 'warmer'} to account for ${info.offset < 0 ? 'lower heat output' : 'higher heat output'}.`;
+        : `${info.label} setting. The clothing logic is nudged by about ${Math.abs(info.offset)}°C ${info.offset < 0 ? 'colder' : 'warmer'} to account for ${info.offset < 0 ? 'lower heat output' : 'higher heat output'}.`;
   }
 }
 
@@ -1219,13 +1219,13 @@ function updateRefreshWeatherButtonUi(isLoading = false) {
   if (!refreshWeatherBtn) return;
   const hasRefreshTarget = !!(weatherData?.latitude && weatherData?.longitude) || !!routeState?.points?.length || !!input?.value?.trim();
   refreshWeatherBtn.disabled = isLoading || !hasRefreshTarget;
-  refreshWeatherBtn.textContent = isLoading ? 'Refreshingâ€¦' : 'Refresh weather';
+  refreshWeatherBtn.textContent = isLoading ? 'Refreshing…' : 'Refresh weather';
 }
 
 async function forceRefreshWeather() {
   hideSuggestions();
   try {
-    if (await refreshWeatherForActiveTarget({ source: 'manual', detail: 'Refreshing weatherâ€¦', clearRouteCheckpointCache: true })) return;
+    if (await refreshWeatherForActiveTarget({ source: 'manual', detail: 'Refreshing weather…', clearRouteCheckpointCache: true })) return;
   } catch (_) {
     return;
   }
@@ -1747,14 +1747,14 @@ function getRaceDaySupportItems(data, raceDayWindow) {
   const items = [];
   if (raceDayWindow.warmupMinutes > 0) {
     items.push(item(
-      `Warm-up layer for ${formatShortTime(dayStartStr)}â€“${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}`,
+      `Warm-up layer for ${formatShortTime(dayStartStr)}–${formatShortTime(formatDateTimeLocal(raceDayWindow.eventStart).slice(0, 16))}`,
       describeRaceDaySupportConditions(warmupPoint, 'warmup'),
       ['warmup']
     ));
   }
   if (raceDayWindow.cooldownMinutes > 0) {
     items.push(item(
-      `Cooldown / finish layer for ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))}â€“${formatShortTime(dayEndStr)}`,
+      `Cooldown / finish layer for ${formatShortTime(formatDateTimeLocal(raceDayWindow.eventEnd).slice(0, 16))}–${formatShortTime(dayEndStr)}`,
       describeRaceDaySupportConditions(cooldownPoint, 'cooldown'),
       ['cooldown']
     ));
@@ -2005,9 +2005,9 @@ function renderWaterSignal(confidence) {
 function formatWaterTemperatureValue(point) {
   if (!point || !isFiniteNumber(point.waterTemp)) return 'unknown';
   if (point.waterTempSource === 'estimated' && isFiniteNumber(point.waterTempRangeLow) && isFiniteNumber(point.waterTempRangeHigh)) {
-    return `~${round1(point.waterTempRangeLow)}â€“${round1(point.waterTempRangeHigh)} °C`;
+    return `~${round1(point.waterTempRangeLow)}–${round1(point.waterTempRangeHigh)}°C`;
   }
-  return `${round1(point.waterTemp)} °C`;
+  return `${round1(point.waterTemp)}°C`;
 }
 
 function getWaterTemperatureSourceLabel(point, data = weatherData) {
@@ -2019,21 +2019,21 @@ function getWaterTemperatureSourceLabel(point, data = weatherData) {
 }
 
 function getWaterTemperatureChip(point, data = weatherData) {
-  if (!point || !isFiniteNumber(point.waterTemp)) return { label: 'ðŸŒŠ water unknown', tone: 'warn' };
+  if (!point || !isFiniteNumber(point.waterTemp)) return { label: '🌊 water unknown', tone: 'warn' };
   const confidence = getWaterConfidenceLabel(point.waterTempConfidence || point.waterTempSource);
   const source = getWaterTemperatureSourceLabel(point, data);
   const tempLabel = formatWaterTemperatureValue(point);
-  return { label: `ðŸŒŠ water ${tempLabel} · ${source}`, tone: point.waterTemp < 14 || confidence === 'unknown' ? 'warn' : (confidence === 'high' ? 'ok' : '') };
+  return { label: `🌊 water ${tempLabel} · ${source}`, tone: point.waterTemp < 14 || confidence === 'unknown' ? 'warn' : (confidence === 'high' ? 'ok' : '') };
 }
 
 function renderWaterTemperatureMetaLine(point, data = weatherData) {
   if (!point || !shouldShowWaterTemperatureSignal(point, selectedActivity)) return '';
   if (!isFiniteNumber(point.waterTemp)) {
-    return `ðŸŒŠ Water <strong>unknown</strong> ${renderWaterSignal('unknown')} <span class="water-source-label">unknown</span>`;
+    return `🌊 Water <strong>unknown</strong> ${renderWaterSignal('unknown')} <span class="water-source-label">unknown</span>`;
   }
   const confidence = getWaterConfidenceLabel(point.waterTempConfidence || point.waterTempSource);
   const source = getWaterTemperatureSourceLabel(point, data);
-  return `ðŸŒŠ Water <strong>${escapeHtml(formatWaterTemperatureValue(point))}</strong> ${renderWaterSignal(confidence)} <span class="water-source-label">${escapeHtml(source)}</span>`;
+  return `🌊 Water <strong>${escapeHtml(formatWaterTemperatureValue(point))}</strong> ${renderWaterSignal(confidence)} <span class="water-source-label">${escapeHtml(source)}</span>`;
 }
 
 function renderWaterTempDisclaimer(point) {
@@ -2073,7 +2073,7 @@ function updateManualWeatherStatus() {
       : `Visible only when the toggle is open. Manual water temperature overrides fetched or estimated water data. Quick lookup:${seaTempLookup}`;
     return;
   }
-  manualWeatherStatus.innerHTML = `Manual water override active: ${round1(override.waterTemp)} °C. The result will be labelled as manual. Quick lookup:${seaTempLookup}`;
+  manualWeatherStatus.innerHTML = `Manual water override active: ${round1(override.waterTemp)}°C. The result will be labelled as manual. Quick lookup:${seaTempLookup}`;
 }
 
 function routeHasDurationOverride() {
@@ -2150,14 +2150,14 @@ function renderEventButtons() {
     const summaryLead = raceDayMode && getRaceDayEventPreset() ? `Race day mode · ${selected.label}` : selected.label;
     summary.textContent = distanceState.source === 'custom'
       ? `Custom distance · ${distanceState.label}`
-      : `${selected.label} · ${distanceState.label}${sourceText ? ` â€” ${sourceText}` : ''}`;
+      : `${selected.label} · ${distanceState.label}${sourceText ? ` — ${sourceText}` : ''}`;
   }
   if (!distanceLocked && raceDayMode && getRaceDayEventPreset()) {
     const distanceState = getDistanceState(selected);
     const sourceText = distanceState.source === 'custom' ? 'custom distance' : distanceState.source === 'derived' ? 'estimated from duration + average' : selected.detail;
     summary.textContent = distanceState.source === 'custom'
       ? `Custom distance · ${distanceState.label}`
-      : `Race day mode · ${selected.label} · ${distanceState.label}${sourceText ? ` â€” ${sourceText}` : ''}`;
+      : `Race day mode · ${selected.label} · ${distanceState.label}${sourceText ? ` — ${sourceText}` : ''}`;
   }
   refreshSelectionNotes();
 }
@@ -2613,7 +2613,7 @@ function getRouteBearingAtIndex(points, index) {
 }
 
 function describeRelativeWind(travelBearing, windDir, windSpeed) {
-  if (!isFiniteNumber(travelBearing) || !isFiniteNumber(windDir)) return { label: 'wind relative to route unavailable', short: 'route wind â€”', tone: '' };
+  if (!isFiniteNumber(travelBearing) || !isFiniteNumber(windDir)) return { label: 'wind relative to route unavailable', short: 'route wind —', tone: '' };
   const diff = Math.abs((((windDir - travelBearing) % 360) + 540) % 360 - 180);
   let label = 'crosswind';
   if (diff <= 30) label = 'headwind';
@@ -2764,13 +2764,13 @@ function applyBaseCheckpointLabels(samples) {
     }
     if (checkpointModel === 'smart' && cp.reasons.includes('sunrise')) {
       cp.label = 'Sunrise';
-      cp.markerShort = 'â†‘';
+      cp.markerShort = '↑';
       cp.markerKind = 'event';
       return;
     }
     if (checkpointModel === 'smart' && cp.reasons.includes('sunset')) {
       cp.label = 'Sunset';
-      cp.markerShort = 'â†“';
+      cp.markerShort = '↓';
       cp.markerKind = 'event';
       return;
     }
@@ -2838,57 +2838,57 @@ function decorateSmartCheckpointMarkers(samples) {
       cp.markerTone = 'finish';
     } else if (cp.reasons.includes('sunrise')) {
       cp.label = 'Sunrise';
-      cp.markerShort = 'ðŸŒ…';
+      cp.markerShort = '🌅';
       cp.markerKind = 'event';
       cp.markerTone = 'sunrise';
     } else if (cp.reasons.includes('sunset')) {
       cp.label = 'Sunset';
-      cp.markerShort = 'ðŸŒ‡';
+      cp.markerShort = '🌇';
       cp.markerKind = 'event';
       cp.markerTone = 'sunset';
     } else if (cp.reasons.includes('pooraqi')) {
       cp.label = 'Poor AQI';
-      cp.markerShort = 'ðŸ˜·';
+      cp.markerShort = '😷';
       cp.markerKind = 'event';
       cp.markerTone = 'aqi';
     } else if (cp.reasons.includes('lowvis')) {
       cp.label = 'Low visibility';
-      cp.markerShort = 'ðŸŒ«ï¸';
+      cp.markerShort = '🌫️';
       cp.markerKind = 'event';
       cp.markerTone = 'lowvis';
     } else if (cp.reasons.includes('wettest')) {
       cp.label = 'Rain risk';
-      cp.markerShort = 'â˜”';
+      cp.markerShort = '☔';
       cp.markerKind = 'event';
       cp.markerTone = 'wet';
     } else if (cp.reasons.includes('uvpeak')) {
       cp.label = 'Peak UV';
-      cp.markerShort = 'â˜€ï¸';
+      cp.markerShort = '☀️';
       cp.markerKind = 'event';
       cp.markerTone = 'uv';
     } else if (cp.reasons.includes('peakwind')) {
       cp.label = 'Peak wind';
-      cp.markerShort = 'ðŸ’¨';
+      cp.markerShort = '💨';
       cp.markerKind = 'event';
       cp.markerTone = 'wind';
     } else if (cp.reasons.includes('coldest')) {
       cp.label = 'Coldest';
-      cp.markerShort = 'ðŸ¥¶';
+      cp.markerShort = '🥶';
       cp.markerKind = 'event';
       cp.markerTone = 'cold';
     } else if (cp.reasons.includes('hottest')) {
       cp.label = 'Hottest';
-      cp.markerShort = 'ðŸ¥µ';
+      cp.markerShort = '🥵';
       cp.markerKind = 'event';
       cp.markerTone = 'hot';
     } else if (cp.reasons.includes('highpoint')) {
       cp.label = 'High point';
-      cp.markerShort = 'â›°ï¸';
+      cp.markerShort = '⛰️';
       cp.markerKind = 'event';
       cp.markerTone = 'high';
     } else if (cp.reasons.includes('lowpoint')) {
       cp.label = 'Low point';
-      cp.markerShort = 'ðŸ•³ï¸';
+      cp.markerShort = '🕳️';
       cp.markerKind = 'event';
       cp.markerTone = 'low';
     } else {
@@ -2911,11 +2911,11 @@ function applySmartEventLabels(samples, modelName) {
       cp.markerKind = 'finish';
     } else if (cp.reasons.includes('sunrise')) {
       cp.label = 'Sunrise';
-      cp.markerShort = 'â†‘';
+      cp.markerShort = '↑';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('sunset')) {
       cp.label = 'Sunset';
-      cp.markerShort = 'â†“';
+      cp.markerShort = '↓';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('lowvis')) {
       cp.label = 'Low visibility';
@@ -2923,19 +2923,19 @@ function applySmartEventLabels(samples, modelName) {
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('wettest')) {
       cp.label = 'Rain risk';
-      cp.markerShort = 'â˜”';
+      cp.markerShort = '☔';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('uvpeak')) {
       cp.label = 'Peak UV';
-      cp.markerShort = 'â˜€';
+      cp.markerShort = '☀';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('peakwind')) {
       cp.label = 'Peak wind';
-      cp.markerShort = 'â†¯';
+      cp.markerShort = '↯';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('coldest')) {
       cp.label = 'Coldest';
-      cp.markerShort = 'â„';
+      cp.markerShort = '❄';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('hottest')) {
       cp.label = 'Hottest';
@@ -3024,27 +3024,27 @@ function markSmartWeatherEventCheckpoints(samples) {
       cp.markerKind = 'finish';
     } else if (cp.reasons.includes('sunrise')) {
       cp.label = 'Sunrise';
-      cp.markerShort = 'â†‘';
+      cp.markerShort = '↑';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('sunset')) {
       cp.label = 'Sunset';
-      cp.markerShort = 'â†“';
+      cp.markerShort = '↓';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('wettest')) {
       cp.label = 'Rain risk';
-      cp.markerShort = 'â˜”';
+      cp.markerShort = '☔';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('uvpeak')) {
       cp.label = 'Peak UV';
-      cp.markerShort = 'â˜€';
+      cp.markerShort = '☀';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('peakwind')) {
       cp.label = 'Peak wind';
-      cp.markerShort = 'â†¯';
+      cp.markerShort = '↯';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('coldest')) {
       cp.label = 'Coldest';
-      cp.markerShort = 'â„';
+      cp.markerShort = '❄';
       cp.markerKind = 'event';
     } else {
       cp.label = `Forecast checkpoint ${genericIndex}`;
@@ -3151,7 +3151,7 @@ function buildRouteCheckpointMarker(cp) {
   const markerInner = kind === 'event'
     ? renderSymbolIconHtml(cp.markerShort, 'checkpoint-marker-icon', cp.label || cp.markerShort, true)
     : null;
-  const shortLabel = cp.markerShort || (kind === 'start' ? 'S' : (kind === 'finish' ? 'F' : 'â€¢'));
+  const shortLabel = cp.markerShort || (kind === 'start' ? 'S' : (kind === 'finish' ? 'F' : '•'));
   return L.marker([cp.lat, cp.lon], {
     icon: L.divIcon({
       className: 'route-checkpoint-marker-wrapper',
@@ -3220,7 +3220,7 @@ function updateRouteHeaderActions() {
 }
 
 function formatRouteCoordinate(value) {
-  return isFiniteNumber(value) ? Number(value).toFixed(5) : 'â€”';
+  return isFiniteNumber(value) ? Number(value).toFixed(5) : '—';
 }
 
 function getRoutePointSelectedTime(pointIndex) {
@@ -3351,7 +3351,7 @@ function bindRouteElevationProfileInteractions() {
       <div class="tt-row"><span>Point type</span><strong>${escapeHtml(pointTypeLabel)}</strong></div>
       <div class="tt-row"><span>Elevation</span><strong>${escapeHtml(`${Math.round(point.ele)} m`)}</strong></div>
       ${pointEta ? `<div class="tt-row"><span>Selected time</span><strong>${escapeHtml(formatShortDateTime(pointEta))}</strong></div>` : ''}
-      <div class="tt-row"><span>Current position</span><strong>${escapeHtml(`${formatRouteCoordinate(point.lat)}Â°, ${formatRouteCoordinate(point.lon)}Â°`)}</strong></div>
+      <div class="tt-row"><span>Current position</span><strong>${escapeHtml(`${formatRouteCoordinate(point.lat)}°, ${formatRouteCoordinate(point.lon)}°`)}</strong></div>
     `;
     tooltip.classList.add('visible');
     positionFloatingTooltip(tooltip, event);
@@ -3602,7 +3602,7 @@ async function refreshRouteWeatherIfPossible() {
     if (slot) slot.innerHTML = buildRouteWeatherHtml();
     return;
   }
-  routeSummary.textContent = `${routeState.fileName} · loading checkpoint weatherâ€¦`;
+  routeSummary.textContent = `${routeState.fileName} · loading checkpoint weather…`;
   await Promise.all(routeState.samples.map(async cp => {
     try {
       const cache = await withTimeout(fetchRouteCheckpointForecast(cp), 12000, 'Route checkpoint forecast');
@@ -3676,7 +3676,7 @@ function getActiveWeatherRefreshPlace() {
   return null;
 }
 
-async function refreshWeatherForActiveTarget({ source = 'manual', detail = 'Refreshing weatherâ€¦', clearRouteCheckpointCache: shouldClearRouteCheckpointCache = false, placeOverride = null } = {}) {
+async function refreshWeatherForActiveTarget({ source = 'manual', detail = 'Refreshing weather…', clearRouteCheckpointCache: shouldClearRouteCheckpointCache = false, placeOverride = null } = {}) {
   const place = placeOverride || getActiveWeatherRefreshPlace();
   if (!place) return false;
   const previousRouteCheckpointState = shouldClearRouteCheckpointCache ? captureRouteCheckpointWeatherState() : null;
@@ -3733,11 +3733,11 @@ async function handleRouteFileChange(event) {
     renderPlannerState();
     if (weatherData) configureLaterInput(weatherData);
     renderRouteMap();
-    routeStatus.textContent = `${routeLoadedMessage} · refreshing weatherâ€¦`;
+    routeStatus.textContent = `${routeLoadedMessage} · refreshing weather…`;
     try {
       await refreshWeatherForActiveTarget({
         source: 'route_load',
-        detail: `Refreshing weather for ${file.name}â€¦`,
+        detail: `Refreshing weather for ${file.name}…`,
         clearRouteCheckpointCache: true,
         placeOverride: { latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: 'Route start', admin1: '', country: '', country_code: '' }
       });
@@ -3860,7 +3860,7 @@ function currentLocationIconHtml() {
 function setCurrentLocationButtonState(isLoading = false) {
   if (!currentLocationBtn) return;
   currentLocationBtn.innerHTML = isLoading ? '<span class="spinner locate-spinner" aria-hidden="true"></span>' : currentLocationIconHtml();
-  currentLocationBtn.title = isLoading ? 'Locatingâ€¦' : 'Use current location';
+  currentLocationBtn.title = isLoading ? 'Locating…' : 'Use current location';
   currentLocationBtn.setAttribute('aria-label', isLoading ? 'Locating current location' : 'Use current location');
 }
 
@@ -3897,12 +3897,12 @@ async function useCurrentLocation() {
 window.useCurrentLocation = useCurrentLocation;
 
 function countryFlag(code) {
-  if (!code) return 'ðŸŒ';
+  if (!code) return '🌍';
   return code.toUpperCase().replace(/./g, c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0)));
 }
 
 function escapeHtml(value) {
-  return normalizeDisplayTextFromModule(value)
+  return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -4126,7 +4126,7 @@ function buildChangelogHtml() {
           <span class="changelog-entry-summary-text"><span class="changelog-version-label">${renderInlineMarkdown(section.heading)}</span>${section.isMilestone && section.milestoneName ? `<span class="changelog-milestone-name">${escapeHtml(section.milestoneName)}</span>` : ''}</span>
           <span class="changelog-entry-summary-meta">
             ${index === 0 ? '<span class="changelog-entry-latest">latest</span>' : ''}
-            <span class="changelog-entry-chevron" aria-hidden="true">â€º</span>
+            <span class="changelog-entry-chevron" aria-hidden="true">›</span>
           </span>
         </summary>
         <div class="changelog-entry-body">${section.html}</div>
@@ -4505,7 +4505,7 @@ function getWeatherRefreshStatusText() {
     return savedAt ? `Offline mode · showing saved forecast from ${savedAt}.` : 'Offline mode · showing saved forecast.';
   }
   if (weatherRefreshStatus.state === 'loading') {
-    return weatherRefreshStatus.detail || 'Refreshing weatherâ€¦';
+    return weatherRefreshStatus.detail || 'Refreshing weather…';
   }
   if (weatherRefreshStatus.state === 'error') {
     const attemptedAt = formatRefreshStatusDateTime(weatherRefreshStatus.lastAttemptAt);
@@ -5411,24 +5411,24 @@ const renderLeadingEmojiLabel = (value, className = 'inline-symbol-icon') =>
   renderLeadingEmojiLabelFromModule(value, className);
 const upgradeEmojiMarkup = (html) => {
   const replacements = [
-    ['ðŸ· ', `${renderSymbolIconHtml('ðŸ·', 'inline-symbol-icon', 'Activity', true)} `],
-    ['Ã°Å¸Â· ', `${renderSymbolIconHtml('ðŸ·', 'inline-symbol-icon', 'Activity', true)} `],
-    ['ðŸ  ', `${renderSymbolIconHtml('ðŸ ', 'inline-symbol-icon', 'Indoor', true)} `],
-    ['Ã°Å¸ÂÂ  ', `${renderSymbolIconHtml('ðŸ ', 'inline-symbol-icon', 'Indoor', true)} `],
-    ['ðŸŒŠ ', `${renderSymbolIconHtml('ðŸŒŠ', 'inline-symbol-icon', 'Water', true)} `],
-    ['Ã°Å¸Å’Å  ', `${renderSymbolIconHtml('ðŸŒŠ', 'inline-symbol-icon', 'Water', true)} `],
-    ['âš ï¸', renderSymbolIconHtml('âš ï¸', 'wi', 'Warning', true)],
-    ['Ã¢Å¡Â Ã¯Â¸Â', renderSymbolIconHtml('âš ï¸', 'wi', 'Warning', true)],
-    ['ðŸ’§ ', `${renderSymbolIconHtml('ðŸ’¦', 'inline-symbol-icon', 'Humidity', true)} `],
-    ['Ã°Å¸â€™Â§ ', `${renderSymbolIconHtml('ðŸ’¦', 'inline-symbol-icon', 'Humidity', true)} `],
-    ['ðŸ’¨ ', `${renderSymbolIconHtml('ðŸ’¨', 'inline-symbol-icon', 'Wind', true)} `],
-    ['Ã°Å¸â€™Â¨ ', `${renderSymbolIconHtml('ðŸ’¨', 'inline-symbol-icon', 'Wind', true)} `],
-    ['ðŸŒ§ ', `${renderSymbolIconHtml('ðŸŒ§ï¸', 'inline-symbol-icon', 'Precipitation', true)} `],
-    ['Ã°Å¸Å’Â§ ', `${renderSymbolIconHtml('ðŸŒ§ï¸', 'inline-symbol-icon', 'Precipitation', true)} `],
-    ['â˜€ ', `${renderSymbolIconHtml('â˜€ï¸', 'inline-symbol-icon', 'UV', true)} `],
-    ['Ã¢Ëœâ‚¬ ', `${renderSymbolIconHtml('â˜€ï¸', 'inline-symbol-icon', 'UV', true)} `],
-    ['ðŸ“ ', `${renderSymbolIconHtml('ðŸŒ', 'inline-symbol-icon', 'Location', true)} `],
-    ['Ã°Å¸â€œÂ ', `${renderSymbolIconHtml('ðŸŒ', 'inline-symbol-icon', 'Location', true)} `],
+    ['🏷 ', `${renderSymbolIconHtml('🏷', 'inline-symbol-icon', 'Activity', true)} `],
+    ['ðŸ· ', `${renderSymbolIconHtml('🏷', 'inline-symbol-icon', 'Activity', true)} `],
+    ['🏠 ', `${renderSymbolIconHtml('🏠', 'inline-symbol-icon', 'Indoor', true)} `],
+    ['ðŸ  ', `${renderSymbolIconHtml('🏠', 'inline-symbol-icon', 'Indoor', true)} `],
+    ['🌊 ', `${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} `],
+    ['ðŸŒŠ ', `${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} `],
+    ['⚠️', renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)],
+    ['âš ï¸', renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)],
+    ['💧 ', `${renderSymbolIconHtml('💦', 'inline-symbol-icon', 'Humidity', true)} `],
+    ['ðŸ’§ ', `${renderSymbolIconHtml('💦', 'inline-symbol-icon', 'Humidity', true)} `],
+    ['💨 ', `${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} `],
+    ['ðŸ’¨ ', `${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} `],
+    ['🌧 ', `${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} `],
+    ['ðŸŒ§ ', `${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} `],
+    ['☀ ', `${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} `],
+    ['â˜€ ', `${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} `],
+    ['📍 ', `${renderSymbolIconHtml('🌍', 'inline-symbol-icon', 'Location', true)} `],
+    ['ðŸ“ ', `${renderSymbolIconHtml('🌍', 'inline-symbol-icon', 'Location', true)} `],
   ];
   let upgraded = String(html ?? '');
   for (const [needle, replacement] of replacements) {
@@ -5517,16 +5517,16 @@ function degreesToCompass(deg) {
 }
 
 function windDirectionHtml(deg, className = 'wind-dir-inline', showText = true) {
-  if (!isFiniteNumber(deg)) return `<span class="${escapeHtml(className)}" title="Variable wind" aria-label="Variable wind"><span class="wind-dir-arrow">â†»</span>${showText ? '<span>Var.</span>' : ''}</span>`;
+  if (!isFiniteNumber(deg)) return `<span class="${escapeHtml(className)}" title="Variable wind" aria-label="Variable wind"><span class="wind-dir-arrow">↻</span>${showText ? '<span>Var.</span>' : ''}</span>`;
   const compass = degreesToCompass(deg);
   const safeDeg = Math.round((((deg % 360) + 360) % 360));
-  const label = `Wind direction ${compass} (${safeDeg}Â°)`;
-  return `<span class="${escapeHtml(className)}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><span class="wind-dir-arrow" style="transform: rotate(${safeDeg}deg)">â†‘</span>${showText ? `<span>${escapeHtml(compass)}</span>` : ''}</span>`;
+  const label = `Wind direction ${compass} (${safeDeg}°)`;
+  return `<span class="${escapeHtml(className)}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><span class="wind-dir-arrow" style="transform: rotate(${safeDeg}deg)">↑</span>${showText ? `<span>${escapeHtml(compass)}</span>` : ''}</span>`;
 }
 
 function formatWindTooltip(speed, gusts, dir) {
-  const speedText = isFiniteNumber(speed) ? `${Math.round(speed)} km/h` : 'â€”';
-  const gustText = isFiniteNumber(gusts) ? `${Math.round(gusts)} km/h` : 'â€”';
+  const speedText = isFiniteNumber(speed) ? `${Math.round(speed)} km/h` : '—';
+  const gustText = isFiniteNumber(gusts) ? `${Math.round(gusts)} km/h` : '—';
   return { speedText, gustText, dirHtml: windDirectionHtml(dir, 'wind-dir-inline', true) };
 }
 
@@ -5540,7 +5540,7 @@ function buildRouteCheckpointPopupHtml(cp) {
   const [, desc] = wCodeToEmoji(w.code);
   const windBits = formatWindTooltip(w.wind, w.gusts, w.windDir);
   const windowSummary = cp.windowWeather
-    ? `${Math.round(firstFinite(cp.windowWeather.feelsMin, w.feels))}Â° to ${Math.round(firstFinite(cp.windowWeather.feelsMax, w.feels))}Â° feels · gusts up to ${Math.round(firstFinite(cp.windowWeather.maxGust, w.gusts, 0))} km/h`
+    ? `${Math.round(firstFinite(cp.windowWeather.feelsMin, w.feels))}° to ${Math.round(firstFinite(cp.windowWeather.feelsMax, w.feels))}° feels · gusts up to ${Math.round(firstFinite(cp.windowWeather.maxGust, w.gusts, 0))} km/h`
     : null;
   const routeWind = cp.relativeWind?.short ? `<span class="popup-muted">${escapeHtml(cp.relativeWind.short)}</span>` : '';
   return `
@@ -5549,10 +5549,10 @@ function buildRouteCheckpointPopupHtml(cp) {
       <span class="popup-place">${escapeHtml(place)}</span>
       ${cp.eta ? `<span class="popup-eta">ETA ${escapeHtml(formatShortDateTime(cp.eta))}</span>` : ''}
       ${reasonLine}
-      <div class="popup-row"><span class="popup-row-left">${weatherIconHtml(w.code, 'cp-icon')} <span>${escapeHtml(desc)}</span></span><span class="popup-row-right"><span>${Math.round(w.temp)} °C</span><span class="popup-muted">feels ${Math.round(w.feels)} °C</span></span></div>
-      <div class="popup-row"><span class="popup-row-left"><span>ðŸ’¨ ${windBits.speedText}</span>${windBits.dirHtml}</span><span class="popup-row-right"><span>â†¯ Gusts ${windBits.gustText}</span></span></div>
-      <div class="popup-row"><span class="popup-row-left"><span>ðŸŒ§ ${Math.round(w.precipProb || 0)}%</span></span><span class="popup-row-right">${routeWind}</span></div>
-      ${isFiniteNumber(w.aqi) ? `<div class="popup-row"><span class="popup-row-left"><span>ðŸ˜· ${renderAqiBadge(w.aqi, true)}</span></span></div>` : ''}
+      <div class="popup-row"><span class="popup-row-left">${weatherIconHtml(w.code, 'cp-icon')} <span>${escapeHtml(desc)}</span></span><span class="popup-row-right"><span>${Math.round(w.temp)}°C</span><span class="popup-muted">feels ${Math.round(w.feels)}°C</span></span></div>
+      <div class="popup-row"><span class="popup-row-left"><span>💨 ${windBits.speedText}</span>${windBits.dirHtml}</span><span class="popup-row-right"><span>↯ Gusts ${windBits.gustText}</span></span></div>
+      <div class="popup-row"><span class="popup-row-left"><span>🌧 ${Math.round(w.precipProb || 0)}%</span></span><span class="popup-row-right">${routeWind}</span></div>
+      ${isFiniteNumber(w.aqi) ? `<div class="popup-row"><span class="popup-row-left"><span>😷 ${renderAqiBadge(w.aqi, true)}</span></span></div>` : ''}
       ${windowSummary ? `<div class="popup-row"><span class="popup-row-left"><span>${escapeHtml(windowSummary)}</span></span></div>` : ''}
     </div>`;
 }
@@ -5588,12 +5588,12 @@ function buildRouteWeatherHtml() {
     const precips = ready.map(cp => firstFinite(cp.windowWeather?.maxPrecipProb, cp.weather?.precipProb)).filter(isFiniteNumber);
     const uvs = ready.map(cp => firstFinite(cp.windowWeather?.maxUv, cp.weather?.uv)).filter(isFiniteNumber);
     const bits = [];
-    if (feels.length) bits.push(`lowest feels-like ${Math.round(Math.min(...feels))} °C`);
+    if (feels.length) bits.push(`lowest feels-like ${Math.round(Math.min(...feels))}°C`);
     if (winds.length) bits.push(`peak wind ${Math.round(Math.max(...winds))} km/h`);
     if (precips.length) bits.push(`max precip ${Math.round(Math.max(...precips))}%`);
     if (uvs.length) bits.push(`peak UV ${formatUvValue(Math.max(...uvs))}`);
     return bits.join(' · ');
-  })() : 'Loading checkpoint weatherâ€¦';
+  })() : 'Loading checkpoint weather…';
 
   return `
     <div class="block-title">Route checkpoints</div>
@@ -5609,7 +5609,7 @@ function buildRouteWeatherHtml() {
         const windowBits = cp.windowWeather && w ? (() => {
           const bits = [];
           if (isFiniteNumber(cp.windowWeather.feelsMin) && isFiniteNumber(cp.windowWeather.feelsMax)) {
-            bits.push(`${Math.round(cp.windowWeather.feelsMin)}Â° to ${Math.round(cp.windowWeather.feelsMax)}Â° feels`);
+            bits.push(`${Math.round(cp.windowWeather.feelsMin)}° to ${Math.round(cp.windowWeather.feelsMax)}° feels`);
           }
           if (isFiniteNumber(cp.windowWeather.maxGust)) bits.push(`gusts up to ${Math.round(cp.windowWeather.maxGust)} km/h`);
           if (isFiniteNumber(cp.windowWeather.maxPrecipProb) && cp.windowWeather.maxPrecipProb >= 10) bits.push(`precip up to ${Math.round(cp.windowWeather.maxPrecipProb)}%`);
@@ -5619,14 +5619,14 @@ function buildRouteWeatherHtml() {
         return `
           <div class="route-weather-cell">
             <div class="cp">${escapeHtml(cp.label)}</div>
-            <div class="cp-main">${escapeHtml(formatKmPrefix(cp.kmFromStart))} ${w ? weatherIconHtml(w.code, 'cp-icon') : '<span class="cp-icon" aria-hidden="true">â€¦</span>'}</div>
+            <div class="cp-main">${escapeHtml(formatKmPrefix(cp.kmFromStart))} ${w ? weatherIconHtml(w.code, 'cp-icon') : '<span class="cp-icon" aria-hidden="true">…</span>'}</div>
             <div class="cp-place">${escapeHtml(cp.placeLabel || 'Nearby area')}</div>
-            <div class="cp-sub">ETA ${cp.eta ? escapeHtml(formatShortDateTime(cp.eta)) : 'â€”'}${reasonLine ? `<br>${escapeHtml(reasonLine)}` : ''}</div>
+            <div class="cp-sub">ETA ${cp.eta ? escapeHtml(formatShortDateTime(cp.eta)) : '—'}${reasonLine ? `<br>${escapeHtml(reasonLine)}` : ''}</div>
             ${w ? `
-              <div class="cp-temp">${Math.round(w.temp)}Â° · feels ${Math.round(w.feels)}Â°</div>
-              <div class="cp-humidity">${renderSymbolIconHtml('ðŸ’§', 'inline-symbol-icon', 'Humidity', true)} ${isFiniteNumber(w.humidity) ? `${Math.round(w.humidity)}% RH` : 'â€”'}</div>
-              <div class="cp-meta">${renderSymbolIconHtml('ðŸ’¨', 'inline-symbol-icon', 'Wind', true)} ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>â†¯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : 'â€”'} km/h${isFiniteNumber(w.uv) ? `<br>${renderSymbolIconHtml('â˜€ï¸', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(w.uv, true)}` : ''}${isFiniteNumber(w.aqi) ? `<br>${renderSymbolIconHtml('ðŸ˜·', 'inline-symbol-icon', 'AQI', true)} ${renderAqiBadge(w.aqi, true)}` : ''}<br>${renderSymbolIconHtml('ðŸŒ§ï¸', 'inline-symbol-icon', 'Precipitation', true)} ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
-            ` : `<div class="cp-temp">Loadingâ€¦</div>`}
+              <div class="cp-temp">${Math.round(w.temp)}° · feels ${Math.round(w.feels)}°</div>
+              <div class="cp-humidity">${renderSymbolIconHtml('💧', 'inline-symbol-icon', 'Humidity', true)} ${isFiniteNumber(w.humidity) ? `${Math.round(w.humidity)}% RH` : '—'}</div>
+              <div class="cp-meta">${renderSymbolIconHtml('💨', 'inline-symbol-icon', 'Wind', true)} ${Math.round(w.wind || 0)} km/h ${windDirectionHtml(w.windDir, 'wind-dir-inline', true)}${escapeHtml(routeWind)}<br>↯ gusts ${isFiniteNumber(w.gusts) ? Math.round(w.gusts) : '—'} km/h${isFiniteNumber(w.uv) ? `<br>${renderSymbolIconHtml('☀️', 'inline-symbol-icon', 'UV', true)} ${renderUvBadge(w.uv, true)}` : ''}${isFiniteNumber(w.aqi) ? `<br>${renderSymbolIconHtml('😷', 'inline-symbol-icon', 'AQI', true)} ${renderAqiBadge(w.aqi, true)}` : ''}<br>${renderSymbolIconHtml('🌧️', 'inline-symbol-icon', 'Precipitation', true)} ${Math.round(w.precipProb || 0)}%${windowBits ? `<br>${escapeHtml(windowBits)}` : ''}</div>
+            ` : `<div class="cp-temp">Loading…</div>`}
           </div>`;
       }).join('')}
     </div>`;
@@ -5672,12 +5672,12 @@ function getUvRiskInfo(value) {
     Moderate: { tone: '', className: 'moderate', colour: 'yellow' },
     Low: { tone: 'ok', className: 'low', colour: 'green' }
   };
-  return { value: uv, label: category, icon: 'â˜€ï¸', ...byCategory[category] };
+  return { value: uv, label: category, icon: '☀️', ...byCategory[category] };
 }
 
 function formatUvValue(value) {
   const uv = firstFinite(value, null);
-  return isFiniteNumber(uv) ? round1(uv) : 'â€”';
+  return isFiniteNumber(uv) ? round1(uv) : '—';
 }
 
 function renderUvBadge(value, compact = false) {
@@ -5718,7 +5718,7 @@ function getUvProtectionItem(maxUv, activity, light) {
   const info = getUvRiskInfo(maxUv);
   if (!info || info.value < 3 || !light?.isDay) return null;
   const detail = info.value >= 8
-    ? `Peak UV ${formatUvValue(info.value)} (${info.label.toLowerCase()}). ECCC guidance treats this as extra/full precautions territory: avoid the strongest sun around 11:00â€“15:00 when possible, use shade, sunglasses, sunscreen, and skin coverage.`
+    ? `Peak UV ${formatUvValue(info.value)} (${info.label.toLowerCase()}). ECCC guidance treats this as extra/full precautions territory: avoid the strongest sun around 11:00–15:00 when possible, use shade, sunglasses, sunscreen, and skin coverage.`
     : info.value >= 6
       ? `Peak UV ${formatUvValue(info.value)} (${info.label.toLowerCase()}). ECCC guidance says protection is required: reduce midday exposure, seek shade, cover up, wear sunglasses, and use sunscreen.`
       : `Peak UV ${formatUvValue(info.value)} (${info.label.toLowerCase()}). ECCC guidance says to take precautions if outside long enough: hat, sunglasses, sunscreen, and shade near midday.`;
@@ -5744,8 +5744,8 @@ function augmentWizardWithUvContext(wizard, data, activity) {
   const uvInfo = getUvRiskInfo(maxUv);
   if (uvInfo && uvInfo.value >= 3) {
     wizard.chips = Array.isArray(wizard.chips) ? wizard.chips : [];
-    if (!wizard.chips.some(chip => /^â˜€ï¸ UV/.test(String(chip.label || '')))) {
-      wizard.chips.push({ label: `â˜€ï¸ UV ${formatUvValue(uvInfo.value)} · ${uvInfo.label}`, tone: `uv-${uvInfo.className}` });
+    if (!wizard.chips.some(chip => /^☀️ UV/.test(String(chip.label || '')))) {
+      wizard.chips.push({ label: `☀️ UV ${formatUvValue(uvInfo.value)} · ${uvInfo.label}`, tone: `uv-${uvInfo.className}` });
     }
     addItemToWizardStep(wizard, getUvProtectionItem(uvInfo.value, activity, describeLight(data, wizard.startTime || getSelectedStartTime(data), selection)));
   }
@@ -5760,11 +5760,11 @@ function augmentWizardWithAqiContext(wizard, data, activity) {
   const aqiInfo = getAqiInfo(maxAqi);
   if (!aqiInfo || aqiInfo.value < 51) return wizard;
   wizard.chips = Array.isArray(wizard.chips) ? wizard.chips : [];
-  if (!wizard.chips.some(chip => /^ðŸ’¨ AQI/.test(String(chip.label || '')))) {
-    wizard.chips.push({ label: `ðŸ’¨ AQI ${aqiInfo.value} · ${aqiInfo.category}`, tone: `aqi-${aqiInfo.className}` });
+  if (!wizard.chips.some(chip => /^💨 AQI/.test(String(chip.label || '')))) {
+    wizard.chips.push({ label: `💨 AQI ${aqiInfo.value} · ${aqiInfo.category}`, tone: `aqi-${aqiInfo.className}` });
   }
   if (aqiInfo.value >= 101) {
-    addItemToWizardStep(wizard, { label: 'Air quality mask', detail: `AQI ${aqiInfo.value} (${aqiInfo.category}) â€” consider an N95/KN95 mask for prolonged outdoor effort.` });
+    addItemToWizardStep(wizard, { label: 'Air quality mask', detail: `AQI ${aqiInfo.value} (${aqiInfo.category}) — consider an N95/KN95 mask for prolonged outdoor effort.` });
   }
   return wizard;
 }
@@ -5815,12 +5815,12 @@ function getAqiHazardWarning(selection, point) {
   const info = getAqiInfo(maxAqi);
   if (!info || info.value < 100) return null;
   if (info.value >= 201) {
-    return { level: 'purple', icon: 'ðŸ˜·', title: `${info.category} air quality`, detail: `Peak AQI around ${info.value}. Avoid prolonged outdoor exertion. N95/KN95 mask recommended if going out.` };
+    return { level: 'purple', icon: '😷', title: `${info.category} air quality`, detail: `Peak AQI around ${info.value}. Avoid prolonged outdoor exertion. N95/KN95 mask recommended if going out.` };
   }
   if (info.value >= 151) {
-    return { level: 'red', icon: 'ðŸ˜·', title: 'Unhealthy air quality', detail: `Peak AQI around ${info.value}. Everyone may experience health effects. Reduce prolonged outdoor effort and consider a mask.` };
+    return { level: 'red', icon: '😷', title: 'Unhealthy air quality', detail: `Peak AQI around ${info.value}. Everyone may experience health effects. Reduce prolonged outdoor effort and consider a mask.` };
   }
-  return { level: 'orange', icon: 'ðŸ˜·', title: 'Unhealthy for Sensitive Groups', detail: `Peak AQI around ${info.value}. Sensitive individuals (asthma, heart/lung conditions) should reduce prolonged outdoor exertion.` };
+  return { level: 'orange', icon: '😷', title: 'Unhealthy for Sensitive Groups', detail: `Peak AQI around ${info.value}. Sensitive individuals (asthma, heart/lung conditions) should reduce prolonged outdoor exertion.` };
 }
 
 function getUvHazardWarning(data, selection, point, activity) {
@@ -5832,9 +5832,9 @@ function getUvHazardWarning(data, selection, point, activity) {
   const info = getUvRiskInfo(maxUv);
   if (!info || info.value < 6) return null;
   if (info.value >= 8) {
-    return { level: info.className === 'extreme' ? 'purple' : 'red', icon: 'â˜€ï¸', title: `${info.label} UV exposure`, detail: `Peak UV around ${formatUvValue(maxUv)}. Follow ECCC sun-safety guidance: avoid the strongest sun around 11:00â€“15:00 when possible, seek shade, wear sunglasses, use sunscreen, and cover skin.` };
+    return { level: info.className === 'extreme' ? 'purple' : 'red', icon: '☀️', title: `${info.label} UV exposure`, detail: `Peak UV around ${formatUvValue(maxUv)}. Follow ECCC sun-safety guidance: avoid the strongest sun around 11:00–15:00 when possible, seek shade, wear sunglasses, use sunscreen, and cover skin.` };
   }
-  return { level: 'orange', icon: 'â˜€ï¸', title: 'High UV exposure', detail: `Peak UV around ${formatUvValue(maxUv)}. ECCC guidance says protection is required: reduce midday exposure, seek shade, cover up, wear sunglasses, and use sunscreen.` };
+  return { level: 'orange', icon: '☀️', title: 'High UV exposure', detail: `Peak UV around ${formatUvValue(maxUv)}. ECCC guidance says protection is required: reduce midday exposure, seek shade, cover up, wear sunglasses, and use sunscreen.` };
 }
 
 function getRouteUvHazardWarning(samples = []) {
@@ -5845,7 +5845,7 @@ function getRouteUvHazardWarning(samples = []) {
   if (!info || info.value < 6) return null;
   return {
     level: info.value >= 8 ? (info.className === 'extreme' ? 'purple' : 'red') : 'orange',
-    icon: 'â˜€ï¸',
+    icon: '☀️',
     title: `Route checkpoint ${info.label.toLowerCase()} UV`,
     detail: `Peak checkpoint UV is around ${formatUvValue(maxUv)}. Let sun protection influence the kit choice.`
   };
@@ -5869,18 +5869,18 @@ function getForecastHazardWarnings(data, selection, point, activity) {
   const warnings = [];
 
   if (codes.some(code => [95, 96, 99].includes(code))) {
-    warnings.push({ level: 'severe', icon: 'â›ˆï¸', title: 'Thunderstorm risk in the planned window', detail: 'Consider changing the timing or route rather than trying to solve this with clothing.' });
+    warnings.push({ level: 'severe', icon: '⛈️', title: 'Thunderstorm risk in the planned window', detail: 'Consider changing the timing or route rather than trying to solve this with clothing.' });
   }
   if (maxGust >= 55 || maxWind >= 40) {
-    warnings.push({ level: 'severe', icon: 'ðŸ’¨', title: 'Strong wind / gust warning', detail: `Peak gusts around ${Math.round(maxGust)} km/h. Exposed cycling, paddling, swimming, and trail sections deserve extra caution.` });
+    warnings.push({ level: 'severe', icon: '💨', title: 'Strong wind / gust warning', detail: `Peak gusts around ${Math.round(maxGust)} km/h. Exposed cycling, paddling, swimming, and trail sections deserve extra caution.` });
   } else if (maxGust >= 38) {
-    warnings.push({ level: 'warn', icon: 'ðŸ’¨', title: 'Gusty conditions', detail: `Gusts may reach about ${Math.round(maxGust)} km/h. Secure loose layers and expect colder-feeling exposed sections.` });
+    warnings.push({ level: 'warn', icon: '💨', title: 'Gusty conditions', detail: `Gusts may reach about ${Math.round(maxGust)} km/h. Secure loose layers and expect colder-feeling exposed sections.` });
   }
   if (maxPrecipProb >= 75 || maxPrecip >= 3) {
-    warnings.push({ level: 'warn', icon: 'ðŸŒ§ï¸', title: 'High precipitation risk', detail: `Rain risk peaks near ${Math.round(maxPrecipProb)}%${maxPrecip > 0 ? ` with up to ${round1(maxPrecip)} mm in a slice` : ''}. Waterproofing, traction, and dry backup layers matter.` });
+    warnings.push({ level: 'warn', icon: '🌧️', title: 'High precipitation risk', detail: `Rain risk peaks near ${Math.round(maxPrecipProb)}%${maxPrecip > 0 ? ` with up to ${round1(maxPrecip)} mm in a slice` : ''}. Waterproofing, traction, and dry backup layers matter.` });
   }
   if (codes.some(code => isSnowy(code))) {
-    warnings.push({ level: 'warn', icon: 'â„ï¸', title: 'Snow / mixed winter precipitation possible', detail: 'Prioritize traction, visibility, hands, and a warmer backup layer.' });
+    warnings.push({ level: 'warn', icon: '❄️', title: 'Snow / mixed winter precipitation possible', detail: 'Prioritize traction, visibility, hands, and a warmer backup layer.' });
   }
   return warnings;
 }
@@ -5932,10 +5932,10 @@ function getRouteCheckpointHazardWarnings(samples = []) {
   const maxUv = Math.max(...ready.map(cp => firstFinite(cp.windowWeather?.maxUv, cp.weather?.uv, 0)));
   const hasStorm = ready.some(cp => [95, 96, 99].includes(firstFinite(cp.weather?.code, -1)));
   const warnings = [];
-  if (hasStorm) warnings.push({ level: 'severe', icon: 'â›ˆï¸', title: 'Route checkpoint thunderstorm risk', detail: 'One or more checkpoints look stormy. Consider changing the route or timing.' });
-  if (maxGust >= 55 || maxWind >= 40) warnings.push({ level: 'severe', icon: 'ðŸ’¨', title: 'Route checkpoint wind warning', detail: `A checkpoint may see gusts near ${Math.round(maxGust)} km/h.` });
-  else if (maxGust >= 38) warnings.push({ level: 'warn', icon: 'ðŸ’¨', title: 'Route checkpoint gusts', detail: `Peak checkpoint gusts may reach about ${Math.round(maxGust)} km/h.` });
-  if (maxPrecipProb >= 75 || maxPrecip >= 3) warnings.push({ level: 'warn', icon: 'ðŸŒ§ï¸', title: 'Route checkpoint precipitation risk', detail: `Checkpoint precip risk peaks near ${Math.round(maxPrecipProb)}%${maxPrecip > 0 ? ` with up to ${round1(maxPrecip)} mm in a slice` : ''}.` });
+  if (hasStorm) warnings.push({ level: 'severe', icon: '⛈️', title: 'Route checkpoint thunderstorm risk', detail: 'One or more checkpoints look stormy. Consider changing the route or timing.' });
+  if (maxGust >= 55 || maxWind >= 40) warnings.push({ level: 'severe', icon: '💨', title: 'Route checkpoint wind warning', detail: `A checkpoint may see gusts near ${Math.round(maxGust)} km/h.` });
+  else if (maxGust >= 38) warnings.push({ level: 'warn', icon: '💨', title: 'Route checkpoint gusts', detail: `Peak checkpoint gusts may reach about ${Math.round(maxGust)} km/h.` });
+  if (maxPrecipProb >= 75 || maxPrecip >= 3) warnings.push({ level: 'warn', icon: '🌧️', title: 'Route checkpoint precipitation risk', detail: `Checkpoint precip risk peaks near ${Math.round(maxPrecipProb)}%${maxPrecip > 0 ? ` with up to ${round1(maxPrecip)} mm in a slice` : ''}.` });
   return warnings;
 }
 
@@ -6541,7 +6541,7 @@ laterInput.addEventListener('change', () => {
   if (!weatherData) return;
   void refreshWeatherForActiveTarget({
     source: 'later_date',
-    detail: 'Refreshing weather for the selected forecast dateâ€¦',
+    detail: 'Refreshing weather for the selected forecast date…',
     clearRouteCheckpointCache: true
   }).catch(() => {});
 });
@@ -7175,7 +7175,7 @@ async function fetchNdbcStationObservation(station) {
 function parseEcccMarineHtml(html) {
   const text = String(html || '').replace(/\u00a0/g, ' ');
   const waveMatch = text.match(/Wave height\s*\(m(?:[^)]*)?\)\s*([^<\n]+)/i);
-  const waterMatch = text.match(/Water temperature\s*\( °C(?:[^)]*)?\)\s*([^<\n]+)/i);
+  const waterMatch = text.match(/Water temperature\s*\(°C(?:[^)]*)?\)\s*([^<\n]+)/i);
   const waterTemp = waterMatch && !textHasNoData(waterMatch[1]) ? parseLooseNumber(waterMatch[1]) : null;
   const waveHeight = waveMatch && !textHasNoData(waveMatch[1]) ? parseLooseNumber(waveMatch[1]) : null;
   if (!isFiniteNumber(waterTemp) && !isFiniteNumber(waveHeight)) return null;
@@ -7316,11 +7316,11 @@ function getCampingOvernightSummary(data, startTime, profile) {
 
 function getSleepingBagGuidance(overnightFeels) {
   if (!isFiniteNumber(overnightFeels)) return 'Match the bag to the overnight comfort rating, not just the daytime temperature.';
-  if (overnightFeels <= -8) return 'Aim for a sleeping bag with a comfort rating around -10 °C or lower.';
-  if (overnightFeels <= -2) return 'Aim for a sleeping bag with a comfort rating around -5 °C.';
-  if (overnightFeels <= 4) return 'Aim for a sleeping bag with a comfort rating around 0 °C.';
-  if (overnightFeels <= 10) return 'Aim for a sleeping bag with a comfort rating around 5 °C.';
-  return 'A 10 °C-ish comfort-rated sleeping bag is usually enough unless the site runs damp or windy.';
+  if (overnightFeels <= -8) return 'Aim for a sleeping bag with a comfort rating around -10°C or lower.';
+  if (overnightFeels <= -2) return 'Aim for a sleeping bag with a comfort rating around -5°C.';
+  if (overnightFeels <= 4) return 'Aim for a sleeping bag with a comfort rating around 0°C.';
+  if (overnightFeels <= 10) return 'Aim for a sleeping bag with a comfort rating around 5°C.';
+  return 'A 10°C-ish comfort-rated sleeping bag is usually enough unless the site runs damp or windy.';
 }
 
 function getSleepingPadGuidance(overnightFeels) {
@@ -7672,7 +7672,7 @@ function getDisplayForecastSelection(data, startTime) {
       chartLatitude: data?.latitude,
       chartLongitude: data?.longitude,
       chartLocationName: data?.locationName,
-      headerMeta: `${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}â€“${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · main event highlighted`
+      headerMeta: `${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}–${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))} · main event highlighted`
     }
   );
 }
@@ -8066,11 +8066,11 @@ function applyCheckpointLabelsForModel(samples, modelName) {
       cp.markerKind = 'finish';
     } else if (modelName === 'smart' && cp.reasons.includes('sunrise')) {
       cp.label = 'Sunrise';
-      cp.markerShort = 'â†‘';
+      cp.markerShort = '↑';
       cp.markerKind = 'event';
     } else if (modelName === 'smart' && cp.reasons.includes('sunset')) {
       cp.label = 'Sunset';
-      cp.markerShort = 'â†“';
+      cp.markerShort = '↓';
       cp.markerKind = 'event';
     } else {
       cp.label = modelName === 'smart' ? `Forecast checkpoint ${genericIndex}` : `Weather checkpoint ${genericIndex}`;
@@ -8112,27 +8112,27 @@ function markSmartWeatherEventCheckpointsForModel(samples, modelName) {
       cp.markerKind = 'finish';
     } else if (cp.reasons.includes('sunrise')) {
       cp.label = 'Sunrise';
-      cp.markerShort = 'â†‘';
+      cp.markerShort = '↑';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('sunset')) {
       cp.label = 'Sunset';
-      cp.markerShort = 'â†“';
+      cp.markerShort = '↓';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('wettest')) {
       cp.label = 'Rain risk';
-      cp.markerShort = 'â˜”';
+      cp.markerShort = '☔';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('uvpeak')) {
       cp.label = 'Peak UV';
-      cp.markerShort = 'â˜€';
+      cp.markerShort = '☀';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('peakwind')) {
       cp.label = 'Peak wind';
-      cp.markerShort = 'â†¯';
+      cp.markerShort = '↯';
       cp.markerKind = 'event';
     } else if (cp.reasons.includes('coldest')) {
       cp.label = 'Coldest';
-      cp.markerShort = 'â„';
+      cp.markerShort = '❄';
       cp.markerKind = 'event';
     } else {
       cp.label = `Forecast checkpoint ${genericIndex}`;
@@ -8504,8 +8504,8 @@ async function runBestWindowAnalysis(force = false) {
   }
 
   const token = ++bestWindowAnalysisToken;
-  bestWindowStatus.textContent = 'Finding the best weather windowsâ€¦';
-  bestWindowResults.innerHTML = `<div class="best-window-empty">Scoring candidate start times across the allowed rangeâ€¦</div>`;
+  bestWindowStatus.textContent = 'Finding the best weather windows…';
+  bestWindowResults.innerHTML = `<div class="best-window-empty">Scoring candidate start times across the allowed range…</div>`;
 
   const stepMinutes = getBestWindowStepMinutes();
   const durationState = getDurationState(getSelectedEvent());
@@ -8636,14 +8636,14 @@ function option(label, detail, selected = false, tags = []) {
 function toChecklistTitle(str) {
   return String(str || '')
     .trim()
-    .split(/(\s+|\/|·|\+|â€“|-|\(|\))/)
+    .split(/(\s+|\/|·|\+|–|-|\(|\))/)
     .map(token => {
       if (!token || /^\s+$/.test(token)) return token;
-      if (/^[\/+·()â€“-]$/.test(token)) return token;
+      if (/^[\/+·()–-]$/.test(token)) return token;
       if (/^[0-9]/.test(token)) return token;
       if (/[A-Z]{2,}/.test(token) && !/[a-z]/.test(token)) return token;
       const lower = token.toLowerCase();
-      return lower.replace(/(^|['â€™])([a-zÃ -Ã¿])/g, (_, prefix, chr) => prefix + chr.toUpperCase());
+      return lower.replace(/(^|['’])([a-zà-ÿ])/g, (_, prefix, chr) => prefix + chr.toUpperCase());
     })
     .join('')
     .replace(/\s+/g, ' ')
@@ -8686,33 +8686,33 @@ function buildWizard(data, activity) {
   const isRaceDay = raceDayMode;
   const distanceKmValue = isFiniteNumber(distanceState.km) ? distanceState.km : null;
   const chips = [
-    { label: `ðŸ ${eventLabel}`, tone: '' },
-    { label: `ðŸ“ ${distanceText}`, tone: distanceState.source === 'derived' ? 'ok' : '' },
-    { label: `â± ${durationState.label}`, tone: durationState.source === 'derived' ? 'ok' : '' },
-    { label: `ðŸ•’ start ${startLabel}`, tone: '' },
-    { label: `ðŸŒ¡ feels ${Math.round(feels)} °C`, tone: '' },
-    { label: light.isDay ? `ðŸŒž ${light.label}` : `ðŸŒ™ ${light.label}`, tone: light.tone }
+    { label: `🏁 ${eventLabel}`, tone: '' },
+    { label: `📏 ${distanceText}`, tone: distanceState.source === 'derived' ? 'ok' : '' },
+    { label: `⏱ ${durationState.label}`, tone: durationState.source === 'derived' ? 'ok' : '' },
+    { label: `🕒 start ${startLabel}`, tone: '' },
+    { label: `🌡 feels ${Math.round(feels)}°C`, tone: '' },
+    { label: light.isDay ? `🌞 ${light.label}` : `🌙 ${light.label}`, tone: light.tone }
   ];
-  if (routeState?.points?.length) chips.push({ label: `ðŸ—º route ${distanceText}`, tone: '' });
-  if (isRaceDay) chips.push({ label: 'ðŸ race day mode', tone: '' });
-  if ((activity === 'triathlon' || activity === 'cross_triathlon') && isRaceDay) chips.push({ label: 'ðŸ” T1 / T2 live', tone: '' });
+  if (routeState?.points?.length) chips.push({ label: `🗺 route ${distanceText}`, tone: '' });
+  if (isRaceDay) chips.push({ label: '🏁 race day mode', tone: '' });
+  if ((activity === 'triathlon' || activity === 'cross_triathlon') && isRaceDay) chips.push({ label: '🔁 T1 / T2 live', tone: '' });
   if (raceDayWindow && shouldShowRaceDayTimingPanel()) {
-    chips.push({ label: `ðŸ—“ day ${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}-${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))}`, tone: raceDayWindow.isValid ? '' : 'warn' });
-    chips.push({ label: `ðŸ”¥ warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)}`, tone: '' });
-    chips.push({ label: `ðŸ§Š cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}`, tone: '' });
+    chips.push({ label: `🗓 day ${formatShortTime(formatDateTimeLocal(raceDayWindow.dayStart).slice(0, 16))}-${formatShortTime(formatDateTimeLocal(raceDayWindow.dayEnd).slice(0, 16))}`, tone: raceDayWindow.isValid ? '' : 'warn' });
+    chips.push({ label: `🔥 warmup ${formatMinutesShort(raceDayWindow.warmupMinutes)}`, tone: '' });
+    chips.push({ label: `🧊 cooldown ${formatMinutesShort(raceDayWindow.cooldownMinutes)}`, tone: '' });
   }
   if (temperaturePreference !== 0) chips.push({ label: tempPreferenceInfo.chip, tone: temperaturePreference < 0 ? 'warn' : '' });
   if (plannedEffort !== 'steady' && isEffortRelevantActivity(activity)) chips.push({ label: effortInfo.chip, tone: effortOffset < 0 ? 'warn' : '' });
-  if (planned.precipitationWindowNote) chips.push({ label: `ðŸŒ§ ${planned.precipitationWindowNote}`, tone: 'warn' });
-  if (distanceState.source === 'custom') chips.push({ label: 'âœ custom distance', tone: '' });
-  if (distanceState.source === 'derived') chips.push({ label: 'â‰ˆ distance from avg', tone: 'ok' });
-  if (durationState.source === 'custom') chips.push({ label: 'âœ custom duration', tone: '' });
-  if (durationState.source === 'route') chips.push({ label: `ðŸ”’ route time ${formatMinutesShort(routeState.elapsedMinutes)}`, tone: '' });
-  if (durationState.source === 'derived') chips.push({ label: 'â‰ˆ duration from avg', tone: 'ok' });
-  if (averageState?.valid) chips.push({ label: `âš¡ ${averageState.label}`, tone: '' });
-  if (getCustomWeatherOverride().active) chips.push({ label: 'âœ manual weather', tone: 'warn' });
-  if (light.sunrise) chips.push({ label: `â¬† sunrise ${formatShortTime(light.sunrise)}`, tone: '' });
-  if (light.sunset) chips.push({ label: `â¬‡ sunset ${formatShortTime(light.sunset)}`, tone: '' });
+  if (planned.precipitationWindowNote) chips.push({ label: `🌧 ${planned.precipitationWindowNote}`, tone: 'warn' });
+  if (distanceState.source === 'custom') chips.push({ label: '✍ custom distance', tone: '' });
+  if (distanceState.source === 'derived') chips.push({ label: '≈ distance from avg', tone: 'ok' });
+  if (durationState.source === 'custom') chips.push({ label: '✍ custom duration', tone: '' });
+  if (durationState.source === 'route') chips.push({ label: `🔒 route time ${formatMinutesShort(routeState.elapsedMinutes)}`, tone: '' });
+  if (durationState.source === 'derived') chips.push({ label: '≈ duration from avg', tone: 'ok' });
+  if (averageState?.valid) chips.push({ label: `⚡ ${averageState.label}`, tone: '' });
+  if (getCustomWeatherOverride().active) chips.push({ label: '✍ manual weather', tone: 'warn' });
+  if (light.sunrise) chips.push({ label: `⬆ sunrise ${formatShortTime(light.sunrise)}`, tone: '' });
+  if (light.sunset) chips.push({ label: `⬇ sunset ${formatShortTime(light.sunset)}`, tone: '' });
 
   if (activity === 'running') {
     const mainOptions = t >= 18 ? [
@@ -8786,7 +8786,7 @@ function buildWizard(data, activity) {
       if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
     if (profile.minutes >= 240 || (distanceKmValue != null && distanceKmValue >= 30)) extras.push(item('Dry backup layer', 'Helpful when the weather could turn or the stop afterward is chilly.', ['long']));
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup around ${distanceText}, starting at ${Math.round(feels)} °C feels-like with ${desc}${wet ? ' and some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main run kit', 'Choose the broad outfit first.', mainOptions), makeListStep('Step 2 · Add the important layers / accessories', 'These are the pieces that meaningfully change comfort.', core), makeListStep('Step 3 · Longer-distance / backup items', 'Worth more as the outing or event gets bigger.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are more of a postpone problem than a clothing problem.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup around ${distanceText}, starting at ${Math.round(feels)}°C feels-like with ${desc}${wet ? ' and some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main run kit', 'Choose the broad outfit first.', mainOptions), makeListStep('Step 2 · Add the important layers / accessories', 'These are the pieces that meaningfully change comfort.', core), makeListStep('Step 3 · Longer-distance / backup items', 'Worth more as the outing or event gets bigger.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are more of a postpone problem than a clothing problem.' : null };
   }
 
   if (activity === 'cycling') {
@@ -8828,7 +8828,7 @@ function buildWizard(data, activity) {
       );
       if (raceDaySupportItems.length) extras.unshift(...raceDaySupportItems);
     }
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with bike-effective feel around ${Math.round(effective)} °C and ${desc}${wet ? ' with wet-road risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main bike kit', 'Choose the core on-bike clothing system.', mainOptions), makeListStep('Step 2 · Add the bike-specific essentials', 'These make the biggest difference on a ride.', core), makeListStep('Step 3 · Adapt for distance / swingy weather', 'Longer rides reward better layer planning.', extras) ], warning: point.code >= 95 ? 'Thunderstorms plus exposed roads are not a â€œdress around itâ€ situation.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with bike-effective feel around ${Math.round(effective)}°C and ${desc}${wet ? ' with wet-road risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main bike kit', 'Choose the core on-bike clothing system.', mainOptions), makeListStep('Step 2 · Add the bike-specific essentials', 'These make the biggest difference on a ride.', core), makeListStep('Step 3 · Adapt for distance / swingy weather', 'Longer rides reward better layer planning.', extras) ], warning: point.code >= 95 ? 'Thunderstorms plus exposed roads are not a “dress around it” situation.' : null };
   }
 
   if (['triathlon', 'swimrun', 'duathlon', 'aquathlon', 'cross_triathlon', 'cross_duathlon'].includes(activity)) {
@@ -8943,7 +8943,7 @@ function buildWizard(data, activity) {
     }
     if (eventPreset?.key === 'tri_70' || eventPreset?.key === 'tri_full' || eventPreset?.key === 'swimrun_long' || eventPreset?.key === 'xtri_long' || eventPreset?.key === 'xdu_long' || (distanceKmValue != null && distanceKmValue >= 80)) extras.push(item('Long-course fuel / carry plan', 'Clothing and storage choices start to overlap here.', ['long-course']));
     const hybridSwimSummary = hasIndoorSwimLeg && !hasOutdoorSwimLeg ? ' The swim block is indoors, so the kit leans toward transition organization and the outdoor legs instead of open-water temperature.' : '';
-    return { point, startTime, chips: hasOutdoorSwimLeg ? [...chips, getWaterTemperatureChip(point, data), { label: `ðŸ ${multisportSummary}` }] : [...chips, { label: `ðŸ ${multisportSummary}` }], activityLabel: multisportLabel, summary: `${eventLabel} preset for ${multisportLabel}, planned as ${multisportSummary}, around ${Math.round(feels)} °C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}.${hybridSwimSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the main multisport kit', `Build around the ${multisportLabel} legs you selected.`, mainOptions), makeListStep('Step 2 · Add the event-specific essentials', 'The small multisport details matter more than they look.', core), makeListStep('Step 3 · Before / after / long-course extras', 'Useful once the event gets bigger.', extras) ], warning: hasOutdoorSwimLeg && wt == null ? 'Water temperature was not available here. Check local swim conditions before locking your swim setup.' : null };
+    return { point, startTime, chips: hasOutdoorSwimLeg ? [...chips, getWaterTemperatureChip(point, data), { label: `🏁 ${multisportSummary}` }] : [...chips, { label: `🏁 ${multisportSummary}` }], activityLabel: multisportLabel, summary: `${eventLabel} preset for ${multisportLabel}, planned as ${multisportSummary}, around ${Math.round(feels)}°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}.${hybridSwimSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the main multisport kit', `Build around the ${multisportLabel} legs you selected.`, mainOptions), makeListStep('Step 2 · Add the event-specific essentials', 'The small multisport details matter more than they look.', core), makeListStep('Step 3 · Before / after / long-course extras', 'Useful once the event gets bigger.', extras) ], warning: hasOutdoorSwimLeg && wt == null ? 'Water temperature was not available here. Check local swim conditions before locking your swim setup.' : null };
   }
 
   if (activity === 'swimming_open') {
@@ -8963,7 +8963,7 @@ function buildWizard(data, activity) {
     if (wt == null) warning = 'Water temperature was not available here. Verify it locally before committing to an open-water swim.';
     else if (wt < 10) warning = 'Very cold water: high-consequence conditions unless you are specifically equipped and experienced.';
     else if (wave != null && wave >= 1) warning = 'Surface chop can make the swim and especially the exit feel harsher than the air suggests.';
-    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with air around ${Math.round(feels)} °C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the swim-suit system', 'For open water, this is the main clothing decision.', suitOptions), makeListStep('Step 2 · Add the safety / swim essentials', 'These are the items that make the session workable and visible.', core), makeListStep('Step 3 · Before / after extras', 'Open-water comfort often lives outside the actual swim.', extras) ], warning };
+    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} around ${distanceText}, with air around ${Math.round(feels)}°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the swim-suit system', 'For open water, this is the main clothing decision.', suitOptions), makeListStep('Step 2 · Add the safety / swim essentials', 'These are the items that make the session workable and visible.', core), makeListStep('Step 3 · Before / after extras', 'Open-water comfort often lives outside the actual swim.', extras) ], warning };
   }
 
   if (isWaterExposureActivity(activity) && activity !== 'swimming_open') {
@@ -9019,7 +9019,7 @@ function buildWizard(data, activity) {
     if (wt == null) warning = 'Water temperature was not available here. Verify it locally before locking the setup.';
     else if (wt < 10) warning = 'Very cold water: treat this as high-consequence unless you are specifically equipped and experienced.';
     else if (wave != null && wave >= 1) warning = 'Surface chop can make water sports feel harsher than the air suggests.';
-    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} ${waterName} setup around ${distanceText}, with air around ${Math.round(feels)} °C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the water setup', 'Start with warmth, immersion risk, and wind exposure.', suitOptions), makeListStep('Step 2 · Add the safety / practical pieces', 'These make the session workable rather than just technically dressed.', core), makeListStep('Step 3 · Exit / backup extras', 'A good dry exit plan matters a lot around water.', extras) ], warning };
+    return { point, startTime, chips: [...chips, getWaterTemperatureChip(point, data)], activityLabel: activityLabels[activity], summary: `${eventLabel} ${waterName} setup around ${distanceText}, with air around ${Math.round(feels)}°C feels-like${wt != null ? ` and water near ${formatWaterTemperatureValue(point)}` : ''}${wave != null ? `, waves around ${wave} m` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the water setup', 'Start with warmth, immersion risk, and wind exposure.', suitOptions), makeListStep('Step 2 · Add the safety / practical pieces', 'These make the session workable rather than just technically dressed.', core), makeListStep('Step 3 · Exit / backup extras', 'A good dry exit plan matters a lot around water.', extras) ], warning };
   }
 
   if (isPoolSwimmingActivity(activity)) {
@@ -9053,12 +9053,12 @@ function buildWizard(data, activity) {
     if (!light.isDay || light.tone === 'warn') core.push(item('Reflective / visible outer layer for the trip home', 'The pool may be warm; outside may not be.', ['light']));
     if (t <= 0) core.push(item('Warm hat / gloves for after', 'The wet-hair-to-cold-air combo is annoying fast.', ['winter']));
     const extras = [ item('Mesh bag / organized change kit', 'Makes pool sessions much smoother.'), item('Towel / absorbent layer', 'Obvious, but it belongs on the list.'), item('Nutrition / hot drink after', profile.minutes >= 120 ? 'A bigger session may justify it.' : 'Optional comfort item.') ];
-    const poolChips = poolNeedsWaterTemp ? [...chips, { label: `ðŸŠ ${poolTypeLabel}`, tone: '' }, getWaterTemperatureChip(point, data)] : [...chips, { label: `ðŸŠ ${poolTypeLabel}`, tone: '' }];
+    const poolChips = poolNeedsWaterTemp ? [...chips, { label: `🏊 ${poolTypeLabel}`, tone: '' }, getWaterTemperatureChip(point, data)] : [...chips, { label: `🏊 ${poolTypeLabel}`, tone: '' }];
     const waterSummary = poolNeedsWaterTemp && wt != null ? `, with water estimated around ${formatWaterTemperatureValue(point)}` : '';
     const warning = poolNeedsWaterTemp && wt == null ? 'Pool water temperature is unknown. For outdoor/unheated pools, verify locally before treating it like a normal heated pool.' : null;
     const poolSummary = noLocationIndoor
       ? `${eventLabel} around ${distanceText} in an ${poolTypeLabel}. Location is optional here; add one only if you want commute-weather layers.`
-      : `${eventLabel} around ${distanceText} in an ${poolTypeLabel}${waterSummary}; outside still lines up with about ${Math.round(feels)} °C feels-like.`;
+      : `${eventLabel} around ${distanceText} in an ${poolTypeLabel}${waterSummary}; outside still lines up with about ${Math.round(feels)}°C feels-like.`;
     return { point, startTime, chips: poolChips, activityLabel: activityLabels[activity], summary: poolSummary, steps: [ makeChoiceStep('Step 1 · Pick the swim kit', 'This part stays simple for pool swimming, unless the pool is outdoor and unheated.', mainOptions), makeListStep('Step 2 · Add the practical pool pieces', 'The useful bits are mostly before and after the water.', core), makeListStep('Step 3 · Session extras', 'These matter more on longer or more structured sessions.', extras) ], warning };
   }
 
@@ -9110,7 +9110,7 @@ function buildWizard(data, activity) {
     if (isIndoorMulti) extras.push(item('Mini transition checklist', `Pack for: ${indoorMultiSummary}. Keep wet pool gear, bike kit, run shoes, and dry clothes separated.`, ['checklist']));
     const indoorSummary = noLocationIndoor
       ? `${eventLabel} setup for ${indoorLabel}${isIndoorMulti ? ` (${indoorMultiSummary})` : ''}. Location is optional here; add one only if you want commute-weather layers.`
-      : `${eventLabel} setup for ${indoorLabel}${isIndoorMulti ? ` (${indoorMultiSummary})` : ''}, with outside conditions around ${Math.round(feels)} °C feels-like for the trip there and back.`;
+      : `${eventLabel} setup for ${indoorLabel}${isIndoorMulti ? ` (${indoorMultiSummary})` : ''}, with outside conditions around ${Math.round(feels)}°C feels-like for the trip there and back.`;
     const indoorStepTitle = isIndoorMulti ? 'Step 1 · Pick the indoor multisport kit' : 'Step 1 · Pick the indoor training kit';
     const indoorStepHelp = isIndoorMulti
       ? 'Build around the indoor blocks you selected in the custom multisport picker.'
@@ -9190,7 +9190,7 @@ function buildWizard(data, activity) {
       item('Sun / eye protection', light.isDay ? 'Useful at elevation, on snow, or exposed trails.' : 'Skip if it stays dark.', ['daylight'])
     ];
     if (snowy || isSnowSport) extras.push(item('Spare gloves / socks', 'Winter days are better with a dry backup.', ['winter']));
-    return { point, startTime, chips, activityLabel: mountainLabel, summary: `${eventLabel} setup for ${mountainLabel}, with planning feel around ${Math.round(exposureTemp)} °C${wet ? ' and wet / mixed-surface risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main trail / mountain kit', 'Start with the clothing system for exposure, terrain, and effort level.', mainOptions), makeListStep('Step 2 · Add terrain-specific essentials', 'These are the things that keep the outing practical and safer.', core), makeListStep('Step 3 · Backup / exposure extras', 'Worth adding when the day gets longer, colder, higher, or more remote.', extras) ], warning: point.code >= 95 ? 'Storms and exposed terrain are a route/timing problem, not just a gear problem.' : null };
+    return { point, startTime, chips, activityLabel: mountainLabel, summary: `${eventLabel} setup for ${mountainLabel}, with planning feel around ${Math.round(exposureTemp)}°C${wet ? ' and wet / mixed-surface risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main trail / mountain kit', 'Start with the clothing system for exposure, terrain, and effort level.', mainOptions), makeListStep('Step 2 · Add terrain-specific essentials', 'These are the things that keep the outing practical and safer.', core), makeListStep('Step 3 · Backup / exposure extras', 'Worth adding when the day gets longer, colder, higher, or more remote.', extras) ], warning: point.code >= 95 ? 'Storms and exposed terrain are a route/timing problem, not just a gear problem.' : null };
   }
 
 
@@ -9224,7 +9224,7 @@ function buildWizard(data, activity) {
       item('Shell / rain layer', wet || veryWindy ? 'Bring it; exposed static time magnifies wet wind.' : 'Packable is usually enough if the forecast is stable.', ['layer'])
     ];
     if (isFishing) core.push(item('Dry bag / waterproof pouch', 'Phone, keys, license, and spare layers deserve dry storage.', ['water']));
-    if (isFishing) core.push(item('Cold-water margin', 'Dress for falling in, spray, or handling wet gear when the water is cold â€” not just the air.', ['water']));
+    if (isFishing) core.push(item('Cold-water margin', 'Dress for falling in, spray, or handling wet gear when the water is cold — not just the air.', ['water']));
     if (!isFishing) core.push(item('Quiet / low-sheen outer layer', 'For hunting, fabric noise and visibility can matter as much as warmth.', ['field']));
     if (!light.isDay || light.tone === 'warn') core.push(item('Headlamp / small light', 'Early starts, late exits, and hands-full packing make this useful.', ['light']));
     if (planningTemp <= 2) core.push(item('Insulated hat / neck gaiter', 'Static exposure makes the head and neck feel the cold quickly.', ['winter']));
@@ -9236,7 +9236,7 @@ function buildWizard(data, activity) {
     if (isFishing && firstFinite(point.waveHeight, 0) >= 1) extras.push(item('Wave / wind caution', 'Boat, kayak, and shoreline fishing get sketchier when chop builds.', ['water']));
     const fieldChips = isFishing && waterOrFieldRisk ? [...chips, waterOrFieldRisk] : chips;
     const fieldSummary = isFishing && shouldShowWaterTemperature(activity, point) && point.waterTemp != null ? ` Water is around ${formatWaterTemperatureValue(point)}, so keep the cold-water margin in mind.` : '';
-    return { point, startTime, chips: fieldChips, activityLabel: fieldLabel, summary: `${eventLabel} setup for ${fieldLabel}, with static-planning feel around ${Math.round(planningTemp)} °C and ${desc}${wet ? ' with wet-weather risk' : ''}.${fieldSummary}`, steps: [ makeChoiceStep(`Step 1 · Pick the main ${isFishing ? 'fishing' : 'hunting'} setup`, 'Static exposure, wind, and wet ground matter more than speed here.', mainOptions), makeListStep('Step 2 · Add the field essentials', 'Safety, footwear, hands, and weather protection are the big pieces.', core), makeListStep('Step 3 · Static-exposure extras', 'These make long sits, shore time, cold starts, or wet exits less miserable.', extras) ], warning: point.code >= 95 ? 'Storms and exposed water/field locations are a timing and safety problem, not just a clothing problem.' : null };
+    return { point, startTime, chips: fieldChips, activityLabel: fieldLabel, summary: `${eventLabel} setup for ${fieldLabel}, with static-planning feel around ${Math.round(planningTemp)}°C and ${desc}${wet ? ' with wet-weather risk' : ''}.${fieldSummary}`, steps: [ makeChoiceStep(`Step 1 · Pick the main ${isFishing ? 'fishing' : 'hunting'} setup`, 'Static exposure, wind, and wet ground matter more than speed here.', mainOptions), makeListStep('Step 2 · Add the field essentials', 'Safety, footwear, hands, and weather protection are the big pieces.', core), makeListStep('Step 3 · Static-exposure extras', 'These make long sits, shore time, cold starts, or wet exits less miserable.', extras) ], warning: point.code >= 95 ? 'Storms and exposed water/field locations are a timing and safety problem, not just a clothing problem.' : null };
   }
 
   if (activity === 'walk') {
@@ -9276,7 +9276,7 @@ function buildWizard(data, activity) {
     if (veryWindy) extras.push(item('Wind-blocking outer layer', 'Walking speed is low, but wind can still chew through thin layers.', ['wind']));
     if (t <= -2) extras.push(item('Neck warmer / scarf', 'Small comfort boost in cold wind.', ['cold']));
     if (!easyWalk) extras.push(item('Phone / route / return plan', 'Useful once the walk is long enough to be more than a quick loop.', ['planning']));
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)} °C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main walking outfit', 'Choose the broad warmth level first, then tune footwear and small accessories.', mainOptions), makeListStep('Step 2 · Add the walking essentials', 'Simple items that matter more once you are outside for a while.', core), makeListStep('Step 3 · Longer-walk / bad-weather extras', 'Bring these when the walk gets longer, colder, windier, or darker.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are a timing problem, not a walking-outfit problem.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}°C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main walking outfit', 'Choose the broad warmth level first, then tune footwear and small accessories.', mainOptions), makeListStep('Step 2 · Add the walking essentials', 'Simple items that matter more once you are outside for a while.', core), makeListStep('Step 3 · Longer-walk / bad-weather extras', 'Bring these when the walk gets longer, colder, windier, or darker.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are a timing problem, not a walking-outfit problem.' : null };
   }
 
   if (activity === 'road_trip') {
@@ -9285,8 +9285,8 @@ function buildWizard(data, activity) {
     const planningFeels = Math.min(feels, coldestStopFeels);
     const endDelta = routeWeather?.deltaFeels;
     const largeSwing = isFiniteNumber(endDelta) && Math.abs(endDelta) >= 8;
-    if (routeWeather?.coldest) chips.push({ label: `ðŸ›£ coldest stop ${Math.round(routeWeather.coldestFeels)} °C`, tone: routeWeather.coldestFeels <= 5 ? 'warn' : '' });
-    if (isFiniteNumber(endDelta)) chips.push({ label: `â†• end ${endDelta > 0 ? '+' : ''}${Math.round(endDelta)} °C vs start`, tone: Math.abs(endDelta) >= 8 ? 'warn' : '' });
+    if (routeWeather?.coldest) chips.push({ label: `🛣 coldest stop ${Math.round(routeWeather.coldestFeels)}°C`, tone: routeWeather.coldestFeels <= 5 ? 'warn' : '' });
+    if (isFiniteNumber(endDelta)) chips.push({ label: `↕ end ${endDelta > 0 ? '+' : ''}${Math.round(endDelta)}°C vs start`, tone: Math.abs(endDelta) >= 8 ? 'warn' : '' });
 
     const mainOptions = planningFeels >= 18 ? [
       option('Tee / light top + easy pants or shorts', 'Comfort-first driving setup.', true, ['main']),
@@ -9307,12 +9307,12 @@ function buildWizard(data, activity) {
     ];
 
     const core = [
-      item('Shoes that still work for fuel, food, and weather stops', routeWeather?.coldest ? `Dress for the roughest stop, not just the cabin â€” ${routeWeather.coldest.label} looks coolest.` : 'You are sitting a lot, but not teleporting door-to-door.'),
+      item('Shoes that still work for fuel, food, and weather stops', routeWeather?.coldest ? `Dress for the roughest stop, not just the cabin — ${routeWeather.coldest.label} looks coolest.` : 'You are sitting a lot, but not teleporting door-to-door.'),
       item('Shell or rain layer within reach', routeWeather?.wettest && firstFinite(routeWeather.maxPrecipProb, 0) >= 40 ? `The wettest stop around ${routeWeather.wettest.label} looks meaningfully wetter than the start.` : (wet ? 'Useful once stops get wet.' : 'Still worth keeping handy for roadside or break stops.')),
       item('Base layer or easy mid-layer when the route cools off', planningFeels <= 6 || profile.minutes >= 360 || largeSwing ? 'Helps a lot when one stop or the destination is colder than the start.' : 'Usually optional.', ['base layer'])
     ];
     if (!light.isDay || light.tone === 'warn') core.push(item('Visibility / flashlight at stops', 'Very worthwhile for dark rest-area or roadside stops.', ['light']));
-    if (planningFeels <= 3) core.push(item('Gloves + warm hat staged in the cabin (for example knit gloves and a beanie)', routeWeather?.coldest ? `The coldest stop is around ${Math.round(routeWeather.coldestFeels)} °C feels-like.` : 'Mostly for outside time, not for driving.', ['cold']));
+    if (planningFeels <= 3) core.push(item('Gloves + warm hat staged in the cabin (for example knit gloves and a beanie)', routeWeather?.coldest ? `The coldest stop is around ${Math.round(routeWeather.coldestFeels)}°C feels-like.` : 'Mostly for outside time, not for driving.', ['cold']));
     if (firstFinite(routeWeather?.maxWind, point.wind, 0) >= 30 || firstFinite(routeWeather?.maxPrecipProb, point.precipProb, 0) >= 45) core.push(item('Extra dry / windproof layer in the trunk', 'Stops can feel a lot rougher than the cabin suggests.', ['travel']));
 
     const extras = [
@@ -9323,10 +9323,10 @@ function buildWizard(data, activity) {
     ];
 
     const routeSummary = routeWeather?.coldest
-      ? ` The route-loaded weather says the coldest stop is ${routeWeather.coldest.label} near ${routeWeather.coldest.placeLabel || 'the route'} at about ${Math.round(routeWeather.coldestFeels)} °C feels-like${isFiniteNumber(endDelta) ? `, with the finish running ${endDelta > 0 ? 'about ' + Math.round(endDelta) + ' °C warmer' : 'about ' + Math.abs(Math.round(endDelta)) + ' °C colder'} than the start` : ''}.`
+      ? ` The route-loaded weather says the coldest stop is ${routeWeather.coldest.label} near ${routeWeather.coldest.placeLabel || 'the route'} at about ${Math.round(routeWeather.coldestFeels)}°C feels-like${isFiniteNumber(endDelta) ? `, with the finish running ${endDelta > 0 ? 'about ' + Math.round(endDelta) + '°C warmer' : 'about ' + Math.abs(Math.round(endDelta)) + '°C colder'} than the start` : ''}.`
       : '';
 
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)} °C feels-like at the planned start and ${desc}${wet ? ' with some wet-stop risk' : ''}.${routeSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the main travel outfit', 'Focus on what still works when you get out of the car.', mainOptions), makeListStep('Step 2 · Add the stop / weather essentials', 'These matter most once you start opening the doors.', core), makeListStep('Step 3 · Long-drive extras', 'These start making more sense as the travel day grows.', extras) ], warning: point.code >= 95 ? 'Strong storms can change a road trip more than a clothing choice can.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}°C feels-like at the planned start and ${desc}${wet ? ' with some wet-stop risk' : ''}.${routeSummary}`.replace('..', '.'), steps: [ makeChoiceStep('Step 1 · Pick the main travel outfit', 'Focus on what still works when you get out of the car.', mainOptions), makeListStep('Step 2 · Add the stop / weather essentials', 'These matter most once you start opening the doors.', core), makeListStep('Step 3 · Long-drive extras', 'These start making more sense as the travel day grows.', extras) ], warning: point.code >= 95 ? 'Strong storms can change a road trip more than a clothing choice can.' : null };
   }
 
   if (activity === 'camping') {
@@ -9335,8 +9335,8 @@ function buildWizard(data, activity) {
     const campPlanningTemp = Math.min(t, firstFinite(overnightFeels, t));
     const windyCamp = firstFinite(overnight?.windyCamp, point.wind, 0);
     const campWet = wet || firstFinite(overnight?.precipChance, 0) >= 40 || firstFinite(overnight?.precipSum, 0) >= 3;
-    if (isFiniteNumber(overnightFeels)) chips.push({ label: `ðŸŒ™ overnight ${Math.round(overnightFeels)} °C`, tone: overnightFeels <= 2 ? 'warn' : '' });
-    if (windyCamp >= 30) chips.push({ label: `â›º gusty camp ${Math.round(windyCamp)} km/h`, tone: 'warn' });
+    if (isFiniteNumber(overnightFeels)) chips.push({ label: `🌙 overnight ${Math.round(overnightFeels)}°C`, tone: overnightFeels <= 2 ? 'warn' : '' });
+    if (windyCamp >= 30) chips.push({ label: `⛺ gusty camp ${Math.round(windyCamp)} km/h`, tone: 'warn' });
 
     const mainOptions = campPlanningTemp >= 14 ? [
       option('Light camp clothing + shell ready', 'Mild-weather camping.', true, ['main']),
@@ -9376,7 +9376,7 @@ function buildWizard(data, activity) {
     ];
     if (profile.mode === 'daily') extras.push(item('Check every overnight low, not just the daytime high', `This trip spans about ${overnight?.nightCount || 1} night${(overnight?.nightCount || 1) === 1 ? '' : 's'}, so the sleep system matters as much as the daytime clothing.`, ['sleep']));
 
-    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with outside conditions around ${Math.round(feels)} °C feels-like${campWet ? ' and some wet-weather risk' : ''}${isFiniteNumber(overnightFeels) ? `, and an overnight low around ${Math.round(overnightFeels)} °C feels-like` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the camp clothing system', 'Think daytime movement, evening camp time, and the overnight drop.', mainOptions), makeListStep('Step 2 · Add the camp and shelter essentials', 'These matter more than a perfectly optimized daytime outfit.', core), makeListStep('Step 3 · Sleep-system and multi-day extras', 'Camping comfort usually lives in the overnight setup.', extras) ], warning: point.code >= 95 ? 'Thunderstorms and camping call for a plan, not just a different jacket.' : null };
+    return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with outside conditions around ${Math.round(feels)}°C feels-like${campWet ? ' and some wet-weather risk' : ''}${isFiniteNumber(overnightFeels) ? `, and an overnight low around ${Math.round(overnightFeels)}°C feels-like` : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the camp clothing system', 'Think daytime movement, evening camp time, and the overnight drop.', mainOptions), makeListStep('Step 2 · Add the camp and shelter essentials', 'These matter more than a perfectly optimized daytime outfit.', core), makeListStep('Step 3 · Sleep-system and multi-day extras', 'Camping comfort usually lives in the overnight setup.', extras) ], warning: point.code >= 95 ? 'Thunderstorms and camping call for a plan, not just a different jacket.' : null };
   }
 
   const mainOptions = t >= 20 ? [ option('Light top + shorts or light pants', 'Warm-weather normal.', true, ['main']), option('Breathable shirt + light trousers', 'A little sharper without being hot.'), option('Light shell packed only', 'Only if the weather could turn later.') ] : t >= 11 ? [ option('Tee / long-sleeve + overshirt', 'Easy shoulder-season answer.', true, ['main']), option('Sweater / hoodie + regular pants', 'Cozier, especially later in the day.'), option('Light jacket over a tee', 'Good if wind matters more than raw temp.') ] : t >= 3 ? [ option('Sweater / hoodie + jacket + regular pants', 'Normal cool-weather setup.', true, ['main']), option('Light insulated jacket + pants', 'Better if you will be out longer.'), option('Shell over base layer + mid-layer', 'Works well when wet wind matters most.', false, ['base layer']) ] : t >= -6 ? [ option('Insulated jacket + warm layer + pants', 'This is proper cold-weather clothing now.', true, ['winter']), option('Parka + regular layers', 'Comfy if you are mostly standing or walking slowly.'), option('Shell + fleece + thermal base', 'Flexible layered approach.', false, ['base layer']) ] : [ option('Warm winter coat / parka + insulating layers', 'Deep winter default.', true, ['winter']), option('Insulated shell + fleece + thermal base', 'If you prefer layering over one huge coat.', false, ['base layer']), option('Lighter summer setup only', 'This is how you start hating the outing.', false, ['nope']) ];
@@ -9389,7 +9389,7 @@ function buildWizard(data, activity) {
   if (t <= 2) extras.push(item('Warm socks', 'Small thing, big comfort payoff.', ['cold']));
   if (t <= -2 || veryWindy) extras.push(item('Neck layer / scarf', 'Very worthwhile in cold wind.', ['cold']));
   if (profile.minutes >= 240 || profile.mode === 'daily' || (distanceKmValue != null && distanceKmValue >= 8)) extras.push(item('Packable extra layer', 'Longer time out means more chance the weather becomes annoying.', ['long']));
-  return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)} °C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main everyday outfit', 'Choose the broad clothing level first.', mainOptions), makeListStep('Step 2 · Add the practical extras', 'Only the pieces that actually improve comfort.', core), makeListStep('Step 3 · Optional comfort / winter items', 'Bring these when the duration or cold justifies them.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are much more a â€œgo laterâ€ problem than a â€œdress betterâ€ problem.' : null };
+  return { point, startTime, chips, activityLabel: activityLabels[activity], summary: `${eventLabel} setup for ${distanceText}, with about ${Math.round(feels)}°C feels-like at the planned start and ${desc}${wet ? ' with some precipitation risk' : ''}.`, steps: [ makeChoiceStep('Step 1 · Pick the main everyday outfit', 'Choose the broad clothing level first.', mainOptions), makeListStep('Step 2 · Add the practical extras', 'Only the pieces that actually improve comfort.', core), makeListStep('Step 3 · Optional comfort / winter items', 'Bring these when the duration or cold justifies them.', extras) ], warning: point.code >= 95 ? 'Thunderstorms are much more a “go later” problem than a “dress better” problem.' : null };
 }
 
 function compactStepTitle(step, index) {
@@ -9400,12 +9400,12 @@ function compactStepTitle(step, index) {
 }
 
 function buildCompactSummary(point, desc, wizard) {
-  const bits = [`Feels ${Math.round(point.feels)} °C`, desc];
+  const bits = [`Feels ${Math.round(point.feels)}°C`, desc];
   if ((point.wind || 0) >= 25) bits.push(`wind ${Math.round(point.wind)} km/h`);
   if ((point.precipProb || 0) >= 35 || (point.precip || 0) >= 0.2) bits.push('wet');
   const darkChip = wizard.chips.find(chip => /dark|night/i.test(chip.label));
   if (darkChip) bits.push('low light');
-  if (isFiniteNumber(point.waterTemp)) bits.push(`water ${round1(point.waterTemp)} °C`);
+  if (isFiniteNumber(point.waterTemp)) bits.push(`water ${round1(point.waterTemp)}°C`);
   return bits.join(' · ');
 }
 
@@ -9438,7 +9438,7 @@ function getClothingExamples(label, tags = [], activity = selectedActivity) {
   if (/wetsuit/.test(text)) add('full-sleeve wetsuit', 'sleeveless wetsuit');
   if (/booties/.test(text)) add('neoprene booties');
   if (/hood/.test(text) && /neoprene|cold-water/.test(text)) add('neoprene hood');
-  if (/sleeping bag/.test(text)) add('0 °C comfort sleeping bag', 'synthetic 3-season bag');
+  if (/sleeping bag/.test(text)) add('0°C comfort sleeping bag', 'synthetic 3-season bag');
   if (/sleeping pad|ground insulation/.test(text)) add('insulated air pad', 'closed-cell foam pad');
   if (/sunglasses|glasses|eyewear|lenses/.test(text)) {
     if (/clear|low-light/.test(text)) add('clear-lens sports glasses', 'rose or yellow low-light lenses');
@@ -9615,8 +9615,8 @@ function renderIndoorAdviceWithoutLocation() {
         <div class="route-callout">No location required for this activity. Add a location later if you want commute weather, daylight, or outdoor arrival/departure layers.</div>
         <div class="mini-chips">
           ${wizard.chips.map(chip => `<div class="mini-chip ${chip.tone || ''}">${renderLeadingEmojiLabel(chip.label)}</div>`).join('')}
-          <div class="mini-chip">ðŸ· ${escapeHtml(wizard.activityLabel)}</div>
-          <div class="mini-chip">ðŸ  indoor / controlled setting</div>
+          <div class="mini-chip">🏷 ${escapeHtml(wizard.activityLabel)}</div>
+          <div class="mini-chip">🏠 indoor / controlled setting</div>
         </div>
       </section>
       <section class="result-panel">
@@ -9628,7 +9628,7 @@ function renderIndoorAdviceWithoutLocation() {
           </div>
         </div>
         <div class="wizard-grid">${renderSteps(wizard.steps)}</div>
-        ${wizard.warning ? `<div class="warning-box">${renderSymbolIconHtml('âš ï¸', 'wi', 'Warning', true)}<span>${escapeHtml(wizard.warning)}</span></div>` : ''}
+        ${wizard.warning ? `<div class="warning-box">${renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)}<span>${escapeHtml(wizard.warning)}</span></div>` : ''}
       </section>
     </div>
   `;
@@ -9687,7 +9687,7 @@ function renderResultLocationHeader(locationName, point = null) {
   const showBackToStart = !!(activeRoutePointForecast?.isRoutePoint && routeState?.points?.length);
   return `
     <div class="location-name-row">
-      <div class="location-name">ðŸ“ <span>${escapeHtml(locationName)}</span></div>
+      <div class="location-name">📍 <span>${escapeHtml(locationName)}</span></div>
       <div class="location-name-actions">
         ${showBackToStart ? `<button class="mode-toggle-btn result-refresh-btn" type="button" data-action="backToRouteStart">Back to start</button>` : ''}
         <button class="mode-toggle-btn result-refresh-btn" type="button" data-action="forceRefreshWeather">Refresh weather</button>
@@ -9715,27 +9715,27 @@ function renderAdvice(data, activity) {
   const [, desc] = wCodeToEmoji(point.code);
   const windSummary = formatWindTooltip(point.wind || data.current.wind, point.gusts || data.current.gusts, point.windDir || data.current.windDir);
   const metaLines = [
-    `ðŸ’§ Humidity <strong>${escapeHtml(data.current.humidity)}%</strong>`,
-    `ðŸ’¨ Wind <strong>${escapeHtml(windSummary.speedText)}</strong> ${windSummary.dirHtml}`,
-    `â†¯ Gusts <strong>${escapeHtml(windSummary.gustText)}</strong>`,
-    `ðŸŒ§ Precip <strong>${escapeHtml(round1(point.precip || 0))} mm</strong> · <strong>${escapeHtml(Math.round(firstFinite(point.precipProb, 0)))}%</strong>`
+    `💧 Humidity <strong>${escapeHtml(data.current.humidity)}%</strong>`,
+    `💨 Wind <strong>${escapeHtml(windSummary.speedText)}</strong> ${windSummary.dirHtml}`,
+    `↯ Gusts <strong>${escapeHtml(windSummary.gustText)}</strong>`,
+    `🌧 Precip <strong>${escapeHtml(round1(point.precip || 0))} mm</strong> · <strong>${escapeHtml(Math.round(firstFinite(point.precipProb, 0)))}%</strong>`
   ];
   const uvInfo = getUvRiskInfo(getUvDisplayValue(point, data));
-  if (uvInfo) metaLines.push(`â˜€ ${renderUvBadge(uvInfo.value)}`);
+  if (uvInfo) metaLines.push(`☀ ${renderUvBadge(uvInfo.value)}`);
   const aqiInfo = getAqiInfo(point.aqi ?? data.current.aqi);
-  if (aqiInfo) metaLines.push(`ðŸ’¨ ${renderAqiBadge(aqiInfo.value)}`);
+  if (aqiInfo) metaLines.push(`💨 ${renderAqiBadge(aqiInfo.value)}`);
 
   const weatherMetaDay = getDayRecord(data, point.time || startTime || data.currentTime);
   if (weatherMetaDay?.sunrise || weatherMetaDay?.sunset) {
     const sunBits = [];
-    if (weatherMetaDay.sunrise) sunBits.push(`â¬† Sunrise <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunrise))}</strong>`);
-    if (weatherMetaDay.sunset) sunBits.push(`â¬‡ Sunset <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunset))}</strong>`);
+    if (weatherMetaDay.sunrise) sunBits.push(`⬆ Sunrise <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunrise))}</strong>`);
+    if (weatherMetaDay.sunset) sunBits.push(`⬇ Sunset <strong>${escapeHtml(formatShortTime(weatherMetaDay.sunset))}</strong>`);
     if (sunBits.length) metaLines.push(sunBits.join(' · '));
   }
   const waterMetaLine = renderWaterTemperatureMetaLine(point, data);
   const showWaterUi = shouldShowWaterTemperatureSignal(point, activity || selectedActivity);
   if (waterMetaLine) metaLines.push(waterMetaLine);
-  if (isFiniteNumber(point.waveHeight)) metaLines.push(`ã€°ï¸ Waves <strong>${escapeHtml(round1(point.waveHeight))} m</strong>`);
+  if (isFiniteNumber(point.waveHeight)) metaLines.push(`〰️ Waves <strong>${escapeHtml(round1(point.waveHeight))} m</strong>`);
 
   const durationState = getDurationState(getSelectedEvent());
   if (!durationState) {
@@ -9747,13 +9747,13 @@ function renderAdvice(data, activity) {
             ${weatherIconHtml(point.code, 'weather-icon')}
             <div class="weather-main">
               <div class="when">${escapeHtml(formatWeatherDateTime(point.time || startTime))}</div>
-              <div class="temp">${escapeHtml(Math.round(point.temp))} °C</div>
-              <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))} °C</div>
+              <div class="temp">${escapeHtml(Math.round(point.temp))}°C</div>
+              <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))}°C</div>
             </div>
             <div class="weather-meta">${metaLines.join('<br>')}</div>
           </div>
           ${showWaterUi ? `<div class="mini-chips">
-            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">${renderSymbolIconHtml('ðŸŒŠ', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
+            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
           </div>` : ''}
           ${showWaterUi ? renderWaterTempDisclaimer(point) : ''}
           <div class="block-title">Weather & forecast</div>
@@ -9783,13 +9783,13 @@ function renderAdvice(data, activity) {
             ${weatherIconHtml(point.code, 'weather-icon')}
             <div class="weather-main">
               <div class="when">${escapeHtml(formatWeatherDateTime(point.time || startTime))}</div>
-              <div class="temp">${escapeHtml(Math.round(point.temp))} °C</div>
-              <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))} °C</div>
+              <div class="temp">${escapeHtml(Math.round(point.temp))}°C</div>
+              <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))}°C</div>
             </div>
             <div class="weather-meta">${metaLines.join('<br>')}</div>
           </div>
           ${showWaterUi ? `<div class="mini-chips">
-            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">${renderSymbolIconHtml('ðŸŒŠ', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
+            <div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'estimated' ? '' : 'warn'}">${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>
           </div>` : ''}
           ${showWaterUi ? renderWaterTempDisclaimer(point) : ''}
           ${weatherWarningsHtml}
@@ -9820,16 +9820,16 @@ function renderAdvice(data, activity) {
           ${weatherIconHtml(point.code, 'weather-icon')}
           <div class="weather-main">
             <div class="when">${escapeHtml(formatWeatherDateTime(point.time || wizard.startTime))}</div>
-            <div class="temp">${escapeHtml(Math.round(point.temp))} °C</div>
-            <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))} °C</div>
+            <div class="temp">${escapeHtml(Math.round(point.temp))}°C</div>
+            <div class="desc">${escapeHtml(desc)} · feels ${escapeHtml(Math.round(point.feels))}°C</div>
           </div>
           <div class="weather-meta">${metaLines.join('<br>')}</div>
         </div>
 
         <div class="mini-chips">
           ${wizard.chips.map(chip => `<div class="mini-chip ${chip.tone || ''}">${renderLeadingEmojiLabel(chip.label)}</div>`).join('')}
-          <div class="mini-chip">ðŸ· ${escapeHtml(wizard.activityLabel)}</div>
-          ${showWaterUi ? `<div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'unknown' ? 'warn' : ''}">${renderSymbolIconHtml('ðŸŒŠ', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>` : ''}
+          <div class="mini-chip">🏷 ${escapeHtml(wizard.activityLabel)}</div>
+          ${showWaterUi ? `<div class="mini-chip ${point.waterTempSource === 'measured' ? 'ok' : point.waterTempSource === 'unknown' ? 'warn' : ''}">${renderSymbolIconHtml('🌊', 'inline-symbol-icon', 'Water', true)} ${escapeHtml(getWaterTemperatureSourceLabel(point, data))}</div>` : ''}
         </div>
         ${showWaterUi ? renderWaterTempDisclaimer(point) : ''}
         ${weatherWarningsHtml}
@@ -9849,7 +9849,7 @@ function renderAdvice(data, activity) {
           </div>
         </div>
         <div class="wizard-grid">${renderSteps(wizard.steps)}</div>
-        ${wizard.warning ? `<div class="warning-box">${renderSymbolIconHtml('âš ï¸', 'wi', 'Warning', true)}<span>${escapeHtml(wizard.warning)}</span></div>` : ''}
+        ${wizard.warning ? `<div class="warning-box">${renderSymbolIconHtml('⚠️', 'wi', 'Warning', true)}<span>${escapeHtml(wizard.warning)}</span></div>` : ''}
       </section>
     </div>
   `);
@@ -9860,7 +9860,7 @@ function renderAdvice(data, activity) {
   if (activity === 'road_trip') triggerRoadTripItinerary();
 }
 
-// â”€â”€ Road trip itinerary (OSM/Nominatim client-side) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Road trip itinerary (OSM/Nominatim client-side) ───────────────────────
 // The road-trip panel is intentionally lightweight and client-side: it reuses
 // route weather checkpoints, adds midpoint break suggestions for very long
 // segments, reverse-geocodes rough place names, and renders a scannable timeline.
@@ -9885,7 +9885,7 @@ async function reverseGeocodePlaceName(lat, lon) {
 function describeRoadTripWeather(cp) {
   if (!cp?.weather) return 'Weather pending';
   const [, desc] = wCodeToEmoji(cp.weather.code);
-  return `${Math.round(cp.weather.temp)} °C / feels ${Math.round(cp.weather.feels)} °C · ${desc.toLowerCase()} · wind ${Math.round(cp.weather.wind || 0)} km/h`;
+  return `${Math.round(cp.weather.temp)}°C / feels ${Math.round(cp.weather.feels)}°C · ${desc.toLowerCase()} · wind ${Math.round(cp.weather.wind || 0)} km/h`;
 }
 
 // Give each itinerary row a reason for existing.
@@ -9895,9 +9895,9 @@ function buildRoadTripRationale(cp, context = {}) {
   const feels = firstFinite(cp.weather.feels, cp.weather.temp, 0);
   const precipProb = firstFinite(cp.weather.precipProb, 0);
   const wind = firstFinite(cp.weather.wind, 0);
-  if (context.segmentMinutes >= 150) return 'Long segment ahead â€” a natural fuel, washroom, and stretch stop.';
-  if (precipProb >= 55) return 'Wettest stretch nearby â€” a good place to layer up before getting out again.';
-  if (wind >= 35) return 'Wind looks strongest here â€” worth a quick layer and comfort check.';
+  if (context.segmentMinutes >= 150) return 'Long segment ahead — a natural fuel, washroom, and stretch stop.';
+  if (precipProb >= 55) return 'Wettest stretch nearby — a good place to layer up before getting out again.';
+  if (wind >= 35) return 'Wind looks strongest here — worth a quick layer and comfort check.';
   if (feels <= 4) return 'This is one of the colder stops, so keep the warm layer easy to grab.';
   if (context.type === 'finish') return 'Good time to swap into something drier or warmer for after the drive.';
   return 'Useful checkpoint to reassess comfort, layers, and the next segment.';
@@ -9944,7 +9944,7 @@ async function buildSuggestedRoadTripStops(samples) {
       place: place || `Between ${prev.placeLabel || prev.label} and ${next.placeLabel || next.label}`,
       eta: prev.eta && next.eta ? formatShortDateTime(addMinutesToLocalString(prev.eta, Math.round(segmentMinutes / 2))) : null,
       weather: next.weather ? `Before ${next.label.toLowerCase()}: ${describeRoadTripWeather(next)}` : 'Good midpoint stop for a break.',
-      rationale: segmentMinutes >= 180 ? 'Long time in the car â€” break up the segment before it gets stale.' : 'Useful midpoint to reset before the next longer stretch.',
+      rationale: segmentMinutes >= 180 ? 'Long time in the car — break up the segment before it gets stale.' : 'Useful midpoint to reset before the next longer stretch.',
       fraction,
       kmFromStart: point.kmFromStart || ((prev.kmFromStart + next.kmFromStart) / 2)
     });
@@ -10091,7 +10091,7 @@ async function triggerRoadTripItinerary() {
             <div class="stop-body">
               <div class="stop-label ${labelClass}">${escapeHtml(stop.label)}${stop.type === 'suggested' ? ' · suggested' : ''}</div>
               <div class="stop-name">${escapeHtml(stop.place || stop.label)}</div>
-              <div class="stop-meta">${stop.eta ? `ðŸ•’ ${escapeHtml(stop.eta)}` : ''}${isFiniteNumber(stop.kmFromStart) ? ` · ${escapeHtml(formatKmPrefix(stop.kmFromStart))}` : ''}${stop.weather ? ` · ${escapeHtml(stop.weather)}` : ''}</div>
+              <div class="stop-meta">${stop.eta ? `🕒 ${escapeHtml(stop.eta)}` : ''}${isFiniteNumber(stop.kmFromStart) ? ` · ${escapeHtml(formatKmPrefix(stop.kmFromStart))}` : ''}${stop.weather ? ` · ${escapeHtml(stop.weather)}` : ''}</div>
               ${stop.rationale ? `<div class="stop-rationale">${escapeHtml(stop.rationale)}</div>` : ''}
             </div>
           </div>`;
@@ -10426,7 +10426,7 @@ resultInner.addEventListener('click', event => {
     item.classList.toggle('done');
     item.setAttribute('aria-pressed', item.classList.contains('done') ? 'true' : 'false');
     const mark = item.querySelector('.mark');
-    if (mark) mark.textContent = item.classList.contains('done') ? 'âœ“' : '';
+    if (mark) mark.textContent = item.classList.contains('done') ? '✓' : '';
   }
 });
 
@@ -10969,7 +10969,7 @@ function handleDisconnectStrava() {
 }
 
 async function handleOpenStravaPicker() {
-  if (stravaStatus) stravaStatus.textContent = 'Loading Strava routesâ€¦';
+  if (stravaStatus) stravaStatus.textContent = 'Loading Strava routes…';
   try {
     await importStravaFirstRoute();
     renderStravaConnectionState();
@@ -10998,11 +10998,11 @@ async function applyImportedStravaRoute(importedRoute, sourceLabel, plannerAutof
   const routeLoadedMessage = `${importedRoute.name} imported from ${sourceLabel} · ${formatKm(routeState.totalKm)}${routeState.totalGain >= 20 ? ` · +${Math.round(routeState.totalGain)} m` : ''} · ${routeState.points.length} points · provenance: imported route`;
   routeStatus.textContent = routeLoadedMessage;
   if (routeState?.points?.[0]) {
-    routeStatus.textContent = `${routeLoadedMessage} · refreshing weatherâ€¦`;
+    routeStatus.textContent = `${routeLoadedMessage} · refreshing weather…`;
     try {
       await refreshWeatherForActiveTarget({
         source: 'service_import',
-        detail: `Refreshing weather for ${importedRoute.name || 'imported route'}â€¦`,
+        detail: `Refreshing weather for ${importedRoute.name || 'imported route'}…`,
         clearRouteCheckpointCache: true,
         placeOverride: { latitude: routeState.points[0].lat, longitude: routeState.points[0].lon, name: importedRoute.name || 'Strava route', admin1: '', country: '', country_code: '' }
       });
@@ -11104,9 +11104,9 @@ function renderStravaPicker() {
     >${escapeHtml(tab.label)}</button>`).join('');
 
   if (stravaPickerLoading) {
-    stravaPickerStatus.textContent = 'Loading Strava itemsâ€¦';
+    stravaPickerStatus.textContent = 'Loading Strava items…';
   } else if (stravaPickerImporting) {
-    stravaPickerStatus.textContent = stravaPickerTab === 'activities' ? 'Importing Strava activityâ€¦' : 'Importing Strava routeâ€¦';
+    stravaPickerStatus.textContent = stravaPickerTab === 'activities' ? 'Importing Strava activity…' : 'Importing Strava route…';
   } else {
     stravaPickerStatus.textContent = getStravaPickerCurrentError() || (stravaPickerTab === 'activities'
       ? 'Choose a recent activity with GPS data.'
