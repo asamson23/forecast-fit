@@ -48,7 +48,21 @@ Planning and follow-up notes for future work.
 
 - Review whether warning-dismissal state should persist once warnings become individually dismissible in the UI.
 - Review whether route persistence should keep the current storage-size guardrails or move to a more explicit user-controlled cache model.
-- Thin out `src/main.ts` by moving cohesive function groups into smaller modules with clear, significant file names so route, weather, planner, rendering, and provider logic are easier to maintain independently.
+
+### Code Refactoring
+
+- Split `src/main.ts` (currently ~11,600 lines with `// @ts-nocheck`) into focused modules:
+  - State mutations and getters → `src/app/stateManager.ts`
+  - Event binding → `src/app/eventHandlers.ts`
+  - Weather, route, and Strava API orchestration → `src/app/apiOrchestrator.ts`
+  - Startup and hydration logic → `src/app/initialize.ts`
+  - Keep `main.ts` as a thin entry-point that wires these together
+- Remove the `// @ts-nocheck` pragma from `main.ts` once the split is done and resolve the underlying type errors.
+- Enable `strict: true` in `tsconfig.json` and replace the ~260 `any` / `unknown` annotations in `src/` with explicit interfaces; create `src/types/forecast.ts` and `src/types/weatherPoint.ts` for the shapes that are currently untyped.
+- Split `src/utils/format.ts` (~550 lines) into `src/utils/formatters.ts` for the exported functions and `src/utils/iconMappings.ts` for the weather-icon asset imports and lookup tables.
+- Consolidate `api/strava/stravaUtils.ts` and `api/strava/_utils.ts` into a single shared module; the two files currently duplicate error-parsing logic.
+- Extract water-temperature formatting out of `src/components/ForecastCells.ts` and `src/components/WarningPanel.ts` into a shared `src/utils/waterFormatting.ts` so the display logic lives in one place.
+- Remove the `as *FromModule` import-aliasing pattern used throughout `src/main.ts`; replace with direct named imports or namespace imports so identifiers resolve cleanly and dead-code elimination works correctly.
 
 ### Provider Browser
 
@@ -70,6 +84,11 @@ Planning and follow-up notes for future work.
 ### Sharing
 
 - For shared routes, prefer deduplication, compact geometry storage, or expiring share records if backend persistence is introduced.
+
+### Component Splits
+
+- Break `src/components/BestWindowPanel.ts` (~740 lines) into separate files for HTML template generation, DOM mounting, and event handlers.
+- Break `src/components/ForecastChart.ts` (~470 lines) into SVG generation logic and tooltip/interaction logic.
 
 ### Internationalization And Formatting
 
@@ -105,3 +124,4 @@ Planning and follow-up notes for future work.
 - Add test coverage targets for:
   - cache invalidation
   - deep-link and launch-intent behavior
+- Add a test framework (Vitest recommended — already uses Vite) and create test files parallel to `src/features/` covering route parsing, weather client error handling, best-window clustering, and Strava normalization; aim for 60%+ coverage on non-UI logic.
