@@ -63,6 +63,8 @@ Planning and follow-up notes for future work.
 - Consolidate `api/strava/stravaUtils.ts` and `api/strava/_utils.ts` into a single shared module; the two files currently duplicate error-parsing logic.
 - Extract water-temperature formatting out of `src/components/ForecastCells.ts` and `src/components/WarningPanel.ts` into a shared `src/utils/waterFormatting.ts` so the display logic lives in one place.
 - Remove the `as *FromModule` import-aliasing pattern used throughout `src/main.ts`; replace with direct named imports or namespace imports so identifiers resolve cleanly and dead-code elimination works correctly.
+- During the `main.ts` split, populate or remove the eleven 1-line stub files that represent intended extraction points but are currently empty: `src/components/ComfortAdjustmentsSection.ts`, `ActivityParametersSection.ts`, `WaterTemperatureSection.ts`, `LocationRouteSection.ts`, `RouteMap.ts`, `QuickStartGuide.ts`, `StartTimeSection.ts`, and `src/features/route/leafletMap.ts`, `checkpoints.ts`, `src/features/gear/recommendationBuilder.ts`, `clothingRules.ts`.
+- Build the `main.ts` split on top of the existing `src/app/` skeleton (`state.ts`, `actions.ts`, `render.ts`) rather than creating parallel files; extend what is already there.
 
 ### Provider Browser
 
